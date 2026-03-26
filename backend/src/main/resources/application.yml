@@ -1,0 +1,36 @@
+spring:
+  application:
+    name: gadget-seva-hub
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/gadget_seva_hub}
+    username: ${DB_USERNAME:gadget}
+    password: ${DB_PASSWORD:gadget}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+  flyway:
+    enabled: true
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+server:
+  port: 8081
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:01234567890123456789012345678901}
+    expiration-minutes: ${JWT_EXPIRATION_MINUTES:120}
+  storage:
+    root-path: ${STORAGE_ROOT:uploads}
+    base-url: ${STORAGE_BASE_URL:http://localhost:8081}
+    signing-secret: ${STORAGE_SIGNING_SECRET:storage-signing-secret-12345}
+  repair-center-state-code: ${REPAIR_CENTER_STATE_CODE:29}
+
+logging:
+  level:
+    com.gadgetseva: INFO
