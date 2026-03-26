@@ -5,22 +5,29 @@ Thumbs.db
 
 # Node / frontend / mobile
 node_modules/
+frontend/node_modules/
+mobile/node_modules/
 dist/
 build/
+frontend/dist/
+mobile/dist/
 .npm-cache/
 .expo/
 .expo-shared/
 
 # Java / Maven
 target/
+backend/target/
 *.class
 *.jar
 
 # Local runtime data
 data/
+.data/
 uploads/
 *.db
 *.mv.db
+*.trace.db
 
 # Logs
 *.log
@@ -30,8 +37,10 @@ uploads/
 .env
 .env.local
 .env.production
+.env.*
+!.env.example
+!*.env.example
 
 # Test / reports
 playwright-report/
 test-results/
-

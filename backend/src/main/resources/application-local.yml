@@ -1,21 +1,41 @@
 spring:
   datasource:
-    url: jdbc:h2:file:./data/gadget-seva-hub;MODE=PostgreSQL;DATABASE_TO_UPPER=FALSE;DB_CLOSE_ON_EXIT=FALSE
+    url: jdbc:h2:file:./.data/gadget-seva-hub;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
     driver-class-name: org.h2.Driver
     username: sa
     password:
   jpa:
     hibernate:
       ddl-auto: update
+    open-in-view: false
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.H2Dialect
         format_sql: true
+        dialect: org.hibernate.dialect.H2Dialect
   flyway:
     enabled: false
+  data:
+    redis:
+      repositories:
+        enabled: false
   h2:
     console:
       enabled: true
+      path: /h2-console
 
 server:
   port: 8081
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:01234567890123456789012345678901}
+    expiration-minutes: ${JWT_EXPIRATION_MINUTES:120}
+  storage:
+    root-path: ${STORAGE_ROOT:uploads}
+    base-url: ${STORAGE_BASE_URL:http://localhost:8081}
+    signing-secret: ${STORAGE_SIGNING_SECRET:storage-signing-secret-12345}
+  repair-center-state-code: ${REPAIR_CENTER_STATE_CODE:29}
+
+logging:
+  level:
+    com.gadgetseva: INFO

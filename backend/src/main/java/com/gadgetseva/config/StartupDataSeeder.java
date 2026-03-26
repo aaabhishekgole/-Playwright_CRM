@@ -7,6 +7,7 @@ import com.gadgetseva.entity.User;
 import com.gadgetseva.repository.RoleRepository;
 import com.gadgetseva.repository.TenantRepository;
 import com.gadgetseva.repository.UserRepository;
+import java.util.Arrays;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -21,7 +22,7 @@ public class StartupDataSeeder {
                                 TenantRepository tenantRepository,
                                 PasswordEncoder passwordEncoder) {
         return args -> {
-            seedRoles(roleRepository);
+            ensureRoles(roleRepository);
 
             Tenant tenant = tenantRepository.findByCode("GSH-CORE").orElseGet(() -> {
                 Tenant created = new Tenant();
@@ -52,14 +53,12 @@ public class StartupDataSeeder {
         };
     }
 
-    private void seedRoles(RoleRepository roleRepository) {
-        for (RoleName roleName : RoleName.values()) {
-            roleRepository.findByName(roleName).orElseGet(() -> {
-                Role role = new Role();
-                role.setName(roleName);
-                return roleRepository.save(role);
-            });
-        }
+    private void ensureRoles(RoleRepository roleRepository) {
+        Arrays.stream(RoleName.values()).forEach(roleName -> roleRepository.findByName(roleName).orElseGet(() -> {
+            Role role = new Role();
+            role.setName(roleName);
+            return roleRepository.save(role);
+        }));
     }
 
     private void seedUser(UserRepository userRepository,
