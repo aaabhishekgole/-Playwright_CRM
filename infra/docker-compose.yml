@@ -1,0 +1,54 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: gadget_seva_hub
+      POSTGRES_USER: gadget
+      POSTGRES_PASSWORD: gadget
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+
+  backend:
+    build: ../backend
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/gadget_seva_hub
+      DB_USERNAME: gadget
+      DB_PASSWORD: gadget
+      REDIS_HOST: redis
+      SERVER_PORT: 8081
+      STORAGE_ROOT: /app/uploads
+    depends_on:
+      - postgres
+      - redis
+    ports:
+      - "8081:8081"
+
+  frontend:
+    build:
+      context: ../frontend
+      args:
+        VITE_API_BASE_URL: http://localhost:8081/api
+    depends_on:
+      - backend
+    ports:
+      - "5173:80"
+
+volumes:
+  postgres_data:

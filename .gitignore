@@ -1,0 +1,37 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+
+# Node / frontend / mobile
+node_modules/
+dist/
+build/
+.npm-cache/
+.expo/
+.expo-shared/
+
+# Java / Maven
+target/
+*.class
+*.jar
+
+# Local runtime data
+data/
+uploads/
+*.db
+*.mv.db
+
+# Logs
+*.log
+*.err.log
+
+# Env files
+.env
+.env.local
+.env.production
+
+# Test / reports
+playwright-report/
+test-results/
+
