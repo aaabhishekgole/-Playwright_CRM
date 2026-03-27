@@ -11,12 +11,14 @@ import java.util.Arrays;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Configuration
 public class StartupDataSeeder {
 
     @Bean
+    @Order(1)
     CommandLineRunner seedAdmin(UserRepository userRepository,
                                 RoleRepository roleRepository,
                                 TenantRepository tenantRepository,
@@ -41,7 +43,7 @@ public class StartupDataSeeder {
             seedUser(userRepository, roleRepository, passwordEncoder, tenant,
                     "backend", "Backend Operations", "backend@gadgetseva.local", "9999999998", RoleName.BACKEND_TEAM);
             seedUser(userRepository, roleRepository, passwordEncoder, tenant,
-                    "pickup", "Pickup Runner", "pickup@gadgetseva.local", "9999999994", RoleName.PICKUP_AGENT);
+                    "pickup", "Vishal Babar", "vishal.babar@gadgetseva.local", "9999999994", RoleName.PICKUP_AGENT);
             seedUser(userRepository, roleRepository, passwordEncoder, tenant,
                     "tech", "Repair Technician", "tech@gadgetseva.local", "9999999993", RoleName.TECHNICIAN);
             seedUser(userRepository, roleRepository, passwordEncoder, tenant,
@@ -70,23 +72,22 @@ public class StartupDataSeeder {
                           String email,
                           String phone,
                           RoleName roleName) {
-        if (userRepository.findByUsername(username).isPresent()) {
-            return;
-        }
-
         Role role = roleRepository.findByName(roleName).orElse(null);
         if (role == null) {
             return;
         }
 
-        User user = new User();
+        User user = userRepository.findByUsername(username).orElseGet(User::new);
         user.setFullName(fullName);
         user.setUsername(username);
-        user.setPassword(passwordEncoder.encode("Admin@123"));
+        if (user.getPassword() == null || user.getPassword().isBlank()) {
+            user.setPassword(passwordEncoder.encode("Admin@123"));
+        }
         user.setEmail(email);
         user.setPhone(phone);
         user.setRole(role);
         user.setTenant(tenant);
+        user.setActive(true);
         userRepository.save(user);
     }
 }

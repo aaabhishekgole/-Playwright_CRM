@@ -1,4 +1,5 @@
 import type { TimelineItem } from '../types/models';
+import { formatDateTimeIn } from '../utils/formatters';
 
 export function Timeline({ items }: { items: TimelineItem[] }) {
   return (
@@ -9,7 +10,7 @@ export function Timeline({ items }: { items: TimelineItem[] }) {
           <div>
             <strong>{item.toStatus.replace(/_/g, ' ')}</strong>
             <p>{item.remarks}</p>
-            <small>{item.changedBy} on {new Date(item.changedAt).toLocaleString()}</small>
+            <small>{item.changedBy} on {formatDateTimeIn(item.changedAt)}</small>
           </div>
         </div>
       ))}

@@ -27,6 +27,10 @@ public class Device extends BaseAuditableEntity {
     @Column(nullable = false, length = 80)
     private String model;
 
+    @Enumerated(EnumType.STRING)
+    @Column(length = 30)
+    private DeviceCategory deviceCategory = DeviceCategory.MOBILE;
+
     @Column(nullable = false, unique = true, length = 120)
     private String serialNumber;
 

@@ -3,6 +3,9 @@ import { StatusBadge } from '../components/StatusBadge';
 import { Timeline } from '../components/Timeline';
 import { TypedEvidenceUploadPanel } from '../components/TypedEvidenceUploadPanel';
 import { useAuth } from '../hooks/useAuth';
+import { formatDeviceCategory, usesImei } from '../utils/deviceCatalog';
+import { formatCurrencyInr, formatDateTimeIn } from '../utils/formatters';
+import { getWorkflowStageMeta } from '../utils/workflowStages';
 import { useRequests } from './useRequests';
 
 function countByPrefix(types: string[], prefix: string) {
@@ -28,6 +31,8 @@ export function ServiceRequestDetailsPage() {
   const cashlessDevicePhotos = countByPrefix(attachmentTypes, 'CASHLESS_DEVICE_IMAGE_');
   const cashlessDamagePhotos = countByPrefix(attachmentTypes, 'CASHLESS_DAMAGE_IMAGE_');
   const uploadMode = role === 'PICKUP_AGENT' ? 'runner' : 'standard';
+  const imeiExpected = usesImei(request.deviceCategory);
+  const workflowMeta = getWorkflowStageMeta(request);
 
   return (
     <section className="workspace-page">
@@ -36,6 +41,12 @@ export function ServiceRequestDetailsPage() {
           <p className="eyebrow">Request details</p>
           <h2>{request.requestNumber}</h2>
           <p>{request.tenantName} | {request.partnerReference ?? 'Direct intake'}</p>
+          <div className="workspace-chip-row">
+            <span className="workspace-chip">Stage: {workflowMeta.label}</span>
+            <span className="workspace-chip">Owner: {workflowMeta.owner}</span>
+            <span className="workspace-chip">Repair: {formatDeviceCategory(request.deviceCategory)}</span>
+            <span className="workspace-chip">Device: {request.deviceLabel}</span>
+          </div>
         </div>
         <div className="status-stack">
           <StatusBadge status={request.status} />
@@ -48,10 +59,18 @@ export function ServiceRequestDetailsPage() {
           <h3>Customer and Device</h3>
           <div className="data-grid">
             <span>Customer</span><strong>{request.customerName}</strong>
+            <span>Contact Person</span><strong>{request.contactPerson ?? 'Self'}</strong>
             <span>Phone</span><strong>{request.customerPhone}</strong>
+            <span>Alternate Phone</span><strong>{request.alternatePhone ?? 'N/A'}</strong>
+            <span>WhatsApp</span><strong>{request.whatsappNumber ?? 'N/A'}</strong>
+            <span>Email</span><strong>{request.customerEmail ?? 'N/A'}</strong>
             <span>GSTIN</span><strong>{request.customerGstin ?? 'N/A'}</strong>
+            <span>Address</span><strong>{request.customerAddress ?? 'N/A'}</strong>
+            <span>Landmark</span><strong>{request.landmark ?? 'N/A'}</strong>
+            <span>Repair Type</span><strong>{formatDeviceCategory(request.deviceCategory)}</strong>
             <span>Device</span><strong>{request.deviceLabel}</strong>
-            <span>IMEI</span><strong>{request.imeiNumber ?? 'Not captured'}</strong>
+            <span>Serial No.</span><strong>{request.serialNumber}</strong>
+            <span>IMEI</span><strong>{imeiExpected ? request.imeiNumber ?? 'Not captured' : request.imeiNumber ?? 'Not applicable'}</strong>
             <span>Validation</span><strong>{request.imeiValidationStatus}</strong>
           </div>
           <p className="muted-line">QR payload: {request.qrCodePayload ?? 'Not scanned yet'}</p>
@@ -60,9 +79,17 @@ export function ServiceRequestDetailsPage() {
         <article className="card">
           <h3>SLA / TAT</h3>
           <div className="data-grid">
-            <span>Committed</span><strong>{new Date(request.committedAt).toLocaleString()}</strong>
-            <span>Expected</span><strong>{new Date(request.expectedCompletionAt).toLocaleString()}</strong>
-            <span>SLA Deadline</span><strong>{new Date(request.slaDeadlineAt).toLocaleString()}</strong>
+            <span>Loan No.</span><strong>{request.loanNumber ?? 'N/A'}</strong>
+            <span>COI No.</span><strong>{request.certificateOfInsuranceNumber ?? 'N/A'}</strong>
+            <span>Previous Ticket</span><strong>{request.previousTicketNumber ?? 'N/A'}</strong>
+            <span>Project</span><strong>{request.projectName ?? 'N/A'}</strong>
+            <span>Branch</span><strong>{request.branchName ?? 'N/A'}</strong>
+            <span>Employee</span><strong>{request.employeeName ?? request.employeeCode ?? 'N/A'}</strong>
+            <span>Business Stage</span><strong>{workflowMeta.label}</strong>
+            <span>Stage Owner</span><strong>{workflowMeta.owner}</strong>
+            <span>Committed</span><strong>{formatDateTimeIn(request.committedAt)}</strong>
+            <span>Expected</span><strong>{formatDateTimeIn(request.expectedCompletionAt)}</strong>
+            <span>SLA Deadline</span><strong>{formatDateTimeIn(request.slaDeadlineAt)}</strong>
             <span>TAT Minutes</span><strong>{request.tatMinutes ?? 'Open'}</strong>
             <span>Breach</span><strong>{request.breachReason ?? 'None'}</strong>
           </div>
@@ -144,16 +171,16 @@ export function ServiceRequestDetailsPage() {
               <div className="data-grid">
                 <span>Invoice</span><strong>{request.invoice.invoiceNumber}</strong>
                 <span>GST Type</span><strong>{request.invoice.gstType}</strong>
-                <span>Total</span><strong>AED {request.invoice.totalAmount}</strong>
-                <span>Paid</span><strong>AED {request.invoice.amountPaid}</strong>
-                <span>Due</span><strong>AED {request.invoice.amountDue}</strong>
-                <span>Refund</span><strong>AED {request.invoice.refundAmount}</strong>
+                <span>Total</span><strong>{formatCurrencyInr(request.invoice.totalAmount)}</strong>
+                <span>Paid</span><strong>{formatCurrencyInr(request.invoice.amountPaid)}</strong>
+                <span>Due</span><strong>{formatCurrencyInr(request.invoice.amountDue)}</strong>
+                <span>Refund</span><strong>{formatCurrencyInr(request.invoice.refundAmount)}</strong>
               </div>
               <div className="mini-list">
                 {request.invoice.items.map((item) => (
                   <div key={item.description}>
                     <strong>{item.description}</strong>
-                    <small>{item.quantity} x AED {item.unitPrice} | GST {item.gstRate}%</small>
+                    <small>{item.quantity} x {formatCurrencyInr(item.unitPrice)} | GST {item.gstRate}%</small>
                   </div>
                 ))}
               </div>
@@ -161,7 +188,7 @@ export function ServiceRequestDetailsPage() {
                 {request.payments.map((payment) => (
                   <div key={payment.id}>
                     <strong>{payment.paymentReference}</strong>
-                    <p>{payment.paymentMethod} | AED {payment.amount}</p>
+                    <p>{payment.paymentMethod} | {formatCurrencyInr(payment.amount)}</p>
                     <small>UTR: {payment.utrNumber ?? 'Not captured'} | Reconciliation: {payment.reconciliationStatus ?? 'PENDING'}</small>
                     <small>{payment.reconciliationRemarks ?? 'No reconciliation remarks yet'}</small>
                   </div>
@@ -180,7 +207,7 @@ export function ServiceRequestDetailsPage() {
               <div key={`${item.entityName}-${index}`}>
                 <strong>{item.entityName} | {item.action}</strong>
                 <p>{item.changedBy}</p>
-                <small>{new Date(item.changedAt).toLocaleString()}</small>
+                <small>{formatDateTimeIn(item.changedAt)}</small>
               </div>
             ))}
           </div>

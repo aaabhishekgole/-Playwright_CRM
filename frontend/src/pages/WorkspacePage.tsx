@@ -4,6 +4,9 @@ import { useAuth } from '../hooks/useAuth';
 import { useRequests } from './useRequests';
 import { buildWorkspaceView } from '../utils/workspaceData';
 import { findMenuContext, hasMenuAccess } from '../utils/menuHierarchy';
+import { isOperationalWorkspaceItem, OperationalWorkspacePage } from './OperationalWorkspacePage';
+import { PickupImagesPage } from './PickupImagesPage';
+import { PickupManagementDashboardPage } from './PickupManagementDashboardPage';
 
 function matchesSearch(query: string, values: string[]) {
   if (!query) {
@@ -12,6 +15,77 @@ function matchesSearch(query: string, values: string[]) {
 
   const normalized = query.toLowerCase();
   return values.some((value) => value.toLowerCase().includes(normalized));
+}
+
+function getQuickActions(sectionId: string) {
+  switch (sectionId) {
+    case 'dashboard':
+      return [
+        { label: 'Open Claims', to: '/requests' },
+        { label: 'Status Timeline', to: '/timeline' },
+      ];
+    case 'notifications':
+      return [
+        { label: 'All Requests', to: '/requests' },
+        { label: 'Status Timeline', to: '/timeline' },
+      ];
+    case 'users':
+      return [
+        { label: 'Create Request', to: '/workspace/service-requests/create-request' },
+        { label: 'Open Claims', to: '/requests' },
+      ];
+    case 'reports':
+      return [
+        { label: 'Open Claims', to: '/requests' },
+        { label: 'Status Timeline', to: '/timeline' },
+      ];
+    case 'settings':
+      return [
+        { label: 'Dashboard', to: '/' },
+        { label: 'Status Timeline', to: '/timeline' },
+      ];
+    case 'audit':
+      return [
+        { label: 'Status Timeline', to: '/timeline' },
+        { label: 'All Requests', to: '/requests' },
+      ];
+    default:
+      return [];
+  }
+}
+
+function getWorklistTitle(sectionId: string) {
+  switch (sectionId) {
+    case 'notifications':
+      return 'Delivery Log';
+    case 'users':
+      return 'Directory';
+    case 'reports':
+      return 'Report Output';
+    case 'settings':
+      return 'Configuration Status';
+    case 'audit':
+      return 'Audit Records';
+    default:
+      return 'Worklist';
+  }
+}
+
+function getWorklistDescription(sectionId: string, itemDescription: string) {
+  switch (sectionId) {
+    case 'notifications':
+      return 'Track channel activity, retries, and delivery posture for this submenu.';
+    case 'users':
+      return 'View the workload and profile signals mapped to this submenu.';
+    case 'reports':
+      return 'Report rows and summary outputs available for this reporting slice.';
+    case 'settings':
+      return 'Current system signals and configuration posture for this area.';
+    case 'audit':
+      return 'Review enterprise trace records and workflow evidence for this slice.';
+    default:
+      return itemDescription;
+  }
 }
 
 export function WorkspacePage() {
@@ -29,6 +103,18 @@ export function WorkspacePage() {
     return <Navigate to="/" replace />;
   }
 
+  if (item.id === 'picked-up-devices') {
+    return <PickupImagesPage />;
+  }
+
+  if (item.id === 'pickup-dashboard') {
+    return <PickupManagementDashboardPage />;
+  }
+
+  if (isOperationalWorkspaceItem(item.id)) {
+    return <OperationalWorkspacePage section={section} item={item} />;
+  }
+
   const view = buildWorkspaceView(section, item, requests);
   const filteredRecords = useMemo(
     () => view.records.filter((record) => matchesSearch(query, [record.title, record.subtitle, record.category, record.owner, record.status, record.amount])),
@@ -38,6 +124,7 @@ export function WorkspacePage() {
     () => view.feed.filter((entry) => matchesSearch(query, [entry.title, entry.detail, entry.meta])),
     [query, view.feed],
   );
+  const quickActions = useMemo(() => getQuickActions(section.id), [section.id]);
 
   return (
     <section className="workspace-page phase-two-workspace">
@@ -53,24 +140,6 @@ export function WorkspacePage() {
         </div>
       </div>
 
-      <article className={`card workspace-stage-hero ${section.accent}`}>
-        <div>
-          <p className="eyebrow">Module overview</p>
-          <h3>{view.heroTitle}</h3>
-          <p>{view.heroDescription}</p>
-        </div>
-        <div className="workspace-controls">
-          <label className="workspace-search">
-            <span>Search this module</span>
-            <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={view.searchPlaceholder} />
-          </label>
-          <div className="workspace-support-copy">
-            <strong>Workflow guidance</strong>
-            <span>Use search and the related module list to move through the current workflow without losing context.</span>
-          </div>
-        </div>
-      </article>
-
       <div className="workspace-stat-grid">
         {view.metrics.map((metric) => (
           <article key={metric.label} className={`card workspace-stat ${metric.tone === 'alert' ? 'tone-alert' : metric.tone === 'ok' ? 'tone-ok' : ''}`}>
@@ -85,15 +154,18 @@ export function WorkspacePage() {
         <article className="card workspace-panel workspace-panel-wide">
           <div className="split-row workspace-panel-head">
             <div>
-              <h3>Worklist</h3>
-              <p>Records for the current module based on the active request data.</p>
+              <h3>{getWorklistTitle(section.id)}</h3>
+              <p>{getWorklistDescription(section.id, item.description)}</p>
             </div>
-            <span className="workspace-subtle">{filteredRecords.length} visible rows</span>
+            <label className="workspace-search">
+              <span>Search</span>
+              <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={view.searchPlaceholder} />
+            </label>
           </div>
 
           {filteredRecords.length > 0 ? (
-            <div className="workspace-record-table">
-              <div className="workspace-record-row workspace-record-head">
+            <div className="portal-table">
+              <div className="portal-table-row portal-table-head">
                 <span>Record</span>
                 <span>Category</span>
                 <span>Owner</span>
@@ -102,28 +174,40 @@ export function WorkspacePage() {
                 <span>Status</span>
               </div>
               {filteredRecords.map((record) => (
-                <div key={record.id} className={`workspace-record-row workspace-record-body ${record.tone === 'alert' ? 'tone-alert-soft' : record.tone === 'ok' ? 'tone-ok-soft' : ''}`}>
+                <div key={record.id} className="portal-table-row portal-table-body">
                   <div>
                     <strong>{record.link ? <Link to={record.link}>{record.title}</Link> : record.title}</strong>
                     <small>{record.subtitle}</small>
                   </div>
-                  <span>{record.category}</span>
-                  <span>{record.owner}</span>
-                  <span>{record.due}</span>
-                  <span>{record.amount}</span>
-                  <span className="status-badge workspace-status-badge">{record.status}</span>
+                  <div>{record.category}</div>
+                  <div>{record.owner}</div>
+                  <div>{record.due}</div>
+                  <div>{record.amount}</div>
+                  <div><span className="status-badge workspace-status-badge">{record.status}</span></div>
                 </div>
               ))}
             </div>
           ) : (
             <div className="workspace-empty">
-              <strong>No matching records</strong>
+              <strong>No records available</strong>
               <p>{view.emptyState}</p>
             </div>
           )}
         </article>
 
         <article className="card workspace-panel">
+          <div className="workspace-panel-head">
+            <h3>Quick Actions</h3>
+            <p>Jump into the most useful live pages from this submenu.</p>
+          </div>
+          <div className="workspace-links compact-links">
+            {quickActions.map((action) => (
+              <Link key={action.to} to={action.to} className="workspace-link">
+                <strong>{action.label}</strong>
+                <span>Open the linked live workspace.</span>
+              </Link>
+            ))}
+          </div>
           <div className="workspace-panel-head">
             <h3>Related Modules</h3>
             <p>Move between pages in the same section.</p>

@@ -70,7 +70,28 @@ public class ServiceRequest extends BaseAuditableEntity {
     private Tenant tenant;
 
     @Column(length = 60)
+    private String loanNumber;
+
+    @Column(length = 80)
+    private String certificateOfInsuranceNumber;
+
+    @Column(length = 60)
+    private String previousTicketNumber;
+
+    @Column(length = 60)
     private String partnerReference;
+
+    @Column(length = 120)
+    private String projectName;
+
+    @Column(length = 120)
+    private String branchName;
+
+    @Column(length = 80)
+    private String employeeCode;
+
+    @Column(length = 120)
+    private String employeeName;
 
     @Column(nullable = false)
     private Instant committedAt;

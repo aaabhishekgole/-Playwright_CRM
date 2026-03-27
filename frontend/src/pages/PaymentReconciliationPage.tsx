@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { formatDeviceCategory } from '../utils/deviceCatalog';
+import { formatCurrencyInr, formatDateTimeIn } from '../utils/formatters';
 import { useRequests } from './useRequests';
 
 export function PaymentReconciliationPage() {
@@ -15,6 +17,8 @@ export function PaymentReconciliationPage() {
         requestId: request.id,
         requestNumber: request.requestNumber,
         customerName: request.customerName,
+        deviceCategory: request.deviceCategory,
+        deviceLabel: request.deviceLabel,
         invoiceNumber: request.invoice?.invoiceNumber ?? 'Pending invoice',
         payment,
       })),
@@ -66,7 +70,7 @@ export function PaymentReconciliationPage() {
             <div className="split-row">
               <div>
                 <h3>{row.invoiceNumber}</h3>
-                <p>{row.requestNumber} | {row.customerName}</p>
+                <p>{row.requestNumber} | {row.customerName} | {formatDeviceCategory(row.deviceCategory)} | {row.deviceLabel}</p>
               </div>
               <span className={row.payment.reconciliationStatus === 'RECONCILED' ? 'ok-badge' : row.payment.reconciliationStatus === 'MISMATCHED' ? 'alert-badge' : 'status-badge'}>
                 {row.payment.reconciliationStatus ?? 'PENDING'}
@@ -77,7 +81,7 @@ export function PaymentReconciliationPage() {
               <span>Payment Ref</span><strong>{row.payment.paymentReference}</strong>
               <span>UTR</span><strong>{row.payment.utrNumber ?? 'Not captured'}</strong>
               <span>Method</span><strong>{row.payment.paymentMethod}</strong>
-              <span>Amount</span><strong>AED {row.payment.amount}</strong>
+              <span>Amount</span><strong>{formatCurrencyInr(row.payment.amount)}</strong>
               <span>Payment Status</span><strong>{row.payment.paymentStatus}</strong>
             </div>
 
@@ -111,7 +115,7 @@ export function PaymentReconciliationPage() {
               </button>
             </div>
 
-            <small className="action-message">{messageByPaymentId[row.payment.id] ?? (row.payment.reconciledAt ? `Reconciled on ${new Date(row.payment.reconciledAt).toLocaleString()}` : 'Awaiting reconciliation update.')}</small>
+            <small className="action-message">{messageByPaymentId[row.payment.id] ?? (row.payment.reconciledAt ? `Reconciled on ${formatDateTimeIn(row.payment.reconciledAt)}` : 'Awaiting reconciliation update.')}</small>
           </article>
         )) : (
           <div className="workspace-empty">

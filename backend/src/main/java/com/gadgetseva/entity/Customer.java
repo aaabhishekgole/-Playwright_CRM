@@ -28,14 +28,32 @@ public class Customer extends BaseAuditableEntity {
     @Column(length = 120)
     private String email;
 
+    @Column(length = 120)
+    private String secondaryEmail;
+
     @Column(nullable = false, length = 20)
     private String phone;
+
+    @Column(length = 20)
+    private String alternatePhone;
+
+    @Column(length = 20)
+    private String whatsappNumber;
+
+    @Column(length = 120)
+    private String contactPerson;
 
     @Column(nullable = false, length = 180)
     private String addressLine1;
 
     @Column(length = 180)
     private String addressLine2;
+
+    @Column(length = 180)
+    private String landmark;
+
+    @Column(length = 255)
+    private String googleMapLink;
 
     @Column(nullable = false, length = 80)
     private String city;

@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { StatusBadge } from '../components/StatusBadge';
+import { formatDeviceCategory } from '../utils/deviceCatalog';
 import { useRequests } from './useRequests';
 
 function countAttachments(attachmentTypes: string[], prefix: string) {
@@ -111,7 +112,7 @@ export function CashlessApprovalPage() {
               <div className="split-row">
                 <div>
                   <h3>{request.requestNumber}</h3>
-                  <p>{request.customerName} | {request.deviceLabel}</p>
+                  <p>{request.customerName} | {formatDeviceCategory(request.deviceCategory)} | {request.deviceLabel}</p>
                 </div>
                 <StatusBadge status={request.status} />
               </div>

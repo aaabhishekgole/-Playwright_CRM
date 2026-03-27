@@ -5,6 +5,7 @@ import { AppLayout } from './layouts/AppLayout';
 import { AuthProvider, useAuth } from './hooks/useAuth';
 import { findMenuContext, hasMenuAccess } from './utils/menuHierarchy';
 import { CashlessApprovalPage } from './pages/CashlessApprovalPage';
+import { ClaimRegistrationPage } from './pages/ClaimRegistrationPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { DeliveryTrackingPage } from './pages/DeliveryTrackingPage';
 import { EstimateApprovalPage } from './pages/EstimateApprovalPage';
@@ -39,14 +40,23 @@ function ProtectedApp() {
     <Routes>
       <Route element={<AppLayout />}>
         <Route path="/" element={<DashboardPage />} />
-        <Route path="/requests" element={<ProtectedMenuRoute sectionId="service-requests" itemId="all-requests"><ServiceRequestListPage /></ProtectedMenuRoute>} />
+        <Route path="/requests" element={<ProtectedMenuRoute sectionId="service-requests" itemId="all-requests"><ServiceRequestListPage title="Open Claims" /></ProtectedMenuRoute>} />
         <Route path="/requests/:id" element={<ProtectedMenuRoute sectionId="service-requests" itemId="all-requests"><ServiceRequestDetailsPage /></ProtectedMenuRoute>} />
         <Route path="/pickup-images" element={<ProtectedMenuRoute sectionId="pickup-management" itemId="picked-up-devices"><PickupImagesPage /></ProtectedMenuRoute>} />
         <Route path="/timeline" element={<ProtectedMenuRoute sectionId="audit" itemId="status-history"><StatusTimelinePage /></ProtectedMenuRoute>} />
+        <Route path="/workspace/dashboard/sla-tat-summary" element={<ProtectedMenuRoute sectionId="dashboard" itemId="sla-tat-summary"><ServiceRequestListPage mode="sla" title="SLA / TAT Summary" description="Track open claims, SLA breaches, and turnaround pressure across the portal." /></ProtectedMenuRoute>} />
+        <Route path="/workspace/dashboard/recent-activities" element={<ProtectedMenuRoute sectionId="dashboard" itemId="recent-activities"><StatusTimelinePage title="Recent Activities" description="Recent status movement and workflow changes across all live requests." /></ProtectedMenuRoute>} />
+        <Route path="/workspace/dashboard/alerts-escalations" element={<ProtectedMenuRoute sectionId="dashboard" itemId="alerts-escalations"><ServiceRequestListPage mode="alerts" title="Alerts & Escalations" description="Claims with SLA breach risk or failed notification delivery that need immediate attention." /></ProtectedMenuRoute>} />
         <Route path="/estimate-approval" element={<ProtectedMenuRoute sectionId="estimates" itemId="awaiting-customer-approval"><EstimateApprovalPage /></ProtectedMenuRoute>} />
         <Route path="/cashless-approval" element={<ProtectedMenuRoute sectionId="cashless" itemId="approval-queue"><CashlessApprovalPage /></ProtectedMenuRoute>} />
         <Route path="/payment-reconciliation" element={<ProtectedMenuRoute sectionId="billing" itemId="payment-reconciliation"><PaymentReconciliationPage /></ProtectedMenuRoute>} />
         <Route path="/delivery-tracking" element={<ProtectedMenuRoute sectionId="delivery" itemId="out-for-delivery"><DeliveryTrackingPage /></ProtectedMenuRoute>} />
+        <Route path="/workspace/service-requests/create-request" element={<ProtectedMenuRoute sectionId="service-requests" itemId="create-request"><ClaimRegistrationPage /></ProtectedMenuRoute>} />
+        <Route path="/workspace/service-requests/open-requests" element={<ProtectedMenuRoute sectionId="service-requests" itemId="open-requests"><ServiceRequestListPage mode="open" title="Open Claims" /></ProtectedMenuRoute>} />
+        <Route path="/workspace/service-requests/in-progress" element={<ProtectedMenuRoute sectionId="service-requests" itemId="in-progress"><ServiceRequestListPage mode="in-progress" title="In Progress Claims" description="Claims already in pickup, hub, repair, approval, dispatch, billing, or payment stages." /></ProtectedMenuRoute>} />
+        <Route path="/workspace/service-requests/closed-requests" element={<ProtectedMenuRoute sectionId="service-requests" itemId="closed-requests"><ServiceRequestListPage mode="closed" title="Closed Claims" description="Completed claims that have gone through the workflow and reached final closure." /></ProtectedMenuRoute>} />
+        <Route path="/workspace/service-requests/cancelled-requests" element={<ProtectedMenuRoute sectionId="service-requests" itemId="cancelled-requests"><ServiceRequestListPage mode="cancelled" title="Cancelled Claims" description="Cancelled or voided claims with filterable ticket, customer, and device references." /></ProtectedMenuRoute>} />
+        <Route path="/workspace/service-requests/search-request" element={<ProtectedMenuRoute sectionId="service-requests" itemId="search-request"><ServiceRequestListPage mode="all" title="Search Claims" description="Search claim records by loan, ticket, COI, device identifier, and settlement state." /></ProtectedMenuRoute>} />
         <Route path="/workspace/:sectionId/:itemId" element={<WorkspacePage />} />
       </Route>
     </Routes>

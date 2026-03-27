@@ -15,6 +15,7 @@ import com.gadgetseva.entity.Attachment;
 import com.gadgetseva.entity.Customer;
 import com.gadgetseva.entity.Delivery;
 import com.gadgetseva.entity.Device;
+import com.gadgetseva.entity.DeviceCategory;
 import com.gadgetseva.entity.Estimate;
 import com.gadgetseva.entity.GstType;
 import com.gadgetseva.entity.ImeiValidationStatus;
@@ -137,10 +138,16 @@ public class ServiceRequestService {
         Customer customer = new Customer();
         customer.setTenant(tenant);
         customer.setFullName(request.customer().fullName());
+        customer.setContactPerson(request.customer().contactPerson());
         customer.setEmail(request.customer().email());
+        customer.setSecondaryEmail(request.customer().secondaryEmail());
         customer.setPhone(request.customer().phone());
+        customer.setAlternatePhone(request.customer().alternatePhone());
+        customer.setWhatsappNumber(request.customer().whatsappNumber());
         customer.setAddressLine1(request.customer().addressLine1());
         customer.setAddressLine2(request.customer().addressLine2());
+        customer.setLandmark(request.customer().landmark());
+        customer.setGoogleMapLink(request.customer().googleMapLink());
         customer.setCity(request.customer().city());
         customer.setState(request.customer().state());
         customer.setPostalCode(request.customer().postalCode());
@@ -152,7 +159,14 @@ public class ServiceRequestService {
         ServiceRequest serviceRequest = new ServiceRequest();
         serviceRequest.setRequestNumber(requestNumberGenerator.next());
         serviceRequest.setTenant(tenant);
+        serviceRequest.setLoanNumber(request.loanNumber());
+        serviceRequest.setCertificateOfInsuranceNumber(request.certificateOfInsuranceNumber());
+        serviceRequest.setPreviousTicketNumber(request.previousTicketNumber());
         serviceRequest.setPartnerReference(request.partnerReference());
+        serviceRequest.setProjectName(request.projectName());
+        serviceRequest.setBranchName(request.branchName());
+        serviceRequest.setEmployeeCode(request.employeeCode());
+        serviceRequest.setEmployeeName(request.employeeName());
         serviceRequest.setCustomer(customer);
         serviceRequest.setDevice(device);
         serviceRequest.setIssueSummary(request.issueSummary());
@@ -431,9 +445,10 @@ public class ServiceRequestService {
     }
 
     private Device buildValidatedDevice(CreateServiceRequestRequest request) {
-        Device device = new Device();
+        Device device = deviceRepository.findBySerialNumber(request.device().serialNumber()).orElseGet(Device::new);
         device.setBrand(request.device().brand());
         device.setModel(request.device().model());
+        device.setDeviceCategory(request.device().deviceCategory() != null ? request.device().deviceCategory() : DeviceCategory.MOBILE);
         device.setSerialNumber(request.device().serialNumber());
         device.setWarrantyStatus(request.device().warrantyStatus());
         device.setDeviceCondition(request.device().deviceCondition());
@@ -495,6 +510,12 @@ public class ServiceRequestService {
 
     private void transition(ServiceRequest serviceRequest, RequestStatus targetStatus, String remarks) {
         Map<String, Object> before = requestSnapshot(serviceRequest);
+        if (targetStatus == RequestStatus.PICKUP_COMPLETED) {
+            long pickupPhotos = attachmentRepository.countByServiceRequestAndAttachmentTypeStartingWith(serviceRequest, "PICKUP_IMAGE_");
+            if (pickupPhotos < 6) {
+                throw new ApiException("Upload all 6 pickup images before marking pickup completed");
+            }
+        }
         StatusTransitionRules.assertAllowed(serviceRequest.getStatus(), targetStatus);
         RequestStatus previous = serviceRequest.getStatus();
         serviceRequest.setStatus(targetStatus);
@@ -577,7 +598,12 @@ public class ServiceRequestService {
         Map<String, Object> snapshot = new LinkedHashMap<>();
         snapshot.put("status", serviceRequest.getStatus() != null ? serviceRequest.getStatus().name() : null);
         snapshot.put("tenant", serviceRequest.getTenant() != null ? serviceRequest.getTenant().getCode() : null);
+        snapshot.put("loanNumber", serviceRequest.getLoanNumber());
+        snapshot.put("certificateOfInsuranceNumber", serviceRequest.getCertificateOfInsuranceNumber());
+        snapshot.put("previousTicketNumber", serviceRequest.getPreviousTicketNumber());
         snapshot.put("partnerReference", serviceRequest.getPartnerReference());
+        snapshot.put("deviceCategory", serviceRequest.getDevice() != null && serviceRequest.getDevice().getDeviceCategory() != null
+                ? serviceRequest.getDevice().getDeviceCategory().name() : DeviceCategory.MOBILE.name());
         snapshot.put("slaDeadlineAt", serviceRequest.getSlaDeadlineAt());
         snapshot.put("slaBreached", serviceRequest.isSlaBreached());
         snapshot.put("repairCenterStateCode", repairCenterStateCode);

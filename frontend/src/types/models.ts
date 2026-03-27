@@ -1,4 +1,105 @@
 export type UserRole = 'ADMIN' | 'CUSTOMER_SUPPORT' | 'BACKEND_TEAM' | 'PICKUP_AGENT' | 'TECHNICIAN' | 'DELIVERY_AGENT' | 'FINANCE' | 'MSE_TEAM';
+export type RequestPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+
+export type CreateCustomerPayload = {
+  fullName: string;
+  contactPerson?: string;
+  email?: string;
+  secondaryEmail?: string;
+  phone: string;
+  alternatePhone?: string;
+  whatsappNumber?: string;
+  addressLine1: string;
+  addressLine2?: string;
+  landmark?: string;
+  googleMapLink?: string;
+  city: string;
+  state: string;
+  postalCode: string;
+};
+
+export type CreateDevicePayload = {
+  brand: string;
+  model: string;
+  deviceCategory: string;
+  serialNumber: string;
+  imeiNumber?: string;
+  warrantyStatus: string;
+  deviceCondition?: string;
+  qrCodePayload?: string;
+};
+
+export type CreateServiceRequestPayload = {
+  customer: CreateCustomerPayload;
+  device: CreateDevicePayload;
+  issueSummary: string;
+  issueDescription?: string;
+  priority: RequestPriority;
+  sourceChannel: string;
+  tenantCode?: string;
+  loanNumber?: string;
+  certificateOfInsuranceNumber?: string;
+  previousTicketNumber?: string;
+  partnerReference?: string;
+  projectName?: string;
+  branchName?: string;
+  employeeCode?: string;
+  employeeName?: string;
+  promisedSlaHours?: number;
+};
+
+export type AssignPickupPayload = {
+  agentId: number;
+  scheduledAt: string;
+  pickupOtp?: string;
+  notes?: string;
+};
+
+export type AssignDeliveryPayload = {
+  agentId: number;
+  scheduledAt: string;
+  otpCode?: string;
+  notes?: string;
+};
+
+export type CreateEstimatePayload = {
+  diagnosisSummary: string;
+  partsCost: number;
+  laborCost: number;
+  taxAmount: number;
+};
+
+export type CreateInvoicePayload = {
+  customerGstin?: string;
+  billingStateCode: string;
+  placeOfSupply: string;
+  gstRate: number;
+  laborDescription: string;
+  partsDescription?: string;
+};
+
+export type RecordPaymentPayload = {
+  paymentReference: string;
+  amount: number;
+  paymentMethod: string;
+  utrNumber?: string;
+  metadataJson?: string;
+};
+
+export type RefundPaymentPayload = {
+  paymentId: number;
+  amount: number;
+  reason: string;
+};
+
+export type UserSummary = {
+  id: number;
+  fullName: string;
+  username: string;
+  role: string;
+  tenantCode?: string | null;
+  active: boolean;
+};
 
 export type TimelineItem = {
   fromStatus: string | null;
@@ -94,17 +195,37 @@ export type ServiceRequest = {
   requestNumber: string;
   tenantCode: string;
   tenantName: string;
+  loanNumber?: string | null;
+  certificateOfInsuranceNumber?: string | null;
+  previousTicketNumber?: string | null;
   partnerReference?: string | null;
+  projectName?: string | null;
+  branchName?: string | null;
+  employeeCode?: string | null;
+  employeeName?: string | null;
   customerName: string;
+  contactPerson?: string | null;
   customerPhone: string;
+  alternatePhone?: string | null;
+  whatsappNumber?: string | null;
   customerGstin?: string | null;
+  customerEmail?: string | null;
+  secondaryEmail?: string | null;
+  customerAddress?: string | null;
+  landmark?: string | null;
+  googleMapLink?: string | null;
+  customerCity?: string | null;
+  customerState?: string | null;
+  customerPostalCode?: string | null;
   deviceLabel: string;
+  deviceCategory: string;
+  serialNumber: string;
   imeiNumber?: string | null;
   imeiValidationStatus: string;
   qrCodePayload?: string | null;
   issueSummary: string;
   issueDescription: string;
-  priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  priority: RequestPriority;
   status: string;
   sourceChannel: string;
   pickupAgent?: string | null;

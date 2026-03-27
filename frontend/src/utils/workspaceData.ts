@@ -1,5 +1,6 @@
 ﻿
 import type { ServiceRequest } from '../types/models';
+import { formatDeviceCategory, supportedRepairCategories, usesImei } from './deviceCatalog';
 import type { MenuLeaf, MenuSection } from './menuHierarchy';
 
 type WorkspaceTone = 'default' | 'ok' | 'alert';
@@ -271,7 +272,7 @@ function toRequestRecord(sectionId: string, request: ServiceRequest): WorkspaceR
     id: request.requestNumber,
     title: request.requestNumber,
     subtitle: `${request.customerName} | ${request.deviceLabel}`,
-    category: `${request.tenantCode} | ${request.imeiValidationStatus}`,
+    category: `${formatDeviceCategory(request.deviceCategory)} | ${request.tenantCode}`,
     owner: requestOwner(sectionId, request),
     due: requestDue(sectionId, request),
     amount: requestAmount(sectionId, request),
@@ -376,7 +377,7 @@ function uniqueActors(requests: ServiceRequest[]) {
 function buildRequestMetrics(scoped: ServiceRequest[], requests: ServiceRequest[]): WorkspaceMetric[] {
   const queueValue = scoped.reduce((sum, request) => sum + (request.invoice?.amountDue ?? 0), 0);
   const breached = scoped.filter((request) => request.slaBreached).length;
-  const invalidImei = scoped.filter((request) => request.imeiValidationStatus !== 'VALID').length;
+  const invalidImei = scoped.filter((request) => usesImei(request.deviceCategory) && request.imeiValidationStatus !== 'VALID').length;
   const partners = new Set(scoped.map((request) => request.tenantCode)).size;
 
   return [
@@ -417,6 +418,38 @@ function buildRequestInsights(scoped: ServiceRequest[]): WorkspaceMetric[] {
 function buildRequestWorkspace(section: MenuSection, item: MenuLeaf, requests: ServiceRequest[]): WorkspaceView {
   const scoped = getRequestScope(item.id, requests);
 
+  if (item.id === 'create-request') {
+    return {
+      heroTitle: 'Repair intake workbench',
+      heroDescription: 'Register and triage repair requests for Mobile, TV, Laptop, AC, and Camera / DSLR devices with the right identifier captured at intake.',
+      searchPlaceholder: 'Search draft requests, supported device types, or customer/device details',
+      metrics: [
+        { label: 'Supported Repairs', value: String(supportedRepairCategories.length), helper: 'Mobile, TV, Laptop, AC, and Camera / DSLR categories are intake-ready.' },
+        { label: 'Draft Queue', value: String(scoped.length), helper: 'Requests still sitting at initial intake or request-created state.' },
+        { label: 'IMEI Required', value: String(scoped.filter((request) => usesImei(request.deviceCategory)).length), helper: 'Mobile repairs expecting IMEI-led validation.' },
+        { label: 'Serial-led Intake', value: String(scoped.filter((request) => !usesImei(request.deviceCategory)).length), helper: 'TV, Laptop, AC, and Camera / DSLR repairs keyed by serial number.' },
+      ],
+      records: scoped
+        .sort((left, right) => new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime())
+        .map((request) => toRequestRecord(section.id, request)),
+      feedTitle: 'Supported Repair Categories',
+      feed: supportedRepairCategories.map((entry) => ({
+        id: entry.id,
+        title: `${entry.label} repairs`,
+        detail: entry.detail,
+        meta: `Primary identifier: ${entry.identifier}`,
+        tone: 'ok',
+      })),
+      insightsTitle: 'Intake Rules',
+      insights: [
+        { label: 'Mobile', value: 'IMEI + serial', helper: 'Use IMEI validation for mobile devices and keep QR extraction when available.' },
+        { label: 'TV / Laptop / AC / Camera', value: 'Serial-led', helper: 'Non-mobile repairs can proceed on serial number even when no IMEI exists.' },
+        { label: 'Request routing', value: 'Repair-aware', helper: 'Surface device category early so pickup, hub, and service-center teams follow the right path.' },
+      ],
+      emptyState: 'No new intake requests yet. The repair categories above are ready to be used once request creation is wired into this workbench.',
+    };
+  }
+
   return {
     heroTitle: `${item.label} workbench`,
     heroDescription: `Live operational view for ${item.label.toLowerCase()} with tenant context, SLA/TAT signals, and next-step ownership.`,
@@ -429,7 +462,7 @@ function buildRequestWorkspace(section: MenuSection, item: MenuLeaf, requests: S
     feed: buildRequestFeed(scoped),
     insightsTitle: 'Operational Signals',
     insights: buildRequestInsights(scoped),
-    emptyState: `No live records are currently mapped to ${item.label}. The page is ready for real API data and workflow actions.`,
+    emptyState: `No records currently match ${item.label}. Use the live workflow and filters to populate this queue.`,
   };
 }
 
@@ -487,7 +520,7 @@ function buildNotificationWorkspace(item: MenuLeaf, requests: ServiceRequest[]):
       { label: 'Queue Depth', value: String(queued), helper: 'Pending retry jobs under notification orchestration.' },
       { label: 'Partner Reach', value: String(new Set(scoped.map((entry) => entry.tenantName)).size), helper: 'Tenants impacted by these messages.' },
     ],
-    emptyState: 'No notification records found for this channel view.',
+    emptyState: 'No notification records are available for this channel right now.',
   };
 }
 
@@ -540,7 +573,7 @@ function buildAuditWorkspace(item: MenuLeaf, requests: ServiceRequest[]): Worksp
       { label: 'System Events', value: String(scoped.filter((entry) => entry.changedBy === 'SYSTEM').length), helper: 'Automated audit events captured by the platform.' },
       { label: 'Manual Events', value: String(scoped.filter((entry) => entry.changedBy !== 'SYSTEM').length), helper: 'Human-operated actions logged in this view.' },
     ],
-    emptyState: 'No audit entries were found for this audit slice.',
+    emptyState: 'No audit entries are available for this view right now.',
   };
 }
 function buildUserWorkspace(item: MenuLeaf, requests: ServiceRequest[]): WorkspaceView {
@@ -610,7 +643,7 @@ function buildUserWorkspace(item: MenuLeaf, requests: ServiceRequest[]): Workspa
       { label: 'Field Roles', value: String(actors.filter((actor) => actor.role.includes('AGENT')).length), helper: 'Pickup and delivery users in the field network.' },
       { label: 'Technical Roles', value: String(actors.filter((actor) => actor.role === 'TECHNICIAN').length), helper: 'Repair and QC lane users currently mapped.' },
     ],
-    emptyState: 'No user records are available in this role view yet.',
+    emptyState: 'No user profiles are available in this role view right now.',
   };
 }
 
@@ -716,7 +749,7 @@ function buildReportWorkspace(item: MenuLeaf, requests: ServiceRequest[]): Works
       { label: 'Invoices', value: String(requests.filter((request) => !!request.invoice).length), helper: 'GST-compliant invoice rows available for export.' },
       { label: 'Notifications', value: String(flattenNotifications(requests).length), helper: 'Message records available for compliance reporting.' },
     ],
-    emptyState: 'No report cards are configured in this view yet.',
+    emptyState: 'No report rows are available for this report right now.',
   };
 }
 
@@ -802,7 +835,7 @@ function buildSettingsWorkspace(item: MenuLeaf, requests: ServiceRequest[]): Wor
       { label: 'Signed URLs', value: 'Enabled', helper: 'Secure file access is represented in attachment metadata.' },
       { label: 'Retry Queue', value: 'Enabled', helper: 'Failed notifications can be surfaced and retried from queue-aware flows.' },
     ],
-    emptyState: 'No configuration records are available in this settings view yet.',
+    emptyState: 'No configuration signals are available in this settings view right now.',
   };
 }
 

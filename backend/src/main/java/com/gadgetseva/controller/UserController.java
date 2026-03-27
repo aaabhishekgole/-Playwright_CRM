@@ -3,6 +3,7 @@ package com.gadgetseva.controller;
 import com.gadgetseva.dto.UserSummaryResponse;
 import com.gadgetseva.entity.RoleName;
 import com.gadgetseva.repository.UserRepository;
+import jakarta.transaction.Transactional;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -22,7 +23,8 @@ public class UserController {
     }
 
     @GetMapping
-    @PreAuthorize("isAuthenticated()")
+    @Transactional
+    @PreAuthorize("hasAnyRole('ADMIN','CUSTOMER_SUPPORT','BACKEND_TEAM','TECHNICIAN','PICKUP_AGENT','DELIVERY_AGENT','FINANCE','MSE_TEAM')")
     public ResponseEntity<List<UserSummaryResponse>> list(@RequestParam(required = false) RoleName role) {
         List<UserSummaryResponse> users = (role == null ? userRepository.findAllByOrderByFullNameAsc() : userRepository.findByRole_NameOrderByFullNameAsc(role))
                 .stream()

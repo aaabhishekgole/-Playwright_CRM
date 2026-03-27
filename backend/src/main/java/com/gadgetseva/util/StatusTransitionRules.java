@@ -17,7 +17,12 @@ public final class StatusTransitionRules {
         ALLOWED.put(RequestStatus.PICKUP_COMPLETED, EnumSet.of(RequestStatus.RECEIVED_AT_HUB, RequestStatus.DIAGNOSIS_IN_PROGRESS));
         ALLOWED.put(RequestStatus.RECEIVED_AT_HUB, EnumSet.of(RequestStatus.DIAGNOSIS_IN_PROGRESS));
         ALLOWED.put(RequestStatus.DIAGNOSIS_IN_PROGRESS, EnumSet.of(RequestStatus.ESTIMATE_PREPARED, RequestStatus.TOTAL_LOSS));
-        ALLOWED.put(RequestStatus.ESTIMATE_PREPARED, EnumSet.of(RequestStatus.DIAGNOSIS_IN_PROGRESS, RequestStatus.ESTIMATE_APPROVED, RequestStatus.CASHLESS_PENDING_APPROVAL));
+        ALLOWED.put(RequestStatus.ESTIMATE_PREPARED, EnumSet.of(
+                RequestStatus.DIAGNOSIS_IN_PROGRESS,
+                RequestStatus.ESTIMATE_APPROVED,
+                RequestStatus.CASHLESS_PENDING_APPROVAL,
+                RequestStatus.TOTAL_LOSS
+        ));
         ALLOWED.put(RequestStatus.CASHLESS_PENDING_APPROVAL, EnumSet.of(
                 RequestStatus.CASHLESS_APPROVED,
                 RequestStatus.CASHLESS_REVISION_REQUIRED,

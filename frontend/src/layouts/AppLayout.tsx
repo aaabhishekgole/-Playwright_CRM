@@ -115,10 +115,10 @@ export function AppLayout() {
 
       <div className="app-main-shell">
         <header className="app-topbar">
-          <div className="app-topbar-copy">
-            <p className="eyebrow">{title.eyebrow}</p>
-            <h2>{title.title}</h2>
-            <p>{title.description}</p>
+          <div className="app-context-line" aria-label="Current page">
+            <span>{title.section}</span>
+            <span>/</span>
+            <strong>{title.title}</strong>
           </div>
 
           <div className="app-topbar-actions">
@@ -132,12 +132,6 @@ export function AppLayout() {
             </button>
           </div>
         </header>
-
-        <div className="page-summary-bar">
-          <span>{title.section}</span>
-          <span>/</span>
-          <span>{title.title}</span>
-        </div>
 
         <main className="merchant-main">
           <Outlet />

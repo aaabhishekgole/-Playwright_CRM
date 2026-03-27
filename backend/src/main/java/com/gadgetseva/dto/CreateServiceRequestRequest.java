@@ -13,7 +13,14 @@ public record CreateServiceRequestRequest(
         @NotNull RequestPriority priority,
         @NotBlank String sourceChannel,
         String tenantCode,
+        String loanNumber,
+        String certificateOfInsuranceNumber,
+        String previousTicketNumber,
         String partnerReference,
+        String projectName,
+        String branchName,
+        String employeeCode,
+        String employeeName,
         Integer promisedSlaHours
 ) {
 }

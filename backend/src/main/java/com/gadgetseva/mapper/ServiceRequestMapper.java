@@ -3,6 +3,7 @@ package com.gadgetseva.mapper;
 import com.gadgetseva.dto.ServiceRequestResponse;
 import com.gadgetseva.entity.Attachment;
 import com.gadgetseva.entity.AuditLog;
+import com.gadgetseva.entity.DeviceCategory;
 import com.gadgetseva.entity.Invoice;
 import com.gadgetseva.entity.InvoiceLineItem;
 import com.gadgetseva.entity.NotificationLog;
@@ -36,11 +37,31 @@ public class ServiceRequestMapper {
                 request.getRequestNumber(),
                 request.getTenant() != null ? request.getTenant().getCode() : null,
                 request.getTenant() != null ? request.getTenant().getName() : null,
+                request.getLoanNumber(),
+                request.getCertificateOfInsuranceNumber(),
+                request.getPreviousTicketNumber(),
                 request.getPartnerReference(),
+                request.getProjectName(),
+                request.getBranchName(),
+                request.getEmployeeCode(),
+                request.getEmployeeName(),
                 request.getCustomer().getFullName(),
+                request.getCustomer().getContactPerson(),
                 request.getCustomer().getPhone(),
+                request.getCustomer().getAlternatePhone(),
+                request.getCustomer().getWhatsappNumber(),
                 request.getCustomer().getGstin(),
+                request.getCustomer().getEmail(),
+                request.getCustomer().getSecondaryEmail(),
+                request.getCustomer().getAddressLine1(),
+                request.getCustomer().getLandmark(),
+                request.getCustomer().getGoogleMapLink(),
+                request.getCustomer().getCity(),
+                request.getCustomer().getState(),
+                request.getCustomer().getPostalCode(),
                 request.getDevice().getBrand() + " " + request.getDevice().getModel(),
+                (request.getDevice().getDeviceCategory() != null ? request.getDevice().getDeviceCategory() : DeviceCategory.MOBILE).name(),
+                request.getDevice().getSerialNumber(),
                 request.getDevice().getImeiNumber(),
                 request.getDevice().getImeiValidationStatus().name(),
                 request.getDevice().getQrCodePayload(),

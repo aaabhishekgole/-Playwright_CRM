@@ -1,5 +1,7 @@
 import { Link } from 'react-router-dom';
 import { StatusBadge } from '../components/StatusBadge';
+import { formatDeviceCategory } from '../utils/deviceCatalog';
+import { formatDateTimeIn } from '../utils/formatters';
 import { useRequests } from './useRequests';
 
 export function DeliveryTrackingPage() {
@@ -29,12 +31,12 @@ export function DeliveryTrackingPage() {
             <div className="split-row">
               <div>
                 <h3>{request.requestNumber}</h3>
-                <p>{request.customerName}</p>
+                <p>{request.customerName} | {formatDeviceCategory(request.deviceCategory)} | {request.deviceLabel}</p>
               </div>
               <StatusBadge status={request.status} />
             </div>
             <p>Assigned agent: {request.deliveryAgent ?? 'Pending assignment'}</p>
-            <p>Last update: {new Date(request.updatedAt).toLocaleString()}</p>
+            <p>Last update: {formatDateTimeIn(request.updatedAt)}</p>
             <div className="action-row action-row-wrap">
               <Link className="secondary-button" to={`/requests/${request.id}`}>Open request</Link>
               {request.status === 'DELIVERY_ASSIGNED' ? <button className="primary-button" onClick={() => handleAction(request.id, 'OUT_FOR_DELIVERY')}>Mark Out For Delivery</button> : null}
