@@ -47,6 +47,7 @@ public record ServiceRequestResponse(
         String pickupAgent,
         String technician,
         String deliveryAgent,
+        PickupSummary pickup,
         Instant committedAt,
         Instant expectedCompletionAt,
         Instant slaDeadlineAt,
@@ -85,6 +86,22 @@ public record ServiceRequestResponse(
             String signedUrl,
             Instant signedUrlExpiresAt,
             Instant uploadedAt
+    ) {
+    }
+
+    public record PickupSummary(
+            String runnerName,
+            String runnerPhone,
+            Instant scheduledAt,
+            String pickupOtp,
+            String notes,
+            Instant acceptedAt,
+            Instant completedAt,
+            Instant runnerLinkSentAt,
+            String runnerPortalLink,
+            Integer requiredPhotoCount,
+            Integer uploadedRequiredPhotoCount,
+            Integer uploadedOptionalPhotoCount
     ) {
     }
 
@@ -141,6 +158,7 @@ public record ServiceRequestResponse(
             String channel,
             String recipient,
             String subject,
+            String message,
             String deliveryStatus,
             Integer attemptCount,
             Integer maxAttempts,

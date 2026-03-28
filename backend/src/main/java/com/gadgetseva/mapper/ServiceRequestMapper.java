@@ -8,6 +8,7 @@ import com.gadgetseva.entity.Invoice;
 import com.gadgetseva.entity.InvoiceLineItem;
 import com.gadgetseva.entity.NotificationLog;
 import com.gadgetseva.entity.PaymentTransaction;
+import com.gadgetseva.entity.Pickup;
 import com.gadgetseva.entity.ServiceRequest;
 import com.gadgetseva.entity.StatusHistory;
 import com.gadgetseva.service.FileStorageService;
@@ -25,6 +26,8 @@ public class ServiceRequestMapper {
     }
 
     public ServiceRequestResponse toResponse(ServiceRequest request,
+                                             Pickup pickup,
+                                             String runnerPortalBaseUrl,
                                              List<StatusHistory> history,
                                              List<Attachment> attachments,
                                              Invoice invoice,
@@ -73,6 +76,7 @@ public class ServiceRequestMapper {
                 request.getAssignedPickupAgent() != null ? request.getAssignedPickupAgent().getFullName() : null,
                 request.getAssignedTechnician() != null ? request.getAssignedTechnician().getFullName() : null,
                 request.getAssignedDeliveryAgent() != null ? request.getAssignedDeliveryAgent().getFullName() : null,
+                mapPickup(pickup, attachments, runnerPortalBaseUrl),
                 request.getCommittedAt(),
                 request.getExpectedCompletionAt(),
                 request.getSlaDeadlineAt(),
@@ -174,6 +178,7 @@ public class ServiceRequestMapper {
                 notification.getChannel(),
                 notification.getRecipient(),
                 notification.getSubject(),
+                notification.getMessage(),
                 notification.getDeliveryStatus().name(),
                 notification.getAttemptCount(),
                 notification.getMaxAttempts(),
@@ -191,6 +196,36 @@ public class ServiceRequestMapper {
                 auditLog.getAfterJson(),
                 auditLog.getChangedBy() != null ? auditLog.getChangedBy().getFullName() : "SYSTEM",
                 auditLog.getChangedAt()
+        );
+    }
+
+    private ServiceRequestResponse.PickupSummary mapPickup(Pickup pickup, List<Attachment> attachments, String runnerPortalBaseUrl) {
+        if (pickup == null) {
+            return null;
+        }
+
+        int requiredPickupPhotos = (int) attachments.stream()
+                .filter(attachment -> attachment.getAttachmentType().startsWith("PICKUP_IMAGE_"))
+                .count();
+        int optionalPickupPhotos = (int) attachments.stream()
+                .filter(attachment -> attachment.getAttachmentType().startsWith("PICKUP_EXTRA_IMAGE_"))
+                .count();
+
+        return new ServiceRequestResponse.PickupSummary(
+                pickup.getAgent() != null ? pickup.getAgent().getFullName() : null,
+                pickup.getAgent() != null ? pickup.getAgent().getPhone() : null,
+                pickup.getScheduledAt(),
+                pickup.getPickupOtp(),
+                pickup.getNotes(),
+                pickup.getAcceptedAt(),
+                pickup.getCompletedAt(),
+                pickup.getRunnerLinkSentAt(),
+                pickup.getRunnerPortalToken() != null
+                        ? runnerPortalBaseUrl + "/" + pickup.getRunnerPortalToken()
+                        : null,
+                10,
+                requiredPickupPhotos,
+                optionalPickupPhotos
         );
     }
 }

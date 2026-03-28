@@ -75,7 +75,7 @@ export const mockRequests: ServiceRequest[] = [
       { id: 91, paymentReference: 'PAY-2031', amount: 400, paymentMethod: 'CARD', paymentStatus: 'CAPTURED', refundStatus: 'NOT_APPLICABLE', refundAmount: 0, paidAt: '2026-03-24T11:00:00Z', refundedAt: null }
     ],
     notifications: [
-      { channel: 'EMAIL', recipient: 'nisha@example.com', subject: 'Invoice Ready', deliveryStatus: 'SENT', attemptCount: 1, maxAttempts: 3, nextRetryAt: '2026-03-24T10:00:00Z', errorMessage: null, createdAt: '2026-03-24T10:00:00Z' }
+      { channel: 'EMAIL', recipient: 'nisha@example.com', subject: 'Invoice Ready', message: 'Invoice INV-2031 is ready for payment.', deliveryStatus: 'SENT', attemptCount: 1, maxAttempts: 3, nextRetryAt: '2026-03-24T10:00:00Z', errorMessage: null, createdAt: '2026-03-24T10:00:00Z' }
     ],
     auditTrail: [
       { entityName: 'Invoice', action: 'CREATE', beforeJson: null, afterJson: '{"amountDue":767}', changedBy: 'Finance Team', changedAt: '2026-03-24T10:00:00Z' },
@@ -143,7 +143,7 @@ export const mockRequests: ServiceRequest[] = [
     invoice: null,
     payments: [],
     notifications: [
-      { channel: 'EMAIL', recipient: 'ops@partner-care.local', subject: 'SLA Breach Alert', deliveryStatus: 'QUEUED', attemptCount: 0, maxAttempts: 3, nextRetryAt: '2026-03-23T18:05:00Z', errorMessage: null, createdAt: '2026-03-23T18:00:00Z' }
+      { channel: 'EMAIL', recipient: 'ops@partner-care.local', subject: 'SLA Breach Alert', message: 'Request GSH-1002 has breached SLA and needs escalation.', deliveryStatus: 'QUEUED', attemptCount: 0, maxAttempts: 3, nextRetryAt: '2026-03-23T18:05:00Z', errorMessage: null, createdAt: '2026-03-23T18:00:00Z' }
     ],
     auditTrail: [
       { entityName: 'ServiceRequest', action: 'SLA_BREACH', beforeJson: null, afterJson: '{"slaBreached":true}', changedBy: 'SYSTEM', changedAt: '2026-03-23T18:00:00Z' }

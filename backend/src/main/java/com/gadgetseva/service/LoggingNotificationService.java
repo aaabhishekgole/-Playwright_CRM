@@ -4,6 +4,7 @@ import com.gadgetseva.entity.NotificationDeliveryStatus;
 import com.gadgetseva.entity.NotificationLog;
 import com.gadgetseva.entity.ServiceRequest;
 import com.gadgetseva.repository.NotificationLogRepository;
+import com.gadgetseva.repository.ServiceRequestRepository;
 import java.time.Instant;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
@@ -15,9 +16,15 @@ import org.springframework.stereotype.Service;
 public class LoggingNotificationService implements NotificationService {
 
     private final NotificationLogRepository notificationLogRepository;
+    private final ServiceRequestRepository serviceRequestRepository;
+    private final RoutingNotificationDeliveryGateway routingNotificationDeliveryGateway;
 
-    public LoggingNotificationService(NotificationLogRepository notificationLogRepository) {
+    public LoggingNotificationService(NotificationLogRepository notificationLogRepository,
+                                      ServiceRequestRepository serviceRequestRepository,
+                                      RoutingNotificationDeliveryGateway routingNotificationDeliveryGateway) {
         this.notificationLogRepository = notificationLogRepository;
+        this.serviceRequestRepository = serviceRequestRepository;
+        this.routingNotificationDeliveryGateway = routingNotificationDeliveryGateway;
     }
 
     @Override
@@ -28,10 +35,21 @@ public class LoggingNotificationService implements NotificationService {
 
     @Override
     public void queueAlert(ServiceRequest serviceRequest, String recipient, String subject, String message) {
+        queueNotification(serviceRequest, resolveChannel(serviceRequest, recipient), recipient, subject, message,
+                "{\"serviceRequestId\":" + serviceRequest.getId() + "}");
+    }
+
+    @Override
+    public void queueNotification(ServiceRequest serviceRequest,
+                                  String channel,
+                                  String recipient,
+                                  String subject,
+                                  String message,
+                                  String payloadJson) {
         NotificationLog logEntry = new NotificationLog();
         logEntry.setServiceRequestId(serviceRequest.getId());
         logEntry.setTenant(serviceRequest.getTenant());
-        logEntry.setChannel(resolveChannel(serviceRequest, recipient));
+        logEntry.setChannel(channel);
         logEntry.setRecipient(recipient);
         logEntry.setSubject(subject);
         logEntry.setMessage(message);
@@ -40,7 +58,7 @@ public class LoggingNotificationService implements NotificationService {
         logEntry.setAttemptCount(0);
         logEntry.setMaxAttempts(3);
         logEntry.setNextRetryAt(Instant.now());
-        logEntry.setPayloadJson("{\"serviceRequestId\":" + serviceRequest.getId() + "}");
+        logEntry.setPayloadJson(payloadJson);
         notificationLogRepository.save(logEntry);
     }
 
@@ -58,10 +76,26 @@ public class LoggingNotificationService implements NotificationService {
         for (NotificationLog item : dueItems) {
             try {
                 item.setAttemptCount(item.getAttemptCount() + 1);
-                item.setDeliveryStatus(NotificationDeliveryStatus.SENT);
-                item.setErrorMessage(null);
+                ServiceRequest serviceRequest = item.getServiceRequestId() != null
+                        ? serviceRequestRepository.findById(item.getServiceRequestId()).orElse(null)
+                        : null;
+                NotificationDeliveryGateway.DeliveryResult deliveryResult = routingNotificationDeliveryGateway.deliver(item, serviceRequest);
+                if (deliveryResult.delivered()) {
+                    item.setDeliveryStatus(NotificationDeliveryStatus.SENT);
+                    item.setErrorMessage(null);
+                    notificationLogRepository.save(item);
+                    log.info("Delivered {} notification {} to {}", item.getChannel(), item.getId(), item.getRecipient());
+                    continue;
+                }
+
+                item.setErrorMessage(deliveryResult.errorMessage());
+                if (item.getAttemptCount() >= item.getMaxAttempts()) {
+                    item.setDeliveryStatus(NotificationDeliveryStatus.DEAD_LETTER);
+                } else {
+                    item.setDeliveryStatus(NotificationDeliveryStatus.RETRYING);
+                    item.setNextRetryAt(Instant.now().plusSeconds(item.getAttemptCount() * 300L));
+                }
                 notificationLogRepository.save(item);
-                log.info("Delivered {} notification {} to {}", item.getChannel(), item.getId(), item.getRecipient());
             } catch (Exception exception) {
                 item.setErrorMessage(exception.getMessage());
                 if (item.getAttemptCount() >= item.getMaxAttempts()) {

@@ -37,7 +37,14 @@ public class Pickup extends BaseAuditableEntity {
     @Column(length = 10)
     private String pickupOtp;
 
+    private Instant acceptedAt;
+
     private Instant completedAt;
+
+    @Column(length = 120, unique = true)
+    private String runnerPortalToken;
+
+    private Instant runnerLinkSentAt;
 
     @Column(nullable = false)
     private boolean customerConfirmation;

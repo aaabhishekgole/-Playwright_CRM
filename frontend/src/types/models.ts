@@ -123,6 +123,21 @@ export type AttachmentItem = {
   uploadedAt: string;
 };
 
+export type PickupSummary = {
+  runnerName?: string | null;
+  runnerPhone?: string | null;
+  scheduledAt?: string | null;
+  pickupOtp?: string | null;
+  notes?: string | null;
+  acceptedAt?: string | null;
+  completedAt?: string | null;
+  runnerLinkSentAt?: string | null;
+  runnerPortalLink?: string | null;
+  requiredPhotoCount: number;
+  uploadedRequiredPhotoCount: number;
+  uploadedOptionalPhotoCount: number;
+};
+
 export type InvoiceLineItem = {
   description: string;
   quantity: number;
@@ -173,6 +188,7 @@ export type NotificationItem = {
   channel: string;
   recipient: string;
   subject: string;
+  message: string;
   deliveryStatus: string;
   attemptCount: number;
   maxAttempts: number;
@@ -231,6 +247,7 @@ export type ServiceRequest = {
   pickupAgent?: string | null;
   technician?: string | null;
   deliveryAgent?: string | null;
+  pickup?: PickupSummary | null;
   committedAt: string;
   expectedCompletionAt: string;
   slaDeadlineAt: string;

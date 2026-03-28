@@ -16,13 +16,46 @@ const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8081/api',
 });
 
+function clearStoredAuth() {
+  localStorage.removeItem('gsh_token');
+  localStorage.removeItem('gsh_user');
+}
+
 api.interceptors.request.use((config) => {
+  const requestUrl = config.url ?? '';
+  if (requestUrl.startsWith('/public/')) {
+    if (config.headers?.Authorization) {
+      delete config.headers.Authorization;
+    }
+    return config;
+  }
+
   const token = localStorage.getItem('gsh_token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
 });
+
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (axios.isAxiosError(error) && error.response && (error.response.status === 401 || error.response.status === 403)) {
+      const requestUrl = error.config?.url ?? '';
+      const currentPath = window.location.pathname;
+      const isPublicRoute = requestUrl.startsWith('/public/') || currentPath.startsWith('/runner-portal/');
+      const isLoginRoute = currentPath.startsWith('/login');
+
+      if (!isPublicRoute) {
+        clearStoredAuth();
+        if (!isLoginRoute) {
+          window.location.replace('/login');
+        }
+      }
+    }
+    return Promise.reject(error);
+  },
+);
 
 export function getApiErrorMessage(error: unknown): string {
   if (axios.isAxiosError(error)) {
@@ -39,7 +72,7 @@ export function getApiErrorMessage(error: unknown): string {
     }
 
     if (error.response.status === 401 || error.response.status === 403) {
-      return payloadMessage ?? 'Invalid username or password.';
+      return payloadMessage ?? 'Your session expired or access is no longer valid. Please sign in again.';
     }
 
     return payloadMessage ?? `Request failed with status ${error.response.status}.`;
@@ -137,5 +170,37 @@ export async function uploadRequestAttachment(requestId: number, attachmentType:
 
 export async function deleteRequestAttachment(requestId: number, attachmentId: number): Promise<ServiceRequest> {
   const response = await api.delete<ServiceRequest>(`/service-requests/${requestId}/attachments/${attachmentId}`);
+  return response.data;
+}
+
+export async function fetchRunnerPickupPortal(token: string): Promise<ServiceRequest> {
+  const response = await api.get<ServiceRequest>(`/public/pickups/${token}`);
+  return response.data;
+}
+
+export async function acceptRunnerPickup(token: string): Promise<ServiceRequest> {
+  const response = await api.post<ServiceRequest>(`/public/pickups/${token}/accept`);
+  return response.data;
+}
+
+export async function uploadRunnerPickupAttachment(token: string, attachmentType: string, file: File): Promise<ServiceRequest> {
+  const formData = new FormData();
+  formData.append('attachmentType', attachmentType);
+  formData.append('file', file);
+  const response = await api.post<ServiceRequest>(`/public/pickups/${token}/attachments`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+  return response.data;
+}
+
+export async function deleteRunnerPickupAttachment(token: string, attachmentId: number): Promise<ServiceRequest> {
+  const response = await api.delete<ServiceRequest>(`/public/pickups/${token}/attachments/${attachmentId}`);
+  return response.data;
+}
+
+export async function completeRunnerPickup(token: string): Promise<ServiceRequest> {
+  const response = await api.post<ServiceRequest>(`/public/pickups/${token}/complete`);
   return response.data;
 }

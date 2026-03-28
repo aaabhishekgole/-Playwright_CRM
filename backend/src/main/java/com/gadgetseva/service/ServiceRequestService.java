@@ -26,6 +26,7 @@ import com.gadgetseva.entity.PaymentStatus;
 import com.gadgetseva.entity.PaymentTransaction;
 import com.gadgetseva.entity.Pickup;
 import com.gadgetseva.entity.RefundStatus;
+import com.gadgetseva.entity.RoleName;
 import com.gadgetseva.entity.RequestStatus;
 import com.gadgetseva.entity.ServiceRequest;
 import com.gadgetseva.entity.StatusHistory;
@@ -56,8 +57,12 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Instant;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -69,6 +74,21 @@ import org.springframework.web.multipart.MultipartFile;
 @Service
 @Transactional
 public class ServiceRequestService {
+
+    private static final int REQUIRED_PICKUP_PHOTO_COUNT = 10;
+    private static final int MAX_PICKUP_EXTRA_PHOTO_COUNT = 20;
+    private static final List<String> REQUIRED_PICKUP_ATTACHMENT_TYPES = List.of(
+            "PICKUP_IMAGE_FRONT",
+            "PICKUP_IMAGE_BACK",
+            "PICKUP_IMAGE_LEFT",
+            "PICKUP_IMAGE_RIGHT",
+            "PICKUP_IMAGE_TOP",
+            "PICKUP_IMAGE_BOTTOM",
+            "PICKUP_IMAGE_DISPLAY_ON",
+            "PICKUP_IMAGE_SERIAL_LABEL",
+            "PICKUP_IMAGE_DAMAGE_CLOSEUP",
+            "PICKUP_IMAGE_ACCESSORIES"
+    );
 
     private final ServiceRequestRepository serviceRequestRepository;
     private final CustomerRepository customerRepository;
@@ -89,6 +109,7 @@ public class ServiceRequestService {
     private final NotificationService notificationService;
     private final AuditTrailService auditTrailService;
     private final String repairCenterStateCode;
+    private final String runnerPortalBaseUrl;
 
     public ServiceRequestService(ServiceRequestRepository serviceRequestRepository,
                                  CustomerRepository customerRepository,
@@ -108,7 +129,8 @@ public class ServiceRequestService {
                                  FileStorageService fileStorageService,
                                  NotificationService notificationService,
                                  AuditTrailService auditTrailService,
-                                 @Value("${app.repair-center-state-code}") String repairCenterStateCode) {
+                                 @Value("${app.repair-center-state-code}") String repairCenterStateCode,
+                                 @Value("${app.runner-portal-base-url:http://localhost:5173/runner-portal}") String runnerPortalBaseUrl) {
         this.serviceRequestRepository = serviceRequestRepository;
         this.customerRepository = customerRepository;
         this.deviceRepository = deviceRepository;
@@ -128,6 +150,9 @@ public class ServiceRequestService {
         this.notificationService = notificationService;
         this.auditTrailService = auditTrailService;
         this.repairCenterStateCode = repairCenterStateCode;
+        this.runnerPortalBaseUrl = runnerPortalBaseUrl.endsWith("/")
+                ? runnerPortalBaseUrl.substring(0, runnerPortalBaseUrl.length() - 1)
+                : runnerPortalBaseUrl;
     }
 
     public ServiceRequestResponse create(CreateServiceRequestRequest request) {
@@ -197,6 +222,11 @@ public class ServiceRequestService {
         return buildResponse(findRequest(id));
     }
 
+    public ServiceRequestResponse getByPickupToken(String token) {
+        Pickup pickup = findPickupByToken(token);
+        return buildResponse(pickup.getServiceRequest());
+    }
+
     public ServiceRequestResponse assignPickup(Long requestId, AssignPickupRequest request) {
         ServiceRequest serviceRequest = findRequest(requestId);
         User agent = findUser(request.agentId());
@@ -205,12 +235,98 @@ public class ServiceRequestService {
         pickup.setServiceRequest(serviceRequest);
         pickup.setAgent(agent);
         pickup.setScheduledAt(request.scheduledAt());
-        pickup.setPickupOtp(request.pickupOtp());
+        pickup.setPickupOtp(request.pickupOtp() != null && !request.pickupOtp().isBlank()
+                ? request.pickupOtp()
+                : generateOtp());
         pickup.setNotes(request.notes());
+        pickup.setAcceptedAt(null);
+        pickup.setCompletedAt(null);
+        pickup.setCustomerConfirmation(false);
+        pickup.setRunnerPortalToken(generateRunnerPortalToken());
+        pickup.setRunnerLinkSentAt(Instant.now());
         pickupRepository.save(pickup);
         serviceRequest.setAssignedPickupAgent(agent);
         transition(serviceRequest, RequestStatus.PICKUP_ASSIGNED, "Pickup assigned");
         auditTrailService.logChange("Pickup", pickup.getId(), serviceRequest.getId(), "UPSERT", before, pickupSnapshot(pickup), currentUserOrNull());
+        queuePickupAssignmentNotifications(serviceRequest, pickup);
+        return buildResponse(serviceRequest);
+    }
+
+    public ServiceRequestResponse acceptPickupByToken(String token) {
+        Pickup pickup = findPickupByToken(token);
+        ServiceRequest serviceRequest = pickup.getServiceRequest();
+        if (serviceRequest.getStatus() == RequestStatus.PICKUP_COMPLETED) {
+            return buildResponse(serviceRequest);
+        }
+        if (serviceRequest.getStatus() != RequestStatus.PICKUP_ASSIGNED && serviceRequest.getStatus() != RequestStatus.PICKUP_IN_PROGRESS) {
+            throw new ApiException("This pickup link is no longer available for acceptance.");
+        }
+
+        boolean firstAcceptance = pickup.getAcceptedAt() == null;
+        Map<String, Object> before = pickupSnapshot(pickup);
+        if (pickup.getAcceptedAt() == null) {
+            pickup.setAcceptedAt(Instant.now());
+        }
+        pickupRepository.save(pickup);
+
+        if (serviceRequest.getStatus() == RequestStatus.PICKUP_ASSIGNED) {
+            transition(serviceRequest, RequestStatus.PICKUP_IN_PROGRESS, "Runner accepted pickup assignment", pickup.getAgent());
+        }
+
+        auditTrailService.logChange("Pickup", pickup.getId(), serviceRequest.getId(), "ACCEPT", before, pickupSnapshot(pickup), pickup.getAgent());
+        if (firstAcceptance) {
+            queuePickupAcceptedNotifications(serviceRequest, pickup);
+        }
+        return buildResponse(serviceRequest);
+    }
+
+    public ServiceRequestResponse uploadPickupAttachmentByToken(String token, String attachmentType, MultipartFile file) {
+        Pickup pickup = findPickupByToken(token);
+        ServiceRequest serviceRequest = pickup.getServiceRequest();
+        if (serviceRequest.getStatus() != RequestStatus.PICKUP_ASSIGNED && serviceRequest.getStatus() != RequestStatus.PICKUP_IN_PROGRESS) {
+            throw new ApiException("Pickup photos can only be uploaded before pickup completion.");
+        }
+        if (!attachmentType.startsWith("PICKUP_IMAGE_") && !attachmentType.startsWith("PICKUP_EXTRA_IMAGE_")) {
+            throw new ApiException("Runner portal only accepts pickup evidence images.");
+        }
+        if (pickup.getAcceptedAt() == null) {
+            throw new ApiException("Accept the pickup before uploading pickup photos.");
+        }
+        return uploadAttachmentInternal(serviceRequest, attachmentType, file, pickup.getAgent());
+    }
+
+    public ServiceRequestResponse deletePickupAttachmentByToken(String token, Long attachmentId) {
+        Pickup pickup = findPickupByToken(token);
+        ServiceRequest serviceRequest = pickup.getServiceRequest();
+        if (serviceRequest.getStatus() != RequestStatus.PICKUP_ASSIGNED && serviceRequest.getStatus() != RequestStatus.PICKUP_IN_PROGRESS) {
+            throw new ApiException("Pickup photos can only be edited before pickup completion.");
+        }
+        return deleteAttachmentInternal(serviceRequest, attachmentId, pickup.getAgent());
+    }
+
+    public ServiceRequestResponse completePickupByToken(String token) {
+        Pickup pickup = findPickupByToken(token);
+        ServiceRequest serviceRequest = pickup.getServiceRequest();
+        if (serviceRequest.getStatus() == RequestStatus.PICKUP_COMPLETED) {
+            return buildResponse(serviceRequest);
+        }
+        if (serviceRequest.getStatus() != RequestStatus.PICKUP_ASSIGNED && serviceRequest.getStatus() != RequestStatus.PICKUP_IN_PROGRESS) {
+            throw new ApiException("This pickup link is no longer available for completion.");
+        }
+        if (pickup.getAcceptedAt() == null) {
+            throw new ApiException("Accept the pickup before submitting pickup completion.");
+        }
+
+        Map<String, Object> before = pickupSnapshot(pickup);
+        if (serviceRequest.getStatus() == RequestStatus.PICKUP_ASSIGNED) {
+            transition(serviceRequest, RequestStatus.PICKUP_IN_PROGRESS, "Runner accepted pickup assignment", pickup.getAgent());
+        }
+        pickup.setCompletedAt(Instant.now());
+        pickup.setCustomerConfirmation(true);
+        pickupRepository.save(pickup);
+        transition(serviceRequest, RequestStatus.PICKUP_COMPLETED, "Pickup completed from runner portal with 10 device photos", pickup.getAgent());
+        auditTrailService.logChange("Pickup", pickup.getId(), serviceRequest.getId(), "COMPLETE", before, pickupSnapshot(pickup), pickup.getAgent());
+        queuePickupCompletedNotifications(serviceRequest, pickup);
         return buildResponse(serviceRequest);
     }
 
@@ -273,44 +389,12 @@ public class ServiceRequestService {
 
     public ServiceRequestResponse uploadAttachment(Long requestId, String attachmentType, MultipartFile file) {
         ServiceRequest serviceRequest = findRequest(requestId);
-        validateAttachmentUpload(serviceRequest, attachmentType);
-        StoredFileDescriptor storedFile = fileStorageService.store(requestId, file);
-        Attachment attachment = new Attachment();
-        attachment.setServiceRequest(serviceRequest);
-        attachment.setTenant(serviceRequest.getTenant());
-        attachment.setAttachmentType(attachmentType);
-        attachment.setFileName(file.getOriginalFilename());
-        attachment.setContentType(file.getContentType() != null ? file.getContentType() : "application/octet-stream");
-        attachment.setObjectKey(storedFile.objectKey());
-        attachment.setChecksum(storedFile.checksum());
-        attachment.setPrivateFile(true);
-        attachment.setSignedUrlExpiresAt(Instant.now().plusSeconds(900));
-        attachment.setUploadedBy(currentUserOrNull());
-        attachment.setUploadedAt(Instant.now());
-        attachmentRepository.save(attachment);
-        maybeAdvanceEvidenceWorkflow(serviceRequest);
-        auditTrailService.logChange("Attachment", attachment.getId(), serviceRequest.getId(), "UPLOAD", null, attachmentSnapshot(attachment), currentUserOrNull());
-        return buildResponse(serviceRequest);
+        return uploadAttachmentInternal(serviceRequest, attachmentType, file, currentUserOrNull());
     }
 
     public ServiceRequestResponse deleteAttachment(Long requestId, Long attachmentId) {
         ServiceRequest serviceRequest = findRequest(requestId);
-        Attachment attachment = attachmentRepository.findByIdAndServiceRequest(attachmentId, serviceRequest)
-                .orElseThrow(() -> new NotFoundException("Attachment not found: " + attachmentId));
-        if (serviceRequest.getStatus() == RequestStatus.CASHLESS_APPROVED && attachment.getAttachmentType().startsWith("CASHLESS_")) {
-            throw new ApiException("Approved cashless evidence cannot be removed");
-        }
-
-        Map<String, Object> before = attachmentSnapshot(attachment);
-        fileStorageService.delete(attachment.getObjectKey());
-        attachmentRepository.delete(attachment);
-
-        if (serviceRequest.getStatus() == RequestStatus.CASHLESS_PENDING_APPROVAL && attachment.getAttachmentType().startsWith("CASHLESS_") && !hasCompleteCashlessEvidence(serviceRequest)) {
-            transition(serviceRequest, RequestStatus.CASHLESS_REVISION_REQUIRED, "Cashless evidence removed and requires revision");
-        }
-
-        auditTrailService.logChange("Attachment", attachmentId, serviceRequest.getId(), "DELETE", before, null, currentUserOrNull());
-        return buildResponse(serviceRequest);
+        return deleteAttachmentInternal(serviceRequest, attachmentId, currentUserOrNull());
     }
 
     public ServiceRequestResponse createInvoice(Long requestId, CreateInvoiceRequest request) {
@@ -503,17 +587,29 @@ public class ServiceRequestService {
         return userRepository.findById(userId).orElseThrow(() -> new NotFoundException("User not found: " + userId));
     }
 
+    private Pickup findPickupByToken(String token) {
+        if (token == null || token.isBlank()) {
+            throw new NotFoundException("Runner pickup link is invalid");
+        }
+        return pickupRepository.findByRunnerPortalToken(token)
+                .orElseThrow(() -> new NotFoundException("Runner pickup link not found"));
+    }
+
     private Tenant resolveTenant(String tenantCode) {
         String effectiveCode = tenantCode != null && !tenantCode.isBlank() ? tenantCode : "GSH-CORE";
         return tenantRepository.findByCode(effectiveCode).orElseThrow(() -> new NotFoundException("Tenant not found: " + effectiveCode));
     }
 
     private void transition(ServiceRequest serviceRequest, RequestStatus targetStatus, String remarks) {
+        transition(serviceRequest, targetStatus, remarks, currentUserOrNull());
+    }
+
+    private void transition(ServiceRequest serviceRequest, RequestStatus targetStatus, String remarks, User actor) {
         Map<String, Object> before = requestSnapshot(serviceRequest);
         if (targetStatus == RequestStatus.PICKUP_COMPLETED) {
             long pickupPhotos = attachmentRepository.countByServiceRequestAndAttachmentTypeStartingWith(serviceRequest, "PICKUP_IMAGE_");
-            if (pickupPhotos < 6) {
-                throw new ApiException("Upload all 6 pickup images before marking pickup completed");
+            if (pickupPhotos < REQUIRED_PICKUP_PHOTO_COUNT) {
+                throw new ApiException("Upload all 10 required pickup photos before marking pickup completed");
             }
         }
         StatusTransitionRules.assertAllowed(serviceRequest.getStatus(), targetStatus);
@@ -529,18 +625,28 @@ public class ServiceRequestService {
         }
         serviceRequestRepository.save(serviceRequest);
         Map<String, Object> after = requestSnapshot(serviceRequest);
-        recordHistory(serviceRequest, previous, targetStatus, remarks, before, after);
-        auditTrailService.logChange("ServiceRequest", serviceRequest.getId(), serviceRequest.getId(), "STATUS_CHANGE", before, after, currentUserOrNull());
+        recordHistory(serviceRequest, previous, targetStatus, remarks, before, after, actor);
+        auditTrailService.logChange("ServiceRequest", serviceRequest.getId(), serviceRequest.getId(), "STATUS_CHANGE", before, after, actor);
         notificationService.queueStatusUpdate(serviceRequest, "Request Update", "Request " + serviceRequest.getRequestNumber() + " moved to " + targetStatus);
     }
 
     private void recordHistory(ServiceRequest serviceRequest, RequestStatus previous, RequestStatus targetStatus, String remarks, Object before, Object after) {
+        recordHistory(serviceRequest, previous, targetStatus, remarks, before, after, currentUserOrNull());
+    }
+
+    private void recordHistory(ServiceRequest serviceRequest,
+                               RequestStatus previous,
+                               RequestStatus targetStatus,
+                               String remarks,
+                               Object before,
+                               Object after,
+                               User actor) {
         StatusHistory history = new StatusHistory();
         history.setServiceRequest(serviceRequest);
         history.setFromStatus(previous != null ? previous.name() : null);
         history.setToStatus(targetStatus.name());
         history.setRemarks(remarks);
-        history.setChangedBy(currentUserOrNull());
+        history.setChangedBy(actor);
         history.setChangedAt(Instant.now());
         history.setBeforeValueJson(auditTrailService.toJson(before));
         history.setAfterValueJson(auditTrailService.toJson(after));
@@ -548,22 +654,80 @@ public class ServiceRequestService {
     }
 
     private ServiceRequestResponse buildResponse(ServiceRequest serviceRequest) {
+        Pickup pickup = pickupRepository.findByServiceRequest(serviceRequest).orElse(null);
+        if (pickup != null && (pickup.getRunnerPortalToken() == null || pickup.getRunnerPortalToken().isBlank())) {
+            pickup.setRunnerPortalToken(generateRunnerPortalToken());
+            pickup.setRunnerLinkSentAt(pickup.getRunnerLinkSentAt() != null ? pickup.getRunnerLinkSentAt() : Instant.now());
+            pickupRepository.save(pickup);
+        }
         List<StatusHistory> history = statusHistoryRepository.findByServiceRequestOrderByChangedAtAsc(serviceRequest);
         List<Attachment> attachments = attachmentRepository.findByServiceRequest(serviceRequest);
         Invoice invoice = invoiceRepository.findByServiceRequest(serviceRequest).orElse(null);
         List<InvoiceLineItem> invoiceItems = invoice != null ? invoiceLineItemRepository.findByInvoiceOrderByIdAsc(invoice) : List.of();
         List<PaymentTransaction> payments = paymentTransactionRepository.findByServiceRequestOrderByCreatedAtDesc(serviceRequest);
         List<NotificationLog> notifications = notificationService.listForRequest(serviceRequest.getId());
-        return mapper.toResponse(serviceRequest, history, attachments, invoice, invoiceItems, payments, notifications, auditTrailService.listForRequest(serviceRequest.getId()));
+        return mapper.toResponse(serviceRequest, pickup, runnerPortalBaseUrl, history, attachments, invoice, invoiceItems, payments, notifications, auditTrailService.listForRequest(serviceRequest.getId()));
     }
+
+    private ServiceRequestResponse uploadAttachmentInternal(ServiceRequest serviceRequest,
+                                                            String attachmentType,
+                                                            MultipartFile file,
+                                                            User actor) {
+        validateAttachmentUpload(serviceRequest, attachmentType);
+        StoredFileDescriptor storedFile = fileStorageService.store(serviceRequest.getId(), file);
+        Attachment attachment = new Attachment();
+        attachment.setServiceRequest(serviceRequest);
+        attachment.setTenant(serviceRequest.getTenant());
+        attachment.setAttachmentType(attachmentType);
+        attachment.setFileName(file.getOriginalFilename());
+        attachment.setContentType(file.getContentType() != null ? file.getContentType() : "application/octet-stream");
+        attachment.setObjectKey(storedFile.objectKey());
+        attachment.setChecksum(storedFile.checksum());
+        attachment.setPrivateFile(true);
+        attachment.setSignedUrlExpiresAt(Instant.now().plusSeconds(900));
+        attachment.setUploadedBy(actor);
+        attachment.setUploadedAt(Instant.now());
+        attachmentRepository.save(attachment);
+        maybeAdvanceEvidenceWorkflow(serviceRequest, actor);
+        auditTrailService.logChange("Attachment", attachment.getId(), serviceRequest.getId(), "UPLOAD", null, attachmentSnapshot(attachment), actor);
+        return buildResponse(serviceRequest);
+    }
+
+    private ServiceRequestResponse deleteAttachmentInternal(ServiceRequest serviceRequest, Long attachmentId, User actor) {
+        Attachment attachment = attachmentRepository.findByIdAndServiceRequest(attachmentId, serviceRequest)
+                .orElseThrow(() -> new NotFoundException("Attachment not found: " + attachmentId));
+        if (serviceRequest.getStatus() == RequestStatus.CASHLESS_APPROVED && attachment.getAttachmentType().startsWith("CASHLESS_")) {
+            throw new ApiException("Approved cashless evidence cannot be removed");
+        }
+        if (serviceRequest.getStatus() == RequestStatus.PICKUP_COMPLETED
+                && (attachment.getAttachmentType().startsWith("PICKUP_IMAGE_") || attachment.getAttachmentType().startsWith("PICKUP_EXTRA_IMAGE_"))) {
+            if (actor == null || actor.getRole() == null || actor.getRole().getName() == RoleName.PICKUP_AGENT) {
+                throw new ApiException("Completed pickup evidence cannot be edited from the runner link");
+            }
+        }
+
+        Map<String, Object> before = attachmentSnapshot(attachment);
+        fileStorageService.delete(attachment.getObjectKey());
+        attachmentRepository.delete(attachment);
+
+        if (serviceRequest.getStatus() == RequestStatus.CASHLESS_PENDING_APPROVAL && attachment.getAttachmentType().startsWith("CASHLESS_") && !hasCompleteCashlessEvidence(serviceRequest)) {
+            transition(serviceRequest, RequestStatus.CASHLESS_REVISION_REQUIRED, "Cashless evidence removed and requires revision", actor);
+        }
+
+        auditTrailService.logChange("Attachment", attachmentId, serviceRequest.getId(), "DELETE", before, null, actor);
+        return buildResponse(serviceRequest);
+    }
+
     private void validateAttachmentUpload(ServiceRequest serviceRequest, String attachmentType) {
         if (attachmentType == null || attachmentType.isBlank()) {
             throw new ApiException("Attachment type is required");
         }
+        validateAttachmentType(attachmentType);
         if (attachmentRepository.existsByServiceRequestAndAttachmentType(serviceRequest, attachmentType)) {
             throw new ApiException("Attachment already uploaded for type " + attachmentType);
         }
-        enforceGroupedAttachmentLimit(serviceRequest, attachmentType, "PICKUP_IMAGE_", 6, "Pickup requires exactly 6 side images");
+        enforceGroupedAttachmentLimit(serviceRequest, attachmentType, "PICKUP_IMAGE_", REQUIRED_PICKUP_PHOTO_COUNT, "Pickup requires exactly 10 required device photos");
+        enforceGroupedAttachmentLimit(serviceRequest, attachmentType, "PICKUP_EXTRA_IMAGE_", MAX_PICKUP_EXTRA_PHOTO_COUNT, "Pickup allows up to 20 optional extra images");
         enforceGroupedAttachmentLimit(serviceRequest, attachmentType, "CASHLESS_DEVICE_IMAGE_", 6, "Cashless review allows 6 device images");
         enforceGroupedAttachmentLimit(serviceRequest, attachmentType, "CASHLESS_DAMAGE_IMAGE_", 4, "Cashless review allows 4 damage images");
     }
@@ -582,10 +746,23 @@ public class ServiceRequestService {
         }
     }
 
+    private void validateAttachmentType(String attachmentType) {
+        if (attachmentType.startsWith("PICKUP_IMAGE_") && !REQUIRED_PICKUP_ATTACHMENT_TYPES.contains(attachmentType)) {
+            throw new ApiException("Unsupported pickup image type " + attachmentType);
+        }
+        if (attachmentType.startsWith("PICKUP_EXTRA_IMAGE_") && !attachmentType.matches("PICKUP_EXTRA_IMAGE_\\d{1,2}")) {
+            throw new ApiException("Unsupported pickup extra image type " + attachmentType);
+        }
+    }
+
     private void maybeAdvanceEvidenceWorkflow(ServiceRequest serviceRequest) {
+        maybeAdvanceEvidenceWorkflow(serviceRequest, currentUserOrNull());
+    }
+
+    private void maybeAdvanceEvidenceWorkflow(ServiceRequest serviceRequest, User actor) {
         if ((serviceRequest.getStatus() == RequestStatus.ESTIMATE_PREPARED || serviceRequest.getStatus() == RequestStatus.CASHLESS_REVISION_REQUIRED)
                 && hasCompleteCashlessEvidence(serviceRequest)) {
-            transition(serviceRequest, RequestStatus.CASHLESS_PENDING_APPROVAL, "Cashless evidence set completed");
+            transition(serviceRequest, RequestStatus.CASHLESS_PENDING_APPROVAL, "Cashless evidence set completed", actor);
         }
     }
 
@@ -594,6 +771,87 @@ public class ServiceRequestService {
         long cashlessDamagePhotos = attachmentRepository.countByServiceRequestAndAttachmentTypeStartingWith(serviceRequest, "CASHLESS_DAMAGE_IMAGE_");
         return cashlessDevicePhotos >= 6 && cashlessDamagePhotos >= 4;
     }
+
+    private void queuePickupAssignmentNotifications(ServiceRequest serviceRequest, Pickup pickup) {
+        String portalLink = resolveRunnerPortalLink(pickup.getRunnerPortalToken());
+        String runnerMessage = "Pickup request " + serviceRequest.getRequestNumber()
+                + " has been assigned to you. Open the runner portal: " + portalLink;
+        queueDirectNotification(serviceRequest, "SMS", pickup.getAgent() != null ? pickup.getAgent().getPhone() : null,
+                "Pickup Runner Link", runnerMessage, Map.of("portalLink", portalLink, "requestNumber", serviceRequest.getRequestNumber()));
+        queueDirectNotification(serviceRequest, "WHATSAPP", pickup.getAgent() != null ? pickup.getAgent().getPhone() : null,
+                "Pickup Runner Link", runnerMessage, Map.of("portalLink", portalLink, "requestNumber", serviceRequest.getRequestNumber()));
+
+        String customerMessage = "Pickup is scheduled for request " + serviceRequest.getRequestNumber()
+                + ". Runner: " + (pickup.getAgent() != null ? pickup.getAgent().getFullName() : "Assigned runner")
+                + ". Scheduled at " + pickup.getScheduledAt() + ".";
+        queueCustomerNotifications(serviceRequest, "Pickup Scheduled", customerMessage);
+    }
+
+    private void queuePickupAcceptedNotifications(ServiceRequest serviceRequest, Pickup pickup) {
+        String message = "Pickup runner " + (pickup.getAgent() != null ? pickup.getAgent().getFullName() : "assigned runner")
+                + " has accepted request " + serviceRequest.getRequestNumber() + ".";
+        queueCustomerNotifications(serviceRequest, "Pickup Accepted", message);
+        queueAdminNotifications(serviceRequest, "Pickup Accepted", message);
+    }
+
+    private void queuePickupCompletedNotifications(ServiceRequest serviceRequest, Pickup pickup) {
+        String message = "Pickup for request " + serviceRequest.getRequestNumber()
+                + " is completed with 10 required photos and optional supporting images uploaded by "
+                + (pickup.getAgent() != null ? pickup.getAgent().getFullName() : "the runner") + ".";
+        queueCustomerNotifications(serviceRequest, "Pickup Completed", message);
+        queueAdminNotifications(serviceRequest, "Pickup Completed", message);
+    }
+
+    private void queueCustomerNotifications(ServiceRequest serviceRequest, String subject, String message) {
+        Customer customer = serviceRequest.getCustomer();
+        queueDirectNotification(serviceRequest, "SMS", customer.getPhone(), subject, message, Map.of("audience", "customer"));
+        queueDirectNotification(serviceRequest, "WHATSAPP", customer.getWhatsappNumber(), subject, message, Map.of("audience", "customer"));
+        if (customer.getAlternatePhone() != null && !customer.getAlternatePhone().isBlank()) {
+            queueDirectNotification(serviceRequest, "SMS", customer.getAlternatePhone(), subject, message, Map.of("audience", "customer-alternate"));
+        }
+    }
+
+    private void queueAdminNotifications(ServiceRequest serviceRequest, String subject, String message) {
+        Set<String> dispatched = new LinkedHashSet<>();
+        for (RoleName roleName : List.of(RoleName.ADMIN, RoleName.BACKEND_TEAM)) {
+            for (User user : userRepository.findByRole_NameOrderByFullNameAsc(roleName)) {
+                if (!user.isActive()) {
+                    continue;
+                }
+                if (user.getEmail() != null && !user.getEmail().isBlank() && dispatched.add("EMAIL:" + user.getEmail())) {
+                    queueDirectNotification(serviceRequest, "EMAIL", user.getEmail(), subject, message, Map.of("audience", "admin"));
+                }
+                if (user.getPhone() != null && !user.getPhone().isBlank() && dispatched.add("SMS:" + user.getPhone())) {
+                    queueDirectNotification(serviceRequest, "SMS", user.getPhone(), subject, message, Map.of("audience", "admin"));
+                }
+            }
+        }
+    }
+
+    private void queueDirectNotification(ServiceRequest serviceRequest,
+                                         String channel,
+                                         String recipient,
+                                         String subject,
+                                         String message,
+                                         Map<String, Object> payload) {
+        if (recipient == null || recipient.isBlank()) {
+            return;
+        }
+        notificationService.queueNotification(serviceRequest, channel, recipient, subject, message, auditTrailService.toJson(payload));
+    }
+
+    private String resolveRunnerPortalLink(String token) {
+        return token == null || token.isBlank() ? null : runnerPortalBaseUrl + "/" + token;
+    }
+
+    private String generateRunnerPortalToken() {
+        return UUID.randomUUID().toString().replace("-", "");
+    }
+
+    private String generateOtp() {
+        return String.valueOf(ThreadLocalRandom.current().nextInt(1000, 10000));
+    }
+
     private Map<String, Object> requestSnapshot(ServiceRequest serviceRequest) {
         Map<String, Object> snapshot = new LinkedHashMap<>();
         snapshot.put("status", serviceRequest.getStatus() != null ? serviceRequest.getStatus().name() : null);
@@ -620,6 +878,9 @@ public class ServiceRequestService {
         snapshot.put("agent", pickup.getAgent() != null ? pickup.getAgent().getUsername() : null);
         snapshot.put("scheduledAt", pickup.getScheduledAt());
         snapshot.put("otp", pickup.getPickupOtp());
+        snapshot.put("acceptedAt", pickup.getAcceptedAt());
+        snapshot.put("completedAt", pickup.getCompletedAt());
+        snapshot.put("runnerPortalLink", resolveRunnerPortalLink(pickup.getRunnerPortalToken()));
         return snapshot;
     }
 

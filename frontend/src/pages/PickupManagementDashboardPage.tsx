@@ -60,7 +60,7 @@ export function PickupManagementDashboardPage() {
       title: 'Pick Up Done',
       systemStatus: 'PICKUP_COMPLETED',
       count: queues.pickedUpDevices.length,
-      description: 'Collected devices with 6-side evidence captured and ready for hub inward processing.',
+      description: 'Collected devices with the 10-photo pickup set captured and ready for hub inward processing.',
       link: '/workspace/pickup-management/picked-up-devices',
       cta: 'Open Picked Up Devices',
     },
@@ -117,11 +117,11 @@ export function PickupManagementDashboardPage() {
           </div>
           <div className="workflow-step">
             <span>2</span>
-            <p><strong>Pickup Assign</strong><br />A pickup runner is selected, schedule is added, and the case moves into runner execution.</p>
+            <p><strong>Pickup Assign</strong><br />A pickup runner is selected, and the portal link is shared over SMS and WhatsApp to the runner.</p>
           </div>
           <div className="workflow-step">
             <span>3</span>
-            <p><strong>Runner Action</strong><br />Runner accepts the task, visits the customer, and captures the 6-side pickup evidence set.</p>
+            <p><strong>Runner Action</strong><br />Runner accepts the task, customer and admin are notified, and the runner captures 10 required device photos plus optional extras.</p>
           </div>
           <div className="workflow-step">
             <span>4</span>
@@ -212,7 +212,7 @@ export function PickupManagementDashboardPage() {
                       <small>{request.status}</small>
                     </div>
                     <div>{request.pickupAgent ?? workflowMeta.owner}</div>
-                    <div>{pickupImages}/6 photos</div>
+                    <div>{pickupImages}/10 photos</div>
                     <div>{formatDateTimeIn(request.updatedAt)}</div>
                     <div><Link to={request.status === 'REQUEST_CREATED' ? '/workspace/pickup-management/assign-pickup' : '/workspace/pickup-management/pending-pickup'}>Open stage</Link></div>
                   </div>

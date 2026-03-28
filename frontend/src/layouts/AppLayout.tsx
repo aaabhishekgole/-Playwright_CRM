@@ -80,7 +80,7 @@ export function AppLayout() {
 
         <nav className="sidebar-nav" aria-label="Application navigation">
           {visibleMenu.map((section) => (
-            <section key={section.id} className="sidebar-section">
+            <section key={section.id} className={`sidebar-section sidebar-${section.accent}`}>
               <button
                 type="button"
                 className={`sidebar-section-toggle${expandedSectionId === section.id ? ' active' : ''}`}

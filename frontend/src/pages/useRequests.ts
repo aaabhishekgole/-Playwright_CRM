@@ -8,6 +8,7 @@ import {
   createServiceRequest as createServiceRequestApi,
   deleteRequestAttachment as deleteRequestAttachmentRequest,
   fetchRequests,
+  getApiErrorMessage,
   recordPayment as recordPaymentRequest,
   reconcilePayment as reconcilePaymentRequest,
   refundPayment as refundPaymentRequest,
@@ -45,7 +46,7 @@ export function useRequests() {
       const data = await fetchRequests();
       setRequests(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load requests');
+      setError(getApiErrorMessage(err));
     } finally {
       setLoading(false);
     }

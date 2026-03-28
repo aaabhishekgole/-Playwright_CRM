@@ -28,9 +28,11 @@ export function ServiceRequestDetailsPage() {
 
   const attachmentTypes = request.attachments.map((attachment) => attachment.attachmentType);
   const pickupPhotos = countByPrefix(attachmentTypes, 'PICKUP_IMAGE_');
+  const pickupExtraPhotos = countByPrefix(attachmentTypes, 'PICKUP_EXTRA_IMAGE_');
   const cashlessDevicePhotos = countByPrefix(attachmentTypes, 'CASHLESS_DEVICE_IMAGE_');
   const cashlessDamagePhotos = countByPrefix(attachmentTypes, 'CASHLESS_DAMAGE_IMAGE_');
   const uploadMode = role === 'PICKUP_AGENT' ? 'runner' : 'standard';
+  const allowedSectionIds = role === 'PICKUP_AGENT' ? ['pickup'] as const : undefined;
   const imeiExpected = usesImei(request.deviceCategory);
   const workflowMeta = getWorkflowStageMeta(request);
 
@@ -98,6 +100,8 @@ export function ServiceRequestDetailsPage() {
         <article className="card">
           <h3>Assignments and Files</h3>
           <p>Pickup: {request.pickupAgent ?? 'Unassigned'}</p>
+          <p>Pickup Schedule: {request.pickup?.scheduledAt ? formatDateTimeIn(request.pickup.scheduledAt) : 'Not scheduled'}</p>
+          <p>Runner Portal: {request.pickup?.runnerPortalLink ? <a href={request.pickup.runnerPortalLink} target="_blank" rel="noreferrer">Open runner portal</a> : 'Not generated yet'}</p>
           <p>Technician: {request.technician ?? 'Unassigned'}</p>
           <p>Delivery: {request.deliveryAgent ?? 'Unassigned'}</p>
           <div className="mini-list">
@@ -113,8 +117,13 @@ export function ServiceRequestDetailsPage() {
       <div className="summary-grid">
         <article className="summary-stat compact-stat">
           <span>Pickup photos</span>
-          <strong>{pickupPhotos}/6</strong>
-          <small>Required six-side pickup evidence set.</small>
+          <strong>{pickupPhotos}/10</strong>
+          <small>Required pickup photo set captured by the runner.</small>
+        </article>
+        <article className="summary-stat compact-stat">
+          <span>Pickup extra photos</span>
+          <strong>{pickupExtraPhotos}</strong>
+          <small>Optional supporting pickup images for doorstep context or damage proof.</small>
         </article>
         <article className="summary-stat compact-stat">
           <span>Cashless device photos</span>
@@ -133,6 +142,7 @@ export function ServiceRequestDetailsPage() {
         attachments={request.attachments}
         mode={uploadMode}
         role={role}
+        allowedSectionIds={allowedSectionIds ? [...allowedSectionIds] : undefined}
         onUpload={(attachmentType, file) => uploadAttachment(request.id, attachmentType, file).then(() => undefined)}
         onRemove={(attachmentId) => deleteAttachment(request.id, attachmentId).then(() => undefined)}
       />
@@ -153,6 +163,7 @@ export function ServiceRequestDetailsPage() {
               <div key={`${notification.subject}-${index}`}>
                 <strong>{notification.subject}</strong>
                 <p>{notification.recipient}</p>
+                <small>{notification.message}</small>
                 <small>{notification.channel} | {notification.deliveryStatus} | attempts {notification.attemptCount}/{notification.maxAttempts}</small>
               </div>
             ))}

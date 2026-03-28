@@ -235,7 +235,7 @@ function getEmptyStageCopy(itemId: string) {
     case 'assign-pickup':
       return 'New claims appear here before pickup is assigned. Create or reopen a claim to start the runner flow.';
     case 'pending-pickup':
-      return 'Assigned pickup jobs will appear here for runner acceptance and six-side evidence upload.';
+      return 'Assigned pickup jobs will appear here for runner acceptance, customer/admin notifications, and 10-photo evidence upload.';
     case 'device-received-at-hub':
     case 'pending-verification':
     case 'send-to-service-center':
@@ -259,16 +259,16 @@ function getStagePlaybook(itemId: string) {
         title: 'New Case Request To Pickup Assignment',
         steps: [
           'New Case Request is created and the request enters system status REQUEST_CREATED.',
-          'Back-end operations assigns a pickup runner with schedule, OTP, and pickup notes.',
-          'Runner receives the assignment and the case moves into Pending Pickup for field execution.',
+          'Back-end operations assigns a pickup runner with schedule, OTP, and notes, then sends the runner link over SMS and WhatsApp.',
+          'Runner receives the link, opens the runner portal, and the case moves into Pending Pickup for field execution.',
         ],
       };
     case 'pending-pickup':
       return {
         title: 'Pickup Execution Flow',
         steps: [
-          'Runner accepts the assigned pickup job from the live queue.',
-          'Field pickup is completed with 6-side device evidence and doorstep confirmation.',
+          'Runner accepts the assigned pickup job from the live queue or runner portal link.',
+          'Field pickup is completed with 10 required device photos plus optional supporting images.',
           'Completed pickup automatically feeds hub receiving, history, and evidence views.',
         ],
       };
@@ -746,11 +746,13 @@ export function OperationalWorkspacePage({
         return (
           <>
             <div className="workspace-chip-row">
-              <span className="workspace-chip">Pickup photos: {pickupPhotoCount}/6</span>
+              <span className="workspace-chip">Pickup photos: {pickupPhotoCount}/10</span>
               <span className="workspace-chip">Runner: {request.pickupAgent ?? 'Awaiting assignment'}</span>
+              {request.pickup?.runnerPortalLink ? <span className="workspace-chip">Runner portal live</span> : null}
             </div>
             <div className="action-row action-row-wrap">
               <Link className="secondary-button" to={`/requests/${request.id}`}>Open capture screen</Link>
+              {request.pickup?.runnerPortalLink ? <a className="secondary-button" href={request.pickup.runnerPortalLink} target="_blank" rel="noreferrer">Open Runner Portal</a> : null}
               {request.status === 'PICKUP_ASSIGNED' ? (
                 <button className="secondary-button" disabled={busyId === request.id} onClick={() => handleTransition(request.id, 'PICKUP_IN_PROGRESS', 'Runner accepted pickup assignment', 'Pickup accepted by runner.')}>
                   {busyId === request.id ? 'Saving...' : 'Accept Pickup'}
@@ -773,7 +775,7 @@ export function OperationalWorkspacePage({
         return (
           <>
             <div className="workspace-chip-row">
-              <span className="workspace-chip">Pickup photos: {pickupPhotoCount}/6</span>
+              <span className="workspace-chip">Pickup photos: {pickupPhotoCount}/10</span>
               <span className="workspace-chip">Current status: {request.status.replaceAll('_', ' ')}</span>
             </div>
             <div className="action-row action-row-wrap">
@@ -818,7 +820,7 @@ export function OperationalWorkspacePage({
         return (
           <>
             <div className="workspace-chip-row">
-              <span className="workspace-chip">Pickup evidence: {pickupPhotoCount}/6</span>
+              <span className="workspace-chip">Pickup evidence: {pickupPhotoCount}/10</span>
               <span className="workspace-chip">Inward stage active</span>
             </div>
             <div className="action-row action-row-wrap">

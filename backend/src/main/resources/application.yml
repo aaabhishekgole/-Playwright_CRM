@@ -30,6 +30,21 @@ app:
     base-url: ${STORAGE_BASE_URL:http://localhost:8081}
     signing-secret: ${STORAGE_SIGNING_SECRET:storage-signing-secret-12345}
   repair-center-state-code: ${REPAIR_CENTER_STATE_CODE:29}
+  notifications:
+    provider: ${NOTIFICATION_PROVIDER:LOG}
+    timeout: ${NOTIFICATION_TIMEOUT:10s}
+    gateway:
+      auth-header: ${NOTIFICATION_AUTH_HEADER:authkey}
+      api-key: ${NOTIFICATION_API_KEY:}
+      sms:
+        enabled: ${NOTIFICATION_SMS_ENABLED:false}
+        url: ${NOTIFICATION_SMS_URL:}
+        sender-id: ${NOTIFICATION_SMS_SENDER_ID:GSHUB}
+      whatsapp:
+        enabled: ${NOTIFICATION_WHATSAPP_ENABLED:false}
+        url: ${NOTIFICATION_WHATSAPP_URL:}
+        integrated-number: ${NOTIFICATION_WHATSAPP_NUMBER:}
+        template-name: ${NOTIFICATION_WHATSAPP_TEMPLATE_NAME:}
 
 logging:
   level:

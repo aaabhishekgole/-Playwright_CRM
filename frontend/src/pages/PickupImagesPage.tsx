@@ -5,7 +5,7 @@ export function PickupImagesPage() {
   const { requests, loading, error } = useRequests();
   const attachments = requests
     .flatMap((request) => request.attachments.map((attachment) => ({ ...attachment, requestId: request.id, requestNumber: request.requestNumber })))
-    .filter((attachment) => attachment.attachmentType.startsWith('PICKUP_IMAGE_'));
+    .filter((attachment) => attachment.attachmentType.startsWith('PICKUP_IMAGE_') || attachment.attachmentType.startsWith('PICKUP_EXTRA_IMAGE_'));
 
   return (
     <section className="workspace-page">
@@ -24,7 +24,7 @@ export function PickupImagesPage() {
         {attachments.length > 0 ? attachments.map((attachment) => (
           <article className="card image-card" key={attachment.id}>
             <a href={attachment.signedUrl} target="_blank" rel="noreferrer" className="workspace-link compact-links">
-              <strong>{attachment.attachmentType.replace('PICKUP_IMAGE_', '').replaceAll('_', ' ')}</strong>
+              <strong>{attachment.attachmentType.replace('PICKUP_IMAGE_', '').replace('PICKUP_EXTRA_IMAGE_', 'EXTRA ').replaceAll('_', ' ')}</strong>
               <span>{attachment.fileName}</span>
             </a>
             <small>{attachment.requestNumber}</small>

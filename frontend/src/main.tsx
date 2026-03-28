@@ -12,6 +12,7 @@ import { EstimateApprovalPage } from './pages/EstimateApprovalPage';
 import { LoginPage } from './pages/LoginPage';
 import { PaymentReconciliationPage } from './pages/PaymentReconciliationPage';
 import { PickupImagesPage } from './pages/PickupImagesPage';
+import { PickupRunnerPortalPage } from './pages/PickupRunnerPortalPage';
 import { ServiceRequestDetailsPage } from './pages/ServiceRequestDetailsPage';
 import { ServiceRequestListPage } from './pages/ServiceRequestListPage';
 import { StatusTimelinePage } from './pages/StatusTimelinePage';
@@ -68,6 +69,7 @@ function RootApp() {
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/runner-portal/:token" element={<PickupRunnerPortalPage />} />
         <Route path="/*" element={<ProtectedApp />} />
       </Routes>
     </BrowserRouter>

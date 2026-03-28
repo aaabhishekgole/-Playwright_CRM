@@ -53,7 +53,11 @@ public class LocalWorkflowDataSeeder {
             "PICKUP_IMAGE_LEFT",
             "PICKUP_IMAGE_RIGHT",
             "PICKUP_IMAGE_TOP",
-            "PICKUP_IMAGE_BOTTOM"
+            "PICKUP_IMAGE_BOTTOM",
+            "PICKUP_IMAGE_DISPLAY_ON",
+            "PICKUP_IMAGE_SERIAL_LABEL",
+            "PICKUP_IMAGE_DAMAGE_CLOSEUP",
+            "PICKUP_IMAGE_ACCESSORIES"
     );
 
     private static final List<String> CASHLESS_DEVICE_EVIDENCE_TYPES = List.of(
@@ -176,6 +180,8 @@ public class LocalWorkflowDataSeeder {
                         serviceRequestService.reconcilePayment(request.id(), paid.payments().get(0).id(), new ReconcilePaymentRequest(PaymentReconciliationStatus.RECONCILED, "Auto reconciled for local workflow demo"));
                     }
                 });
+
+                backfillExpandedPickupEvidence(admin);
             });
         };
     }
@@ -248,7 +254,7 @@ public class LocalWorkflowDataSeeder {
     private void advanceToPickupCompleted(Long requestId, User pickupAgent) {
         assignPickup(requestId, pickupAgent.getId(), "Pickup scheduled from seeded assign board.");
         addEvidence(requestId, PICKUP_EVIDENCE_TYPES, pickupAgent, "pickup");
-        move(requestId, RequestStatus.PICKUP_COMPLETED, "Pickup completed with six-side evidence upload");
+        move(requestId, RequestStatus.PICKUP_COMPLETED, "Pickup completed with 10 required device photos");
     }
 
     private void advanceToReceivedAtHub(Long requestId, User pickupAgent) {
@@ -359,6 +365,28 @@ public class LocalWorkflowDataSeeder {
             attachment.setUploadedAt(Instant.now());
             attachmentRepository.save(attachment);
         }
+    }
+
+    private void backfillExpandedPickupEvidence(User uploadedBy) {
+        serviceRequestRepository.findAllByOrderByCreatedAtDesc().stream()
+                .filter(request -> request.getPartnerReference() != null && request.getPartnerReference().startsWith("DEMO-WORKSPACE-"))
+                .filter(request -> request.getStatus() == RequestStatus.PICKUP_COMPLETED
+                        || request.getStatus() == RequestStatus.RECEIVED_AT_HUB
+                        || request.getStatus() == RequestStatus.DIAGNOSIS_IN_PROGRESS
+                        || request.getStatus() == RequestStatus.ESTIMATE_PREPARED
+                        || request.getStatus() == RequestStatus.CASHLESS_PENDING_APPROVAL
+                        || request.getStatus() == RequestStatus.CASHLESS_APPROVED
+                        || request.getStatus() == RequestStatus.ESTIMATE_APPROVED
+                        || request.getStatus() == RequestStatus.REPAIR_IN_PROGRESS
+                        || request.getStatus() == RequestStatus.REPAIR_COMPLETED
+                        || request.getStatus() == RequestStatus.TOTAL_LOSS
+                        || request.getStatus() == RequestStatus.READY_FOR_DISPATCH
+                        || request.getStatus() == RequestStatus.DELIVERY_ASSIGNED
+                        || request.getStatus() == RequestStatus.OUT_FOR_DELIVERY
+                        || request.getStatus() == RequestStatus.DELIVERED
+                        || request.getStatus() == RequestStatus.INVOICED
+                        || request.getStatus() == RequestStatus.CLOSED)
+                .forEach(request -> addEvidence(request.getId(), PICKUP_EVIDENCE_TYPES, uploadedBy, "pickup"));
     }
 
     private byte[] buildSvgBytes(String requestNumber, String attachmentType) {

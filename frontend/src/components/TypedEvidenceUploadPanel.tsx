@@ -23,15 +23,22 @@ type EvidenceUploadPanelProps = {
   onRemove: (attachmentId: number) => Promise<void>;
   mode?: 'standard' | 'runner';
   role?: UserRole | null;
+  allowedSectionIds?: EvidenceSectionId[];
 };
 
+const MAX_PICKUP_EXTRA_IMAGES = 20;
+
 const pickupSlots: EvidenceSlot[] = [
-  { type: 'PICKUP_IMAGE_FRONT', label: 'Front View', helper: 'Capture the front display and body.' },
-  { type: 'PICKUP_IMAGE_BACK', label: 'Back View', helper: 'Capture the back panel condition.' },
+  { type: 'PICKUP_IMAGE_FRONT', label: 'Front View', helper: 'Capture the front panel and body condition.' },
+  { type: 'PICKUP_IMAGE_BACK', label: 'Back View', helper: 'Capture the rear panel and housing.' },
   { type: 'PICKUP_IMAGE_LEFT', label: 'Left Edge', helper: 'Capture the left side frame.' },
   { type: 'PICKUP_IMAGE_RIGHT', label: 'Right Edge', helper: 'Capture the right side frame.' },
-  { type: 'PICKUP_IMAGE_TOP', label: 'Top Edge', helper: 'Capture ports and top-side condition.' },
+  { type: 'PICKUP_IMAGE_TOP', label: 'Top Edge', helper: 'Capture top-side ports and body condition.' },
   { type: 'PICKUP_IMAGE_BOTTOM', label: 'Bottom Edge', helper: 'Capture speakers, ports, and bottom frame.' },
+  { type: 'PICKUP_IMAGE_DISPLAY_ON', label: 'Display On', helper: 'Capture the device while the display is powered on if possible.' },
+  { type: 'PICKUP_IMAGE_SERIAL_LABEL', label: 'Serial / IMEI Label', helper: 'Capture serial, IMEI, or product sticker clearly.' },
+  { type: 'PICKUP_IMAGE_DAMAGE_CLOSEUP', label: 'Damage Close-up', helper: 'Capture the main damage or fault area up close.' },
+  { type: 'PICKUP_IMAGE_ACCESSORIES', label: 'Accessories / Box', helper: 'Capture charger, remote, lens, or other handed-over items.' },
 ];
 
 const cashlessDeviceSlots: EvidenceSlot[] = [
@@ -54,7 +61,7 @@ const evidenceSections: EvidenceSection[] = [
   {
     id: 'pickup',
     title: 'Pickup Evidence',
-    description: 'Collect the exact six-side evidence set before handoff from the customer.',
+    description: 'Capture 10 required pickup photos, then add optional supporting images before pickup completion.',
     slots: pickupSlots,
   },
   {
@@ -71,22 +78,37 @@ const evidenceSections: EvidenceSection[] = [
   },
 ];
 
-function getPreferredSectionId(attachments: AttachmentItem[], role?: UserRole | null): EvidenceSectionId {
-  if (role === 'PICKUP_AGENT') {
+function getPreferredSectionId(
+  attachments: AttachmentItem[],
+  sections: EvidenceSection[],
+  role?: UserRole | null,
+): EvidenceSectionId {
+  if (role === 'PICKUP_AGENT' && sections.some((section) => section.id === 'pickup')) {
     return 'pickup';
   }
 
   const attachmentTypes = new Set(attachments.map((attachment) => attachment.attachmentType));
-  const nextIncomplete = evidenceSections.find((section) => section.slots.some((slot) => !attachmentTypes.has(slot.type)));
-  return nextIncomplete?.id ?? 'pickup';
+  const nextIncomplete = sections.find((section) => section.slots.some((slot) => !attachmentTypes.has(slot.type)));
+  return nextIncomplete?.id ?? sections[0]?.id ?? 'pickup';
 }
 
 function countCompletedSlots(slots: EvidenceSlot[], attachmentByType: Map<string, AttachmentItem>) {
   return slots.filter((slot) => attachmentByType.has(slot.type)).length;
 }
 
+function getPickupExtraAttachments(attachments: AttachmentItem[]) {
+  return attachments
+    .filter((attachment) => attachment.attachmentType.startsWith('PICKUP_EXTRA_IMAGE_'))
+    .sort((left, right) => {
+      const leftIndex = Number(left.attachmentType.replace('PICKUP_EXTRA_IMAGE_', ''));
+      const rightIndex = Number(right.attachmentType.replace('PICKUP_EXTRA_IMAGE_', ''));
+      return leftIndex - rightIndex;
+    });
+}
+
 function EvidenceSectionCard({
   section,
+  attachments,
   attachmentByType,
   uploadingType,
   removingId,
@@ -94,6 +116,7 @@ function EvidenceSectionCard({
   onRemove,
 }: {
   section: EvidenceSection;
+  attachments: AttachmentItem[];
   attachmentByType: Map<string, AttachmentItem>;
   uploadingType: string | null;
   removingId: number | null;
@@ -101,6 +124,10 @@ function EvidenceSectionCard({
   onRemove: (attachment: AttachmentItem) => void;
 }) {
   const nextRequiredType = section.slots.find((slot) => !attachmentByType.has(slot.type))?.type ?? null;
+  const pickupExtraAttachments = section.id === 'pickup' ? getPickupExtraAttachments(attachments) : [];
+  const nextPickupExtraType = section.id === 'pickup' && pickupExtraAttachments.length < MAX_PICKUP_EXTRA_IMAGES
+    ? `PICKUP_EXTRA_IMAGE_${pickupExtraAttachments.length + 1}`
+    : null;
 
   return (
     <article className="card evidence-section">
@@ -166,6 +193,75 @@ function EvidenceSectionCard({
           );
         })}
       </div>
+
+      {section.id === 'pickup' ? (
+        <div className="pickup-extra-panel">
+          <div className="split-row">
+            <div>
+              <h4>Optional Extra Photos</h4>
+              <p>Add extra supporting pickup images after the 10 required photos, such as doorstep context or additional damage views.</p>
+            </div>
+            <span className="workspace-chip">{pickupExtraAttachments.length}/{MAX_PICKUP_EXTRA_IMAGES} optional</span>
+          </div>
+
+          <div className="evidence-extra-grid">
+            {pickupExtraAttachments.map((attachment, index) => {
+              const busy = removingId === attachment.id;
+              return (
+                <div key={attachment.id} className="evidence-slot evidence-slot-optional complete">
+                  <div>
+                    <strong>Extra Photo {index + 1}</strong>
+                    <span>{attachment.fileName}</span>
+                  </div>
+                  <div className="evidence-slot-actions">
+                    <a className="secondary-button evidence-action" href={attachment.signedUrl} target="_blank" rel="noreferrer">
+                      Preview
+                    </a>
+                    <button
+                      type="button"
+                      className="secondary-button danger-button evidence-action"
+                      disabled={busy}
+                      onClick={() => onRemove(attachment)}
+                    >
+                      {busy ? 'Removing...' : 'Remove'}
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+
+            {nextPickupExtraType ? (
+              <label className="evidence-slot evidence-slot-optional">
+                <div>
+                  <strong>Add Extra Photo</strong>
+                  <span>Capture any additional supporting pickup image.</span>
+                </div>
+                <input
+                  type="file"
+                  accept="image/*"
+                  disabled={uploadingType === nextPickupExtraType}
+                  capture="environment"
+                  onChange={(event) => {
+                    const file = event.target.files?.[0];
+                    if (file) {
+                      onFileSelected(nextPickupExtraType, file);
+                      event.target.value = '';
+                    }
+                  }}
+                />
+                <small>{uploadingType === nextPickupExtraType ? 'Uploading...' : 'Optional extra image for support or audit.'}</small>
+              </label>
+            ) : (
+              <div className="evidence-slot evidence-slot-optional complete">
+                <div>
+                  <strong>Optional photo limit reached</strong>
+                  <span>You have already uploaded the maximum optional pickup images.</span>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      ) : null}
     </article>
   );
 }
@@ -177,6 +273,7 @@ export function TypedEvidenceUploadPanel({
   onRemove,
   mode = 'standard',
   role,
+  allowedSectionIds,
 }: EvidenceUploadPanelProps) {
   const [uploadingType, setUploadingType] = useState<string | null>(null);
   const [removingId, setRemovingId] = useState<number | null>(null);
@@ -184,17 +281,30 @@ export function TypedEvidenceUploadPanel({
   const timerRef = useRef<number | null>(null);
   const compactMode = mode === 'runner';
 
+  const visibleSections = useMemo(
+    () => allowedSectionIds && allowedSectionIds.length > 0
+      ? evidenceSections.filter((section) => allowedSectionIds.includes(section.id))
+      : evidenceSections,
+    [allowedSectionIds],
+  );
+
   const attachmentByType = useMemo(
     () => new Map(attachments.map((attachment) => [attachment.attachmentType, attachment])),
     [attachments],
   );
 
   const preferredSectionId = useMemo(
-    () => getPreferredSectionId(attachments, role),
-    [attachments, role],
+    () => getPreferredSectionId(attachments, visibleSections, role),
+    [attachments, role, visibleSections],
   );
 
   const [activeSectionId, setActiveSectionId] = useState<EvidenceSectionId>(preferredSectionId);
+
+  useEffect(() => {
+    if (!visibleSections.some((section) => section.id === activeSectionId)) {
+      setActiveSectionId(preferredSectionId);
+    }
+  }, [activeSectionId, preferredSectionId, visibleSections]);
 
   useEffect(() => {
     if (compactMode) {
@@ -235,13 +345,13 @@ export function TypedEvidenceUploadPanel({
   }
 
   const sectionsToRender = compactMode
-    ? evidenceSections.filter((section) => section.id === activeSectionId)
-    : evidenceSections;
+    ? visibleSections.filter((section) => section.id === activeSectionId)
+    : visibleSections;
 
   return (
     <section className={`workspace-page evidence-panel${compactMode ? ' runner-mode' : ''}`}>
       <div className="evidence-progress-strip">
-        {evidenceSections.map((section) => {
+        {visibleSections.map((section) => {
           const completed = countCompletedSlots(section.slots, attachmentByType);
           const total = section.slots.length;
           const active = section.id === activeSectionId;
@@ -266,6 +376,7 @@ export function TypedEvidenceUploadPanel({
         <EvidenceSectionCard
           key={section.id}
           section={section}
+          attachments={attachments}
           attachmentByType={attachmentByType}
           uploadingType={uploadingType}
           removingId={removingId}
@@ -278,8 +389,8 @@ export function TypedEvidenceUploadPanel({
         <strong>Request #{requestId}</strong>
         <span>
           {message ?? (compactMode
-            ? 'Runner mode keeps the next required capture step in focus for faster pickup completion on mobile.'
-            : 'Preview, remove, and re-upload typed evidence directly against the live backend request.')}
+            ? 'Runner mode keeps pickup capture focused: accept the job, upload 10 required photos, add optional extras, and submit pickup done.'
+            : 'Preview, remove, and re-upload typed evidence directly against the live backend request. Pickup now supports 10 required photos plus optional extras.')}
         </span>
       </div>
     </section>
