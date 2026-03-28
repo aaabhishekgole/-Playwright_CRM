@@ -85,6 +85,7 @@ public class StartupDataSeeder {
         }
         user.setEmail(email);
         user.setPhone(phone);
+        user.setWhatsappNumber(phone);
         user.setRole(role);
         user.setTenant(tenant);
         user.setActive(true);

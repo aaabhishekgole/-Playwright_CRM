@@ -1,5 +1,6 @@
 import { useMemo, useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
+import { useToast } from '../hooks/useToast';
 import { getApiErrorMessage } from '../services/api';
 import { supportedRepairCategories, usesImei } from '../utils/deviceCatalog';
 import type { CreateServiceRequestPayload, ServiceRequest } from '../types/models';
@@ -121,6 +122,7 @@ function splitDeviceLabel(deviceLabel: string) {
 
 export function ClaimRegistrationPage() {
   const { requests, loading, createRequest } = useRequests();
+  const { showError, showInfo, showSuccess } = useToast();
   const [lookup, setLookup] = useState<SearchState>(emptySearch);
   const [matches, setMatches] = useState<ServiceRequest[]>([]);
   const [form, setForm] = useState<ClaimFormState>(emptyForm);
@@ -144,14 +146,20 @@ export function ClaimRegistrationPage() {
     setMatches(nextMatches);
     setCreatedRequest(null);
     setError(null);
-    setStatusMessage(nextMatches.length > 0 ? `${nextMatches.length} matching claim(s) found.` : 'No existing claim found. Continue with a new registration.');
+    const nextMessage = nextMatches.length > 0
+      ? `${nextMatches.length} matching claim(s) found.`
+      : 'No existing claim found. Continue with a new registration.';
+    setStatusMessage(nextMessage);
+    showInfo(nextMessage, 'Claim search updated');
   }
 
   function handleDeviceNotInDatabase() {
     setMatches([]);
     setCreatedRequest(null);
     setError(null);
-    setStatusMessage('Switched to fresh registration mode. Enter the claim details below.');
+    const nextMessage = 'Switched to fresh registration mode. Enter the claim details below.';
+    setStatusMessage(nextMessage);
+    showInfo(nextMessage, 'Fresh claim mode');
   }
 
   function loadFromRequest(request: ServiceRequest) {
@@ -193,7 +201,9 @@ export function ClaimRegistrationPage() {
       partnerReference: request.partnerReference ?? '',
       promisedSlaHours: emptyForm.promisedSlaHours,
     });
-    setStatusMessage(`Loaded details from ${request.requestNumber}. Review and submit a new claim when ready.`);
+    const nextMessage = `Loaded details from ${request.requestNumber}. Review and submit a new claim when ready.`;
+    setStatusMessage(nextMessage);
+    showInfo(nextMessage, 'Claim details loaded');
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -251,9 +261,13 @@ export function ClaimRegistrationPage() {
       setMatches([]);
       setLookup(emptySearch);
       setForm({ ...emptyForm, projectName: form.projectName, branchName: form.branchName, employeeCode: form.employeeCode, employeeName: form.employeeName });
-      setStatusMessage(`Claim ${created.requestNumber} has been registered and stored successfully.`);
+      const nextMessage = `Claim ${created.requestNumber} has been registered and stored successfully.`;
+      setStatusMessage(nextMessage);
+      showSuccess(nextMessage, 'Claim registered');
     } catch (nextError) {
-      setError(getApiErrorMessage(nextError));
+      const nextMessage = getApiErrorMessage(nextError);
+      setError(nextMessage);
+      showError(nextMessage, 'Claim registration failed');
     } finally {
       setSubmitting(false);
     }

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getApiErrorMessage, fetchUsers } from '../services/api';
 import { useAuth } from '../hooks/useAuth';
+import { useToast } from '../hooks/useToast';
 import type { MenuLeaf, MenuSection } from '../utils/menuHierarchy';
 import type { ServiceRequest, UserSummary } from '../types/models';
 import { useRequests } from './useRequests';
@@ -233,7 +234,7 @@ function getSummaryLabel(itemId: string) {
 function getEmptyStageCopy(itemId: string) {
   switch (itemId) {
     case 'assign-pickup':
-      return 'New claims appear here before pickup is assigned. Create or reopen a claim to start the runner flow.';
+      return 'Assign Pickup only shows requests in REQUEST_CREATED. If this looks empty, the current demo claims have already been assigned or moved forward in the workflow.';
     case 'pending-pickup':
       return 'Assigned pickup jobs will appear here for runner acceptance, customer/admin notifications, and 10-photo evidence upload.';
     case 'device-received-at-hub':
@@ -383,6 +384,7 @@ export function OperationalWorkspacePage({
   item: MenuLeaf;
 }) {
   const { role } = useAuth();
+  const { showError, showSuccess } = useToast();
   const {
     requests,
     loading,
@@ -426,6 +428,20 @@ export function OperationalWorkspacePage({
   const [refundAmountById, setRefundAmountById] = useState<Record<number, string>>({});
   const [refundReasonById, setRefundReasonById] = useState<Record<number, string>>({});
 
+  function setModuleMessage(requestId: number, message: string) {
+    setMessageById((current) => ({ ...current, [requestId]: message }));
+  }
+
+  function reportSuccess(requestId: number, message: string) {
+    setModuleMessage(requestId, message);
+    showSuccess(message, item.label);
+  }
+
+  function reportError(requestId: number, message: string) {
+    setModuleMessage(requestId, message);
+    showError(message, item.label);
+  }
+
   const stageRequests = useMemo(() => resolveRequests(item.id, requests) ?? [], [item.id, requests]);
   const isAssignmentPage = item.id === 'assign-pickup';
   const isDeliveryAssignmentPage = item.id === 'assign-delivery' || item.id === 'ready-for-dispatch';
@@ -444,20 +460,22 @@ export function OperationalWorkspacePage({
       try {
         setUserError(null);
         if (isAssignmentPage) {
-          const agents = await fetchUsers('PICKUP_AGENT');
+          const agents = await fetchUsers('PICKUP_AGENT', true);
           if (active) {
-            setPickupAgents(prioritizePreferredUsers(agents.filter((agent) => agent.active), preferredPickupRunner));
+            setPickupAgents(prioritizePreferredUsers(agents, preferredPickupRunner));
           }
         }
         if (isDeliveryAssignmentPage) {
-          const agents = await fetchUsers('DELIVERY_AGENT');
+          const agents = await fetchUsers('DELIVERY_AGENT', true);
           if (active) {
-            setDeliveryAgents(agents.filter((agent) => agent.active));
+            setDeliveryAgents(agents);
           }
         }
       } catch (nextError) {
         if (active) {
-          setUserError(getApiErrorMessage(nextError));
+          const nextMessage = getApiErrorMessage(nextError);
+          setUserError(nextMessage);
+          showError(nextMessage, `${item.label} setup failed`);
         }
       }
     }
@@ -475,9 +493,9 @@ export function OperationalWorkspacePage({
     try {
       setBusyId(requestId);
       await transitionStatus(requestId, targetStatus, remarks);
-      setMessageById((current) => ({ ...current, [requestId]: successMessage }));
+      reportSuccess(requestId, successMessage);
     } catch (nextError) {
-      setMessageById((current) => ({ ...current, [requestId]: getApiErrorMessage(nextError) }));
+      reportError(requestId, getApiErrorMessage(nextError));
     } finally {
       setBusyId(null);
     }
@@ -486,21 +504,21 @@ export function OperationalWorkspacePage({
   async function handleAssignPickup(requestId: number) {
     const agentId = Number(selectedPickupAgentById[requestId] ?? pickupAgents[0]?.id ?? 0);
     if (!agentId) {
-      setMessageById((current) => ({ ...current, [requestId]: 'Select a pickup runner before assigning.' }));
+      reportError(requestId, 'Select a pickup runner before assigning.');
       return;
     }
 
     try {
       setBusyId(requestId);
-      await assignPickup(requestId, {
+      const updated = await assignPickup(requestId, {
         agentId,
         scheduledAt: toIso(pickupScheduleById[requestId] ?? defaultScheduleValue()),
         pickupOtp: '4826',
         notes: pickupNotesById[requestId] || 'Assigned from pickup management board',
       });
-      setMessageById((current) => ({ ...current, [requestId]: 'Pickup assigned to runner.' }));
+      reportSuccess(requestId, `Pickup assigned to ${updated.pickup?.runnerName ?? 'runner'}. Runner link sent over SMS and WhatsApp.`);
     } catch (nextError) {
-      setMessageById((current) => ({ ...current, [requestId]: getApiErrorMessage(nextError) }));
+      reportError(requestId, getApiErrorMessage(nextError));
     } finally {
       setBusyId(null);
     }
@@ -509,7 +527,7 @@ export function OperationalWorkspacePage({
   async function handleAssignDelivery(requestId: number) {
     const agentId = Number(selectedDeliveryAgentById[requestId] ?? deliveryAgents[0]?.id ?? 0);
     if (!agentId) {
-      setMessageById((current) => ({ ...current, [requestId]: 'Select a delivery runner before assigning.' }));
+      reportError(requestId, 'Select a delivery runner before assigning.');
       return;
     }
 
@@ -521,9 +539,9 @@ export function OperationalWorkspacePage({
         otpCode: '9032',
         notes: deliveryNotesById[requestId] || 'Assigned from dispatch board',
       });
-      setMessageById((current) => ({ ...current, [requestId]: 'Delivery assigned to runner.' }));
+      reportSuccess(requestId, 'Delivery assigned to runner.');
     } catch (nextError) {
-      setMessageById((current) => ({ ...current, [requestId]: getApiErrorMessage(nextError) }));
+      reportError(requestId, getApiErrorMessage(nextError));
     } finally {
       setBusyId(null);
     }
@@ -538,9 +556,9 @@ export function OperationalWorkspacePage({
         laborCost: Number(laborCostById[requestId] ?? 0),
         taxAmount: Number(taxById[requestId] ?? 0),
       });
-      setMessageById((current) => ({ ...current, [requestId]: 'Estimate submitted to approval queue.' }));
+      reportSuccess(requestId, 'Estimate submitted to approval queue.');
     } catch (nextError) {
-      setMessageById((current) => ({ ...current, [requestId]: getApiErrorMessage(nextError) }));
+      reportError(requestId, getApiErrorMessage(nextError));
     } finally {
       setBusyId(null);
     }
@@ -549,7 +567,7 @@ export function OperationalWorkspacePage({
   async function handleCreateInvoice(request: ServiceRequest) {
     const laborDescription = invoiceLaborDescriptionById[request.id] ?? 'Repair labour and diagnostics';
     if (!laborDescription.trim()) {
-      setMessageById((current) => ({ ...current, [request.id]: 'Enter the labor description before generating the invoice.' }));
+      reportError(request.id, 'Enter the labor description before generating the invoice.');
       return;
     }
 
@@ -563,9 +581,9 @@ export function OperationalWorkspacePage({
         laborDescription,
         partsDescription: invoicePartsDescriptionById[request.id] || undefined,
       });
-      setMessageById((current) => ({ ...current, [request.id]: 'Invoice generated and moved to billing.' }));
+      reportSuccess(request.id, 'Invoice generated and moved to billing.');
     } catch (nextError) {
-      setMessageById((current) => ({ ...current, [request.id]: getApiErrorMessage(nextError) }));
+      reportError(request.id, getApiErrorMessage(nextError));
     } finally {
       setBusyId(null);
     }
@@ -574,13 +592,13 @@ export function OperationalWorkspacePage({
   async function handleRecordPayment(request: ServiceRequest) {
     const paymentReference = paymentReferenceById[request.id]?.trim();
     if (!paymentReference) {
-      setMessageById((current) => ({ ...current, [request.id]: 'Enter a payment reference before recording the payment.' }));
+      reportError(request.id, 'Enter a payment reference before recording the payment.');
       return;
     }
 
     const amount = Number(paymentAmountById[request.id] ?? request.invoice?.amountDue ?? 0);
     if (!amount || amount <= 0) {
-      setMessageById((current) => ({ ...current, [request.id]: 'Enter a valid payment amount greater than zero.' }));
+      reportError(request.id, 'Enter a valid payment amount greater than zero.');
       return;
     }
 
@@ -592,9 +610,9 @@ export function OperationalWorkspacePage({
         paymentMethod: paymentMethodById[request.id] || 'UPI',
         utrNumber: paymentUtrById[request.id] || undefined,
       });
-      setMessageById((current) => ({ ...current, [request.id]: 'Payment recorded successfully.' }));
+      reportSuccess(request.id, 'Payment recorded successfully.');
     } catch (nextError) {
-      setMessageById((current) => ({ ...current, [request.id]: getApiErrorMessage(nextError) }));
+      reportError(request.id, getApiErrorMessage(nextError));
     } finally {
       setBusyId(null);
     }
@@ -606,26 +624,26 @@ export function OperationalWorkspacePage({
     const reason = refundReasonById[request.id]?.trim();
 
     if (!paymentId) {
-      setMessageById((current) => ({ ...current, [request.id]: 'Select a payment entry before processing a refund.' }));
+      reportError(request.id, 'Select a payment entry before processing a refund.');
       return;
     }
 
     if (!amount || amount <= 0) {
-      setMessageById((current) => ({ ...current, [request.id]: 'Enter a refund amount greater than zero.' }));
+      reportError(request.id, 'Enter a refund amount greater than zero.');
       return;
     }
 
     if (!reason) {
-      setMessageById((current) => ({ ...current, [request.id]: 'Enter a refund reason before submitting.' }));
+      reportError(request.id, 'Enter a refund reason before submitting.');
       return;
     }
 
     try {
       setBusyId(request.id);
       await refundPayment(request.id, { paymentId, amount, reason });
-      setMessageById((current) => ({ ...current, [request.id]: 'Refund processed successfully.' }));
+      reportSuccess(request.id, 'Refund processed successfully.');
     } catch (nextError) {
-      setMessageById((current) => ({ ...current, [request.id]: getApiErrorMessage(nextError) }));
+      reportError(request.id, getApiErrorMessage(nextError));
     } finally {
       setBusyId(null);
     }
@@ -736,6 +754,7 @@ export function OperationalWorkspacePage({
             </label>
             <div className="action-row action-row-wrap">
               <Link className="secondary-button" to={`/requests/${request.id}`}>Open request</Link>
+              <Link className="secondary-button" to="/workspace/pickup-management/runner-onboarding">Onboard Runner</Link>
               <button className="primary-button" disabled={busyId === request.id} onClick={() => handleAssignPickup(request.id)}>
                 {busyId === request.id ? 'Assigning...' : 'Assign Pickup'}
               </button>
@@ -1313,12 +1332,18 @@ export function OperationalWorkspacePage({
             <strong>No requests in this stage</strong>
             <p>{getEmptyStageCopy(item.id)}</p>
             <div className="action-card-cta">
-              <strong>Quick next steps</strong>
-              <p>Use these live pages to move a claim into this submenu without leaving the workflow.</p>
+              <strong>{item.id === 'assign-pickup' ? 'Pickup recovery actions' : 'Quick next steps'}</strong>
+              <p>{item.id === 'assign-pickup'
+                ? 'This queue refills when a new claim is created or a fresh local demo REQUEST_CREATED case is available after restart.'
+                : 'Use these live pages to move a claim into this submenu without leaving the workflow.'}</p>
               <div className="action-row action-row-wrap">
                 <Link className="secondary-button" to="/workspace/service-requests/create-request">Register New Claim</Link>
-                <Link className="secondary-button" to="/workspace/service-requests/open-requests">Open Claims</Link>
-                <Link className="secondary-button" to="/workspace/service-requests/search-request">Search Claims</Link>
+                <Link className="secondary-button" to={item.id === 'assign-pickup' ? '/workspace/pickup-management/pending-pickup' : '/workspace/service-requests/open-requests'}>
+                  {item.id === 'assign-pickup' ? 'Pending Pickup' : 'Open Claims'}
+                </Link>
+                <Link className="secondary-button" to={item.id === 'assign-pickup' ? '/workspace/pickup-management/pickup-history' : '/workspace/service-requests/search-request'}>
+                  {item.id === 'assign-pickup' ? 'Pickup History' : 'Search Claims'}
+                </Link>
               </div>
             </div>
           </div>

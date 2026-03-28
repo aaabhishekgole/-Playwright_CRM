@@ -21,4 +21,7 @@ public interface ServiceRequestRepository extends JpaRepository<ServiceRequest, 
 
     @EntityGraph(attributePaths = {"customer", "device", "assignedPickupAgent", "assignedDeliveryAgent", "assignedTechnician", "tenant"})
     Optional<ServiceRequest> findByPartnerReference(String partnerReference);
+
+    @EntityGraph(attributePaths = {"customer", "device", "assignedPickupAgent", "assignedDeliveryAgent", "assignedTechnician", "tenant"})
+    List<ServiceRequest> findAllByPartnerReferenceStartingWithOrderByCreatedAtDesc(String partnerReferencePrefix);
 }

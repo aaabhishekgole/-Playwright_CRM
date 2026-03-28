@@ -1,6 +1,7 @@
 import { FormEvent, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { GadgetSevaLogo } from '../components/GadgetSevaLogo';
+import { useToast } from '../hooks/useToast';
 import { getApiErrorMessage } from '../services/api';
 import { useAuth } from '../hooks/useAuth';
 
@@ -20,6 +21,7 @@ const operatorRoles = ['admin', 'support', 'backend', 'pickup', 'tech', 'deliver
 
 export function LoginPage() {
   const { login } = useAuth();
+  const { showError, showSuccess } = useToast();
   const navigate = useNavigate();
   const [username, setUsername] = useState('admin');
   const [password, setPassword] = useState('Admin@123');
@@ -32,9 +34,12 @@ export function LoginPage() {
       setSubmitting(true);
       setError(null);
       await login(username, password);
+      showSuccess('You are signed in successfully. The operations console is ready.', 'Welcome back');
       navigate('/');
     } catch (nextError) {
-      setError(getApiErrorMessage(nextError));
+      const nextMessage = getApiErrorMessage(nextError);
+      setError(nextMessage);
+      showError(nextMessage, 'Sign in failed');
     } finally {
       setSubmitting(false);
     }

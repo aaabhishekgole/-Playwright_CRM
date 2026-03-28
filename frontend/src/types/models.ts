@@ -96,9 +96,21 @@ export type UserSummary = {
   id: number;
   fullName: string;
   username: string;
+  email?: string | null;
+  phone?: string | null;
+  whatsappNumber?: string | null;
   role: string;
   tenantCode?: string | null;
   active: boolean;
+};
+
+export type CreatePickupRunnerPayload = {
+  fullName: string;
+  phone: string;
+  whatsappNumber?: string;
+  email?: string;
+  username?: string;
+  active?: boolean;
 };
 
 export type TimelineItem = {
@@ -270,4 +282,22 @@ export type LoginResponse = {
   tokenType: string;
   username: string;
   role: UserRole;
+  fullName?: string | null;
+  phone?: string | null;
+};
+
+export type RunnerNotification = {
+  id: number;
+  channel: string;
+  subject: string;
+  message: string;
+  deliveryStatus: string;
+  createdAt: string;
+  serviceRequestId?: number | null;
+  requestNumber?: string | null;
+  customerName?: string | null;
+  deviceLabel?: string | null;
+  requestStatus?: string | null;
+  scheduledAt?: string | null;
+  runnerPortalToken?: string | null;
 };

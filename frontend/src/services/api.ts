@@ -2,18 +2,22 @@ import axios from 'axios';
 import type {
   AssignDeliveryPayload,
   AssignPickupPayload,
+  CreatePickupRunnerPayload,
   CreateInvoicePayload,
   CreateEstimatePayload,
   CreateServiceRequestPayload,
   LoginResponse,
   RecordPaymentPayload,
+  RunnerNotification,
   RefundPaymentPayload,
   ServiceRequest,
   UserSummary,
 } from '../types/models';
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8081/api';
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8081/api',
+  baseURL: API_BASE_URL,
 });
 
 function clearStoredAuth() {
@@ -23,7 +27,7 @@ function clearStoredAuth() {
 
 api.interceptors.request.use((config) => {
   const requestUrl = config.url ?? '';
-  if (requestUrl.startsWith('/public/')) {
+  if (requestUrl.startsWith('/public/') || requestUrl === '/auth/login') {
     if (config.headers?.Authorization) {
       delete config.headers.Authorization;
     }
@@ -81,9 +85,48 @@ export function getApiErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : 'Request failed.';
 }
 
+async function readRunnerApiResponse<T>(response: Response): Promise<T> {
+  const responseText = await response.text();
+  if (!responseText) {
+    return {} as T;
+  }
+  return JSON.parse(responseText) as T;
+}
+
 export async function login(username: string, password: string): Promise<LoginResponse> {
   const response = await api.post<LoginResponse>('/auth/login', { username, password });
   return response.data;
+}
+
+export async function loginRunnerApp(username: string, password: string): Promise<LoginResponse> {
+  const response = await fetch(`${API_BASE_URL}/auth/login`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ username, password }),
+  });
+  const payload = await readRunnerApiResponse<LoginResponse & { message?: string }>(response);
+  if (!response.ok) {
+    throw new Error(payload.message ?? `Request failed with status ${response.status}.`);
+  }
+  return payload;
+}
+
+export async function fetchRunnerAppNotifications(accessToken: string): Promise<RunnerNotification[]> {
+  const response = await fetch(`${API_BASE_URL}/mobile/runner/notifications`, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+  const payload = await readRunnerApiResponse<RunnerNotification[] | { message?: string }>(response);
+  if (!response.ok || !Array.isArray(payload)) {
+    const message = !Array.isArray(payload) && payload.message
+      ? payload.message
+      : `Request failed with status ${response.status}.`;
+    throw new Error(message);
+  }
+  return payload;
 }
 
 export async function fetchRequests(): Promise<ServiceRequest[]> {
@@ -96,10 +139,18 @@ export async function createServiceRequest(payload: CreateServiceRequestPayload)
   return response.data;
 }
 
-export async function fetchUsers(role?: string): Promise<UserSummary[]> {
+export async function fetchUsers(role?: string, activeOnly = false): Promise<UserSummary[]> {
   const response = await api.get<UserSummary[]>('/users', {
-    params: role ? { role } : undefined,
+    params: {
+      ...(role ? { role } : {}),
+      ...(activeOnly ? { activeOnly: true } : {}),
+    },
   });
+  return response.data;
+}
+
+export async function createPickupRunner(payload: CreatePickupRunnerPayload): Promise<UserSummary> {
+  const response = await api.post<UserSummary>('/users/pickup-runners', payload);
   return response.data;
 }
 

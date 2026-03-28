@@ -130,7 +130,7 @@ public class ServiceRequestService {
                                  NotificationService notificationService,
                                  AuditTrailService auditTrailService,
                                  @Value("${app.repair-center-state-code}") String repairCenterStateCode,
-                                 @Value("${app.runner-portal-base-url:http://localhost:5173/runner-portal}") String runnerPortalBaseUrl) {
+                                 @Value("${app.runner-portal-base-url:http://localhost:5173/runner-access}") String runnerPortalBaseUrl) {
         this.serviceRequestRepository = serviceRequestRepository;
         this.customerRepository = customerRepository;
         this.deviceRepository = deviceRepository;
@@ -775,11 +775,21 @@ public class ServiceRequestService {
     private void queuePickupAssignmentNotifications(ServiceRequest serviceRequest, Pickup pickup) {
         String portalLink = resolveRunnerPortalLink(pickup.getRunnerPortalToken());
         String runnerMessage = "Pickup request " + serviceRequest.getRequestNumber()
-                + " has been assigned to you. Open the runner portal: " + portalLink;
+                + " has been assigned to you for " + pickup.getScheduledAt()
+                + ". Open the runner portal: " + portalLink;
+        Map<String, Object> runnerPayload = new LinkedHashMap<>();
+        runnerPayload.put("portalLink", portalLink);
+        runnerPayload.put("runnerPortalToken", pickup.getRunnerPortalToken());
+        runnerPayload.put("requestNumber", serviceRequest.getRequestNumber());
+        runnerPayload.put("scheduledAt", pickup.getScheduledAt());
+        runnerPayload.put("runnerUsername", pickup.getAgent() != null ? pickup.getAgent().getUsername() : null);
+        runnerPayload.put("runnerPhone", pickup.getAgent() != null ? pickup.getAgent().getPhone() : null);
         queueDirectNotification(serviceRequest, "SMS", pickup.getAgent() != null ? pickup.getAgent().getPhone() : null,
-                "Pickup Runner Link", runnerMessage, Map.of("portalLink", portalLink, "requestNumber", serviceRequest.getRequestNumber()));
-        queueDirectNotification(serviceRequest, "WHATSAPP", pickup.getAgent() != null ? pickup.getAgent().getPhone() : null,
-                "Pickup Runner Link", runnerMessage, Map.of("portalLink", portalLink, "requestNumber", serviceRequest.getRequestNumber()));
+                "Pickup Runner Link", runnerMessage, runnerPayload);
+        queueDirectNotification(serviceRequest, "WHATSAPP", resolveWhatsappRecipient(pickup.getAgent()),
+                "Pickup Runner Link", runnerMessage, runnerPayload);
+        queueDirectNotification(serviceRequest, "APP", pickup.getAgent() != null ? pickup.getAgent().getUsername() : null,
+                "Pickup Assigned In App", runnerMessage, runnerPayload);
 
         String customerMessage = "Pickup is scheduled for request " + serviceRequest.getRequestNumber()
                 + ". Runner: " + (pickup.getAgent() != null ? pickup.getAgent().getFullName() : "Assigned runner")
@@ -824,6 +834,10 @@ public class ServiceRequestService {
                 if (user.getPhone() != null && !user.getPhone().isBlank() && dispatched.add("SMS:" + user.getPhone())) {
                     queueDirectNotification(serviceRequest, "SMS", user.getPhone(), subject, message, Map.of("audience", "admin"));
                 }
+                String whatsappRecipient = resolveWhatsappRecipient(user);
+                if (whatsappRecipient != null && !whatsappRecipient.isBlank() && dispatched.add("WHATSAPP:" + whatsappRecipient)) {
+                    queueDirectNotification(serviceRequest, "WHATSAPP", whatsappRecipient, subject, message, Map.of("audience", "admin"));
+                }
             }
         }
     }
@@ -842,6 +856,15 @@ public class ServiceRequestService {
 
     private String resolveRunnerPortalLink(String token) {
         return token == null || token.isBlank() ? null : runnerPortalBaseUrl + "/" + token;
+    }
+
+    private String resolveWhatsappRecipient(User user) {
+        if (user == null) {
+            return null;
+        }
+        return user.getWhatsappNumber() != null && !user.getWhatsappNumber().isBlank()
+                ? user.getWhatsappNumber()
+                : user.getPhone();
     }
 
     private String generateRunnerPortalToken() {

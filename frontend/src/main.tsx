@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { AppLayout } from './layouts/AppLayout';
 import { AuthProvider, useAuth } from './hooks/useAuth';
+import { ToastProvider } from './hooks/useToast';
 import { findMenuContext, hasMenuAccess } from './utils/menuHierarchy';
 import { CashlessApprovalPage } from './pages/CashlessApprovalPage';
 import { ClaimRegistrationPage } from './pages/ClaimRegistrationPage';
@@ -13,6 +14,8 @@ import { LoginPage } from './pages/LoginPage';
 import { PaymentReconciliationPage } from './pages/PaymentReconciliationPage';
 import { PickupImagesPage } from './pages/PickupImagesPage';
 import { PickupRunnerPortalPage } from './pages/PickupRunnerPortalPage';
+import { RunnerAccessPage } from './pages/RunnerAccessPage';
+import { RunnerAppInboxPage } from './pages/RunnerAppInboxPage';
 import { ServiceRequestDetailsPage } from './pages/ServiceRequestDetailsPage';
 import { ServiceRequestListPage } from './pages/ServiceRequestListPage';
 import { StatusTimelinePage } from './pages/StatusTimelinePage';
@@ -69,6 +72,8 @@ function RootApp() {
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/runner-app" element={<RunnerAppInboxPage />} />
+        <Route path="/runner-access/:token" element={<RunnerAccessPage />} />
         <Route path="/runner-portal/:token" element={<PickupRunnerPortalPage />} />
         <Route path="/*" element={<ProtectedApp />} />
       </Routes>
@@ -78,8 +83,10 @@ function RootApp() {
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <AuthProvider>
-      <RootApp />
-    </AuthProvider>
+    <ToastProvider>
+      <AuthProvider>
+        <RootApp />
+      </AuthProvider>
+    </ToastProvider>
   </React.StrictMode>,
 );

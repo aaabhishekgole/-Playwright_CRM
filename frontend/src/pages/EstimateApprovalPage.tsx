@@ -1,11 +1,14 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { StatusBadge } from '../components/StatusBadge';
+import { useToast } from '../hooks/useToast';
+import { getApiErrorMessage } from '../services/api';
 import { formatDeviceCategory } from '../utils/deviceCatalog';
 import { useRequests } from './useRequests';
 
 export function EstimateApprovalPage() {
   const { requests, approveEstimate, transitionStatus, loading, error } = useRequests();
+  const { showError, showSuccess } = useToast();
   const estimateQueue = requests.filter((request) => request.status === 'ESTIMATE_PREPARED');
   const [busyId, setBusyId] = useState<number | null>(null);
   const [messageById, setMessageById] = useState<Record<number, string>>({});
@@ -15,8 +18,11 @@ export function EstimateApprovalPage() {
       setBusyId(requestId);
       await approveEstimate(requestId, 'Estimate approved from approval desk');
       setMessageById((current) => ({ ...current, [requestId]: 'Estimate approved.' }));
+      showSuccess('Estimate approved and moved forward in the workflow.', 'Estimate approved');
     } catch (nextError) {
-      setMessageById((current) => ({ ...current, [requestId]: nextError instanceof Error ? nextError.message : 'Approval failed' }));
+      const nextMessage = getApiErrorMessage(nextError);
+      setMessageById((current) => ({ ...current, [requestId]: nextMessage }));
+      showError(nextMessage, 'Estimate approval failed');
     } finally {
       setBusyId(null);
     }
@@ -27,8 +33,11 @@ export function EstimateApprovalPage() {
       setBusyId(requestId);
       await transitionStatus(requestId, 'DIAGNOSIS_IN_PROGRESS', 'Estimate revision requested');
       setMessageById((current) => ({ ...current, [requestId]: 'Sent back for estimate revision.' }));
+      showSuccess('Estimate sent back for revision successfully.', 'Revision requested');
     } catch (nextError) {
-      setMessageById((current) => ({ ...current, [requestId]: nextError instanceof Error ? nextError.message : 'Revision request failed' }));
+      const nextMessage = getApiErrorMessage(nextError);
+      setMessageById((current) => ({ ...current, [requestId]: nextMessage }));
+      showError(nextMessage, 'Revision request failed');
     } finally {
       setBusyId(null);
     }

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useToast } from '../hooks/useToast';
 import type { AttachmentItem, UserRole } from '../types/models';
 
 type EvidenceSectionId = 'pickup' | 'cashless-device' | 'cashless-damage';
@@ -77,6 +78,23 @@ const evidenceSections: EvidenceSection[] = [
     slots: cashlessDamageSlots,
   },
 ];
+
+function getAttachmentDisplayLabel(attachmentType: string) {
+  const matchedSlot = evidenceSections
+    .flatMap((section) => section.slots)
+    .find((slot) => slot.type === attachmentType);
+
+  if (matchedSlot) {
+    return matchedSlot.label;
+  }
+
+  if (attachmentType.startsWith('PICKUP_EXTRA_IMAGE_')) {
+    const index = Number(attachmentType.replace('PICKUP_EXTRA_IMAGE_', ''));
+    return Number.isFinite(index) && index > 0 ? `Extra Photo ${index}` : 'Extra Photo';
+  }
+
+  return attachmentType.replaceAll('_', ' ');
+}
 
 function getPreferredSectionId(
   attachments: AttachmentItem[],
@@ -275,6 +293,7 @@ export function TypedEvidenceUploadPanel({
   role,
   allowedSectionIds,
 }: EvidenceUploadPanelProps) {
+  const { showError, showSuccess } = useToast();
   const [uploadingType, setUploadingType] = useState<string | null>(null);
   const [removingId, setRemovingId] = useState<number | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -321,24 +340,34 @@ export function TypedEvidenceUploadPanel({
   }
 
   async function handleUpload(attachmentType: string, file: File) {
+    const label = getAttachmentDisplayLabel(attachmentType);
     try {
       setUploadingType(attachmentType);
       await onUpload(attachmentType, file);
-      setTransientMessage(`${attachmentType} uploaded successfully.`);
+      const nextMessage = `${label} uploaded successfully.`;
+      setTransientMessage(nextMessage);
+      showSuccess(nextMessage, 'Evidence uploaded');
     } catch (error) {
-      setTransientMessage(error instanceof Error ? error.message : 'Upload failed');
+      const nextMessage = error instanceof Error ? error.message : 'Upload failed';
+      setTransientMessage(nextMessage);
+      showError(nextMessage, 'Evidence upload failed');
     } finally {
       setUploadingType(null);
     }
   }
 
   async function handleRemove(attachment: AttachmentItem) {
+    const label = getAttachmentDisplayLabel(attachment.attachmentType);
     try {
       setRemovingId(attachment.id);
       await onRemove(attachment.id);
-      setTransientMessage(`${attachment.attachmentType} removed successfully.`);
+      const nextMessage = `${label} removed successfully.`;
+      setTransientMessage(nextMessage);
+      showSuccess(nextMessage, 'Evidence removed');
     } catch (error) {
-      setTransientMessage(error instanceof Error ? error.message : 'Remove failed');
+      const nextMessage = error instanceof Error ? error.message : 'Remove failed';
+      setTransientMessage(nextMessage);
+      showError(nextMessage, 'Evidence remove failed');
     } finally {
       setRemovingId(null);
     }

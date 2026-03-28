@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { StatusBadge } from '../components/StatusBadge';
 import { TypedEvidenceUploadPanel } from '../components/TypedEvidenceUploadPanel';
+import { useToast } from '../hooks/useToast';
 import {
   acceptRunnerPickup,
   completeRunnerPickup,
@@ -20,6 +21,7 @@ function countByPrefix(types: string[], prefix: string) {
 
 export function PickupRunnerPortalPage() {
   const { token } = useParams();
+  const { showError, showSuccess } = useToast();
   const [request, setRequest] = useState<ServiceRequest | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -47,7 +49,9 @@ export function PickupRunnerPortalPage() {
         }
       } catch (nextError) {
         if (active) {
-          setError(getApiErrorMessage(nextError));
+          const nextMessage = getApiErrorMessage(nextError);
+          setError(nextMessage);
+          showError(nextMessage, 'Runner portal unavailable');
         }
       } finally {
         if (active) {
@@ -72,9 +76,13 @@ export function PickupRunnerPortalPage() {
       setBusyAction('accept');
       const updated = await acceptRunnerPickup(token);
       setRequest(updated);
-      setActionMessage('Pickup accepted successfully. Customer and admin notifications were queued.');
+      const nextMessage = 'Pickup accepted successfully. Customer and admin notifications were queued.';
+      setActionMessage(nextMessage);
+      showSuccess(nextMessage, 'Pickup accepted');
     } catch (nextError) {
-      setActionMessage(getApiErrorMessage(nextError));
+      const nextMessage = getApiErrorMessage(nextError);
+      setActionMessage(nextMessage);
+      showError(nextMessage, 'Pickup acceptance failed');
     } finally {
       setBusyAction(null);
     }
@@ -89,9 +97,13 @@ export function PickupRunnerPortalPage() {
       setBusyAction('complete');
       const updated = await completeRunnerPickup(token);
       setRequest(updated);
-      setActionMessage('Pickup marked complete. Customer and admin notifications were queued.');
+      const nextMessage = 'Pickup marked complete. Customer and admin notifications were queued.';
+      setActionMessage(nextMessage);
+      showSuccess(nextMessage, 'Pickup completed');
     } catch (nextError) {
-      setActionMessage(getApiErrorMessage(nextError));
+      const nextMessage = getApiErrorMessage(nextError);
+      setActionMessage(nextMessage);
+      showError(nextMessage, 'Pickup completion failed');
     } finally {
       setBusyAction(null);
     }
@@ -145,6 +157,7 @@ export function PickupRunnerPortalPage() {
           <div className="runner-portal-status">
             <StatusBadge status={request.status} />
             <span className="workspace-chip">{request.pickup?.runnerName ?? request.pickupAgent ?? 'Assigned runner'}</span>
+            <Link className="secondary-button" to={token ? `/runner-app?token=${token}` : '/runner-app'}>Open Runner Inbox</Link>
           </div>
         </div>
 

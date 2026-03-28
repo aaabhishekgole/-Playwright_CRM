@@ -1,11 +1,14 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useToast } from '../hooks/useToast';
+import { getApiErrorMessage } from '../services/api';
 import { formatDeviceCategory } from '../utils/deviceCatalog';
 import { formatCurrencyInr, formatDateTimeIn } from '../utils/formatters';
 import { useRequests } from './useRequests';
 
 export function PaymentReconciliationPage() {
   const { requests, reconcilePayment } = useRequests();
+  const { showError, showSuccess } = useToast();
   const [statusByPaymentId, setStatusByPaymentId] = useState<Record<number, string>>({});
   const [remarksByPaymentId, setRemarksByPaymentId] = useState<Record<number, string>>({});
   const [busyPaymentId, setBusyPaymentId] = useState<number | null>(null);
@@ -34,8 +37,11 @@ export function PaymentReconciliationPage() {
       setBusyPaymentId(row.payment.id);
       await reconcilePayment(row.requestId, row.payment.id, nextStatus, nextRemarks);
       setMessageByPaymentId((current) => ({ ...current, [row.payment.id]: 'Reconciliation updated.' }));
+      showSuccess('Payment reconciliation updated successfully.', 'Reconciliation saved');
     } catch (error) {
-      setMessageByPaymentId((current) => ({ ...current, [row.payment.id]: error instanceof Error ? error.message : 'Failed to update reconciliation' }));
+      const nextMessage = getApiErrorMessage(error);
+      setMessageByPaymentId((current) => ({ ...current, [row.payment.id]: nextMessage }));
+      showError(nextMessage, 'Reconciliation failed');
     } finally {
       setBusyPaymentId(null);
     }

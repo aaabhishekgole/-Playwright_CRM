@@ -233,6 +233,10 @@ export function PickupManagementDashboardPage() {
             <p>Jump into the exact pickup board needed for the next step.</p>
           </div>
           <div className="workspace-links compact-links">
+            <Link className="workspace-link" to="/workspace/pickup-management/runner-onboarding">
+              <strong>Runner Onboarding</strong>
+              <span>Create pickup runners before assignment and link delivery starts.</span>
+            </Link>
             <Link className="workspace-link" to="/workspace/pickup-management/assign-pickup">
               <strong>Assign Pickup</strong>
               <span>Work on `REQUEST_CREATED` claims.</span>

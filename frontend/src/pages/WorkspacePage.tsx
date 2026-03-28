@@ -7,6 +7,7 @@ import { findMenuContext, hasMenuAccess } from '../utils/menuHierarchy';
 import { isOperationalWorkspaceItem, OperationalWorkspacePage } from './OperationalWorkspacePage';
 import { PickupImagesPage } from './PickupImagesPage';
 import { PickupManagementDashboardPage } from './PickupManagementDashboardPage';
+import { PickupRunnerOnboardingPage } from './PickupRunnerOnboardingPage';
 
 function matchesSearch(query: string, values: string[]) {
   if (!query) {
@@ -109,6 +110,10 @@ export function WorkspacePage() {
 
   if (item.id === 'pickup-dashboard') {
     return <PickupManagementDashboardPage />;
+  }
+
+  if (item.id === 'runner-onboarding') {
+    return <PickupRunnerOnboardingPage />;
   }
 
   if (isOperationalWorkspaceItem(item.id)) {

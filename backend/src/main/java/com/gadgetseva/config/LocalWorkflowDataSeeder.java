@@ -33,6 +33,9 @@ import java.security.MessageDigest;
 import java.time.Instant;
 import java.util.HexFormat;
 import java.util.List;
+import java.util.Set;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
@@ -110,31 +113,31 @@ public class LocalWorkflowDataSeeder {
             }
 
             runAs(admin, () -> {
-                seedScenario("DEMO-WORKSPACE-ASSIGN-PICKUP", DeviceCategory.MOBILE, "Aarav Shah", "Mumbai", "Central", "Samsung", "Galaxy A54", "Display replacement required", request -> {
+                seedScenario("DEMO-WORKSPACE-ASSIGN-PICKUP", request -> request.getStatus() == RequestStatus.REQUEST_CREATED, DeviceCategory.MOBILE, "Aarav Shah", "Mumbai", "Central", "Samsung", "Galaxy A54", "Display replacement required", request -> {
                 });
 
-                seedScenario("DEMO-WORKSPACE-PENDING-PICKUP", DeviceCategory.TV, "Mira Patel", "Thane", "Harbour", "Sony", "Bravia X74K", "Power board diagnosis required", request -> {
+                seedScenario("DEMO-WORKSPACE-PENDING-PICKUP", request -> request.getStatus() == RequestStatus.PICKUP_ASSIGNED || request.getStatus() == RequestStatus.PICKUP_IN_PROGRESS, DeviceCategory.TV, "Mira Patel", "Thane", "Harbour", "Sony", "Bravia X74K", "Power board diagnosis required", request -> {
                     assignPickup(request.id(), pickupAgent.getId(), "Runner assigned for doorstep pickup.");
                     addRemark(request.id(), "Pickup failed once because the customer requested a reschedule window.", pickupAgent);
                 });
 
-                seedScenario("DEMO-WORKSPACE-PICKUP-COMPLETE", DeviceCategory.LAPTOP, "Ishaan Verma", "Pune", "Western", "HP", "Pavilion 14", "Keyboard and hinge inspection", request -> {
+                seedScenario("DEMO-WORKSPACE-PICKUP-COMPLETE", request -> request.getStatus() == RequestStatus.PICKUP_COMPLETED, DeviceCategory.LAPTOP, "Ishaan Verma", "Pune", "Western", "HP", "Pavilion 14", "Keyboard and hinge inspection", request -> {
                     advanceToPickupCompleted(request.id(), pickupAgent);
                 });
 
-                seedScenario("DEMO-WORKSPACE-HUB-RECEIVED", DeviceCategory.AC, "Diya Nair", "Navi Mumbai", "South Mumbai", "LG", "Dual Inverter AC", "Cooling issue and PCB check", request -> {
+                seedScenario("DEMO-WORKSPACE-HUB-RECEIVED", request -> request.getStatus() == RequestStatus.RECEIVED_AT_HUB, DeviceCategory.AC, "Diya Nair", "Navi Mumbai", "South Mumbai", "LG", "Dual Inverter AC", "Cooling issue and PCB check", request -> {
                     advanceToReceivedAtHub(request.id(), pickupAgent);
                 });
 
-                seedScenario("DEMO-WORKSPACE-DIAGNOSIS", DeviceCategory.CAMERA_DSLR, "Kabir Sinha", "Mumbai", "Central", "Canon", "EOS 1500D", "Shutter mechanism inspection", request -> {
+                seedScenario("DEMO-WORKSPACE-DIAGNOSIS", request -> request.getStatus() == RequestStatus.DIAGNOSIS_IN_PROGRESS, DeviceCategory.CAMERA_DSLR, "Kabir Sinha", "Mumbai", "Central", "Canon", "EOS 1500D", "Shutter mechanism inspection", request -> {
                     advanceToDiagnosis(request.id(), pickupAgent);
                 });
 
-                seedScenario("DEMO-WORKSPACE-ESTIMATE", DeviceCategory.MOBILE, "Anaya Gupta", "Mumbai", "Harbour", "OnePlus", "Nord CE", "Front glass and frame replacement", request -> {
+                seedScenario("DEMO-WORKSPACE-ESTIMATE", request -> request.getStatus() == RequestStatus.ESTIMATE_PREPARED, DeviceCategory.MOBILE, "Anaya Gupta", "Mumbai", "Harbour", "OnePlus", "Nord CE", "Front glass and frame replacement", request -> {
                     advanceToEstimatePrepared(request.id(), pickupAgent, "Estimate prepared for screen and chassis restoration");
                 });
 
-                seedScenario("DEMO-WORKSPACE-CASHLESS", DeviceCategory.LAPTOP, "Reyansh Kulkarni", "Pune", "Western", "Dell", "Inspiron 15", "Accidental damage claim", request -> {
+                seedScenario("DEMO-WORKSPACE-CASHLESS", request -> request.getStatus() == RequestStatus.CASHLESS_APPROVED, DeviceCategory.LAPTOP, "Reyansh Kulkarni", "Pune", "Western", "Dell", "Inspiron 15", "Accidental damage claim", request -> {
                     advanceToEstimatePrepared(request.id(), pickupAgent, "Cashless estimate prepared for accidental damage");
                     addEvidence(request.id(), CASHLESS_DEVICE_EVIDENCE_TYPES, admin, "cashless-device");
                     addEvidence(request.id(), CASHLESS_DAMAGE_EVIDENCE_TYPES, admin, "cashless-damage");
@@ -142,35 +145,35 @@ public class LocalWorkflowDataSeeder {
                     serviceRequestService.approveEstimate(request.id(), "Cashless approval granted by backend team");
                 });
 
-                seedScenario("DEMO-WORKSPACE-REWORK", DeviceCategory.TV, "Siya Joshi", "Mumbai", "South Mumbai", "Samsung", "Crystal UHD", "Panel flicker and board rework", request -> {
+                seedScenario("DEMO-WORKSPACE-REWORK", request -> request.getStatus() == RequestStatus.REPAIR_IN_PROGRESS, DeviceCategory.TV, "Siya Joshi", "Mumbai", "South Mumbai", "Samsung", "Crystal UHD", "Panel flicker and board rework", request -> {
                     advanceToRepairInProgress(request.id(), pickupAgent, "Repair estimate approved for panel rework");
                     addRemark(request.id(), "QC failed and device returned for rework after panel flicker reappeared.", admin);
                 });
 
-                seedScenario("DEMO-WORKSPACE-REPAIR-COMPLETE", DeviceCategory.AC, "Vivaan Rao", "Thane", "Central", "Daikin", "Split Inverter", "Compressor and gas refill estimate", request -> {
+                seedScenario("DEMO-WORKSPACE-REPAIR-COMPLETE", request -> request.getStatus() == RequestStatus.REPAIR_COMPLETED, DeviceCategory.AC, "Vivaan Rao", "Thane", "Central", "Daikin", "Split Inverter", "Compressor and gas refill estimate", request -> {
                     advanceToRepairCompleted(request.id(), pickupAgent, "Repair completed after compressor replacement");
                 });
 
-                seedScenario("DEMO-WORKSPACE-DELIVERY-FAILED", DeviceCategory.CAMERA_DSLR, "Sara Khan", "Mumbai", "Western", "Nikon", "D5600", "Lens mount repair", request -> {
+                seedScenario("DEMO-WORKSPACE-DELIVERY-FAILED", request -> request.getStatus() == RequestStatus.DELIVERY_ASSIGNED, DeviceCategory.CAMERA_DSLR, "Sara Khan", "Mumbai", "Western", "Nikon", "D5600", "Lens mount repair", request -> {
                     advanceToDeliveryAssigned(request.id(), pickupAgent, deliveryAgent, "Repair completed and handed to delivery runner");
                     addRemark(request.id(), "Delivery failed because the customer was unavailable at the delivery location.", deliveryAgent);
                 });
 
-                seedScenario("DEMO-WORKSPACE-DELIVERED", DeviceCategory.MOBILE, "Arjun Malhotra", "Mumbai", "Harbour", "Apple", "iPhone 13", "Battery and charging port replacement", request -> {
+                seedScenario("DEMO-WORKSPACE-DELIVERED", request -> request.getStatus() == RequestStatus.DELIVERED, DeviceCategory.MOBILE, "Arjun Malhotra", "Mumbai", "Harbour", "Apple", "iPhone 13", "Battery and charging port replacement", request -> {
                     advanceToDelivered(request.id(), pickupAgent, deliveryAgent, "Delivered after repair completion");
                 });
 
-                seedScenario("DEMO-WORKSPACE-TOTAL-LOSS", DeviceCategory.TV, "Priya Reddy", "Pune", "South Mumbai", "Xiaomi", "TV 5X", "Severe panel damage assessment", request -> {
+                seedScenario("DEMO-WORKSPACE-TOTAL-LOSS", request -> request.getStatus() == RequestStatus.TOTAL_LOSS, DeviceCategory.TV, "Priya Reddy", "Pune", "South Mumbai", "Xiaomi", "TV 5X", "Severe panel damage assessment", request -> {
                     advanceToEstimatePrepared(request.id(), pickupAgent, "Declared total loss after estimate review");
                     move(request.id(), RequestStatus.TOTAL_LOSS, "Declared total loss after estimate review");
                 });
 
-                seedScenario("DEMO-WORKSPACE-PENDING-INVOICE", DeviceCategory.LAPTOP, "Neel Kapoor", "Mumbai", "Central", "Lenovo", "ThinkPad E14", "Motherboard and SSD replacement", request -> {
+                seedScenario("DEMO-WORKSPACE-PENDING-INVOICE", request -> request.getStatus() == RequestStatus.INVOICED, DeviceCategory.LAPTOP, "Neel Kapoor", "Mumbai", "Central", "Lenovo", "ThinkPad E14", "Motherboard and SSD replacement", request -> {
                     advanceToDelivered(request.id(), pickupAgent, deliveryAgent, "Delivered and ready for billing");
                     serviceRequestService.createInvoice(request.id(), new CreateInvoiceRequest(null, "MH", "MH", new BigDecimal("18"), "Repair labour and diagnostics", "Spare parts and consumables"));
                 });
 
-                seedScenario("DEMO-WORKSPACE-PAID-INVOICE", DeviceCategory.AC, "Tara Bhat", "Navi Mumbai", "Western", "Voltas", "Inverter AC", "Indoor unit board and motor repair", request -> {
+                seedScenario("DEMO-WORKSPACE-PAID-INVOICE", request -> request.getStatus() == RequestStatus.CLOSED, DeviceCategory.AC, "Tara Bhat", "Navi Mumbai", "Western", "Voltas", "Inverter AC", "Indoor unit board and motor repair", request -> {
                     advanceToDelivered(request.id(), pickupAgent, deliveryAgent, "Delivered and closed for collections");
                     ServiceRequestResponse invoiced = serviceRequestService.createInvoice(request.id(), new CreateInvoiceRequest(null, "MH", "MH", new BigDecimal("18"), "Repair labour and diagnostics", "Spare parts and consumables"));
                     BigDecimal total = invoiced.invoice() != null ? invoiced.invoice().totalAmount() : BigDecimal.ZERO;
@@ -187,6 +190,7 @@ public class LocalWorkflowDataSeeder {
     }
 
     private void seedScenario(String partnerReference,
+                              Predicate<ServiceRequest> visibilityRule,
                               DeviceCategory category,
                               String customerName,
                               String city,
@@ -195,21 +199,19 @@ public class LocalWorkflowDataSeeder {
                               String model,
                               String issueSummary,
                               ScenarioSeeder scenarioSeeder) {
-        if (serviceRequestRepository.findByPartnerReference(partnerReference).isPresent()) {
+        List<ServiceRequest> matchingRequests = serviceRequestRepository.findAllByPartnerReferenceStartingWithOrderByCreatedAtDesc(partnerReference);
+        if (matchingRequests.stream().anyMatch(visibilityRule)) {
             return;
         }
 
-        String token = partnerReference.substring(Math.max(0, partnerReference.length() - 4));
-        String phoneSuffix = token.replaceAll("[^0-9]", "");
-        if (phoneSuffix.isBlank()) {
-            phoneSuffix = String.valueOf(Math.abs(partnerReference.hashCode())).substring(0, 4);
-        }
+        String effectivePartnerReference = nextPartnerReference(partnerReference, matchingRequests);
+        String phoneSuffix = derivePhoneSuffix(effectivePartnerReference);
 
         ServiceRequestResponse created = serviceRequestService.create(new CreateServiceRequestRequest(
                 new CustomerPayload(
                         customerName,
                         customerName,
-                        partnerReference.toLowerCase() + "@gadgetseva.local",
+                        effectivePartnerReference.toLowerCase() + "@gadgetseva.local",
                         null,
                         "9000" + phoneSuffix + "10",
                         "9000" + phoneSuffix + "20",
@@ -226,7 +228,7 @@ public class LocalWorkflowDataSeeder {
                         brand,
                         model,
                         category,
-                        "SER-" + partnerReference,
+                        "SER-" + effectivePartnerReference,
                         category == DeviceCategory.MOBILE ? "490154203237518" : null,
                         "IN_WARRANTY",
                         "Operational with reported fault",
@@ -237,18 +239,44 @@ public class LocalWorkflowDataSeeder {
                 RequestPriority.HIGH,
                 "WEB_PORTAL",
                 "GSH-CORE",
-                "LN-" + token,
-                "COI-" + token,
+                "LN-" + phoneSuffix,
+                "COI-" + phoneSuffix,
                 null,
-                partnerReference,
+                effectivePartnerReference,
                 "Demo Workflow",
                 branchName,
-                "EMP-" + token,
+                "EMP-" + phoneSuffix,
                 customerName,
                 48
         ));
 
         scenarioSeeder.accept(created);
+    }
+
+    private String nextPartnerReference(String basePartnerReference, List<ServiceRequest> matchingRequests) {
+        Set<String> existingReferences = matchingRequests.stream()
+                .map(ServiceRequest::getPartnerReference)
+                .collect(Collectors.toSet());
+
+        if (!existingReferences.contains(basePartnerReference)) {
+            return basePartnerReference;
+        }
+
+        int suffix = 2;
+        String candidate = basePartnerReference + "-R" + suffix;
+        while (existingReferences.contains(candidate)) {
+            suffix++;
+            candidate = basePartnerReference + "-R" + suffix;
+        }
+        return candidate;
+    }
+
+    private String derivePhoneSuffix(String partnerReference) {
+        String digits = partnerReference.replaceAll("[^0-9]", "");
+        if (digits.length() >= 4) {
+            return digits.substring(digits.length() - 4);
+        }
+        return String.format("%04d", Math.abs(partnerReference.hashCode()) % 10000);
     }
 
     private void advanceToPickupCompleted(Long requestId, User pickupAgent) {

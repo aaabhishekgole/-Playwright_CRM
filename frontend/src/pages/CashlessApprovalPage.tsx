@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { StatusBadge } from '../components/StatusBadge';
+import { useToast } from '../hooks/useToast';
+import { getApiErrorMessage } from '../services/api';
 import { formatDeviceCategory } from '../utils/deviceCatalog';
 import { useRequests } from './useRequests';
 
@@ -10,6 +12,7 @@ function countAttachments(attachmentTypes: string[], prefix: string) {
 
 export function CashlessApprovalPage() {
   const { requests, approveEstimate, transitionStatus } = useRequests();
+  const { showError, showSuccess } = useToast();
   const [remarksById, setRemarksById] = useState<Record<number, string>>({});
   const [busyId, setBusyId] = useState<number | null>(null);
   const [messageById, setMessageById] = useState<Record<number, string>>({});
@@ -24,8 +27,11 @@ export function CashlessApprovalPage() {
       setBusyId(requestId);
       await transitionStatus(requestId, 'CASHLESS_PENDING_APPROVAL', remarksById[requestId] ?? 'Cashless evidence reviewed');
       setMessageById((current) => ({ ...current, [requestId]: 'Case moved to cashless review.' }));
+      showSuccess('Case moved into cashless review successfully.', 'Cashless review updated');
     } catch (error) {
-      setMessageById((current) => ({ ...current, [requestId]: error instanceof Error ? error.message : 'Failed to move case' }));
+      const nextMessage = getApiErrorMessage(error);
+      setMessageById((current) => ({ ...current, [requestId]: nextMessage }));
+      showError(nextMessage, 'Cashless review update failed');
     } finally {
       setBusyId(null);
     }
@@ -36,8 +42,11 @@ export function CashlessApprovalPage() {
       setBusyId(requestId);
       await approveEstimate(requestId, remarksById[requestId] ?? 'Cashless approval completed');
       setMessageById((current) => ({ ...current, [requestId]: 'Cashless approval saved.' }));
+      showSuccess('Cashless approval saved successfully.', 'Cashless approved');
     } catch (error) {
-      setMessageById((current) => ({ ...current, [requestId]: error instanceof Error ? error.message : 'Approval failed' }));
+      const nextMessage = getApiErrorMessage(error);
+      setMessageById((current) => ({ ...current, [requestId]: nextMessage }));
+      showError(nextMessage, 'Cashless approval failed');
     } finally {
       setBusyId(null);
     }
@@ -48,8 +57,11 @@ export function CashlessApprovalPage() {
       setBusyId(requestId);
       await transitionStatus(requestId, 'CASHLESS_REVISION_REQUIRED', remarksById[requestId] ?? 'Additional evidence is required');
       setMessageById((current) => ({ ...current, [requestId]: 'Revision request sent for additional evidence.' }));
+      showSuccess('Revision request sent successfully.', 'Cashless revision requested');
     } catch (error) {
-      setMessageById((current) => ({ ...current, [requestId]: error instanceof Error ? error.message : 'Revision update failed' }));
+      const nextMessage = getApiErrorMessage(error);
+      setMessageById((current) => ({ ...current, [requestId]: nextMessage }));
+      showError(nextMessage, 'Cashless revision failed');
     } finally {
       setBusyId(null);
     }
@@ -60,8 +72,11 @@ export function CashlessApprovalPage() {
       setBusyId(requestId);
       await transitionStatus(requestId, 'CASHLESS_REJECTED', remarksById[requestId] ?? 'Cashless request rejected');
       setMessageById((current) => ({ ...current, [requestId]: 'Cashless request rejected.' }));
+      showSuccess('Cashless request rejected successfully.', 'Cashless rejected');
     } catch (error) {
-      setMessageById((current) => ({ ...current, [requestId]: error instanceof Error ? error.message : 'Reject action failed' }));
+      const nextMessage = getApiErrorMessage(error);
+      setMessageById((current) => ({ ...current, [requestId]: nextMessage }));
+      showError(nextMessage, 'Cashless reject failed');
     } finally {
       setBusyId(null);
     }

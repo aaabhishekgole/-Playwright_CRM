@@ -1,0 +1,16 @@
+version: '3.9'
+
+services:
+  smoke:
+    build: .
+    command: npx playwright test --grep @Smoke --project=chromium
+    environment:
+      BASE_URL: ${BASE_URL:-http://host.docker.internal:5173}
+      API_BASE_URL: ${API_BASE_URL:-http://host.docker.internal:8081/api}
+
+  regression:
+    build: .
+    command: npx playwright test --grep @Regression --project=chromium
+    environment:
+      BASE_URL: ${BASE_URL:-http://host.docker.internal:5173}
+      API_BASE_URL: ${API_BASE_URL:-http://host.docker.internal:8081/api}

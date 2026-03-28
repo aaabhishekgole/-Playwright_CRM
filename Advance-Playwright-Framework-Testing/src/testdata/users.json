@@ -1,0 +1,15 @@
+{
+  "admin": {
+    "username": "admin",
+    "password": "Admin@123",
+    "fullName": "System Administrator",
+    "role": "ADMIN"
+  },
+  "pickupRunner": {
+    "username": "pickup",
+    "password": "Admin@123",
+    "phone": "9999999994",
+    "fullName": "Vishal Babar",
+    "role": "PICKUP_AGENT"
+  }
+}

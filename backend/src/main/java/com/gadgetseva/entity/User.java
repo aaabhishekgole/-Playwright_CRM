@@ -37,6 +37,9 @@ public class User extends BaseAuditableEntity {
     @Column(length = 20)
     private String phone;
 
+    @Column(length = 20)
+    private String whatsappNumber;
+
     @Column(nullable = false)
     private boolean active = true;
 

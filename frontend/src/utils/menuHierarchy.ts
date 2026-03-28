@@ -24,6 +24,7 @@ const financeRoles: UserRole[] = ['ADMIN', 'FINANCE', 'MSE_TEAM'];
 const cashlessRoles: UserRole[] = ['ADMIN', 'BACKEND_TEAM', 'FINANCE', 'MSE_TEAM'];
 const deliveryRoles: UserRole[] = ['ADMIN', 'DELIVERY_AGENT', 'CUSTOMER_SUPPORT', 'BACKEND_TEAM'];
 const pickupRoles: UserRole[] = ['ADMIN', 'PICKUP_AGENT', 'CUSTOMER_SUPPORT', 'BACKEND_TEAM'];
+const runnerAdminRoles: UserRole[] = ['ADMIN', 'BACKEND_TEAM'];
 const broadRoles: UserRole[] = ['ADMIN', 'CUSTOMER_SUPPORT', 'BACKEND_TEAM', 'TECHNICIAN', 'PICKUP_AGENT', 'DELIVERY_AGENT', 'FINANCE', 'MSE_TEAM'];
 
 export const menuHierarchy: MenuSection[] = [
@@ -64,6 +65,7 @@ export const menuHierarchy: MenuSection[] = [
     roles: pickupRoles,
     items: [
       { id: 'pickup-dashboard', label: 'Pickup Dashboard', description: 'Stage-wise pickup overview and runner readiness.', path: workspace('pickup-management', 'pickup-dashboard'), roles: pickupRoles },
+      { id: 'runner-onboarding', label: 'Runner Onboarding', description: 'Onboard pickup runners and link them to assignment flow.', path: workspace('pickup-management', 'runner-onboarding'), roles: runnerAdminRoles },
       { id: 'assign-pickup', label: 'Assign Pickup', description: 'Allocate pickup executives.', path: workspace('pickup-management', 'assign-pickup'), roles: opsRoles },
       { id: 'pending-pickup', label: 'Pending Pickup', description: 'Awaiting doorstep collection.', path: workspace('pickup-management', 'pending-pickup'), roles: pickupRoles },
       { id: 'picked-up-devices', label: 'Picked Up Devices', description: 'Collected devices and image sets.', path: workspace('pickup-management', 'picked-up-devices'), roles: pickupRoles },

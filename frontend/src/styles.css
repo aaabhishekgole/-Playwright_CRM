@@ -1497,6 +1497,33 @@ body {
   color: var(--navy-deep);
 }
 
+.workspace-success {
+  border-color: rgba(31, 184, 108, 0.24);
+  background: linear-gradient(180deg, rgba(241, 253, 246, 0.98), rgba(234, 250, 240, 0.98));
+}
+
+.runner-onboarding-form {
+  display: grid;
+  gap: 1rem;
+}
+
+.runner-onboarding-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.95rem 1rem;
+  border-radius: 1rem;
+  border: 1px solid var(--border);
+  background: #f8fafc;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.runner-onboarding-toggle input {
+  width: 1rem;
+  height: 1rem;
+}
+
 .pickup-stage-card p {
   margin: 0;
   color: var(--muted);
@@ -2270,6 +2297,74 @@ body {
   align-items: flex-start;
 }
 
+.toast-viewport {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 1200;
+  display: grid;
+  gap: 0.8rem;
+  width: min(380px, calc(100vw - 2rem));
+  pointer-events: none;
+}
+
+.toast-card {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.85rem;
+  align-items: start;
+  padding: 1rem 1rem 0.95rem;
+  border-radius: 18px;
+  border: 1px solid rgba(148, 163, 184, 0.26);
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 18px 36px rgba(15, 23, 42, 0.14);
+  backdrop-filter: blur(14px);
+  pointer-events: auto;
+}
+
+.toast-card strong {
+  display: block;
+  margin-bottom: 0.2rem;
+  color: var(--navy-deep);
+}
+
+.toast-card p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.toast-copy {
+  min-width: 0;
+}
+
+.toast-dismiss {
+  width: 2rem;
+  height: 2rem;
+  border: none;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.06);
+  color: var(--navy-deep);
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.toast-success {
+  border-color: rgba(34, 197, 94, 0.22);
+  background: linear-gradient(180deg, rgba(240, 253, 244, 0.98), rgba(220, 252, 231, 0.98));
+}
+
+.toast-error {
+  border-color: rgba(244, 63, 94, 0.22);
+  background: linear-gradient(180deg, rgba(255, 241, 242, 0.98), rgba(254, 226, 226, 0.98));
+}
+
+.toast-info {
+  border-color: rgba(37, 99, 235, 0.18);
+  background: linear-gradient(180deg, rgba(239, 246, 255, 0.98), rgba(219, 234, 254, 0.98));
+}
+
 .portal-muted {
   color: var(--muted);
 }
@@ -2552,6 +2647,14 @@ body {
 }
 
 @media (max-width: 768px) {
+  .toast-viewport {
+    top: auto;
+    right: 1rem;
+    bottom: 1rem;
+    left: 1rem;
+    width: auto;
+  }
+
   .app-topbar,
   .page-summary-bar,
   .merchant-main {
@@ -2895,6 +2998,161 @@ body {
   color: var(--muted);
 }
 
+.runner-app-shell {
+  background:
+    radial-gradient(circle at top left, rgba(14, 165, 233, 0.16), transparent 24%),
+    radial-gradient(circle at top right, rgba(37, 99, 235, 0.1), transparent 22%),
+    linear-gradient(180deg, #e8f1ff 0%, #f8fbff 38%, #eef5ff 100%);
+}
+
+.runner-app-frame {
+  width: min(1180px, 100%);
+}
+
+.runner-app-hero {
+  display: grid;
+  gap: 1.25rem;
+  border-color: rgba(37, 99, 235, 0.16);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.99), rgba(239, 246, 255, 0.98));
+}
+
+.runner-app-hero h1,
+.runner-app-form h2,
+.runner-app-highlight h2,
+.runner-app-notification h2 {
+  margin: 0.2rem 0 0;
+  color: var(--navy-deep);
+}
+
+.runner-app-hero p,
+.runner-app-form p,
+.runner-app-highlight p,
+.runner-app-notification p,
+.runner-app-feedback p {
+  margin: 0.35rem 0 0;
+  color: var(--muted);
+}
+
+.runner-app-chip-stack {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.55rem;
+}
+
+.runner-app-meta-grid,
+.runner-app-grid,
+.runner-app-detail-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.runner-app-meta-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.runner-app-meta-card,
+.runner-app-detail-grid div {
+  display: grid;
+  gap: 0.25rem;
+  padding: 1rem;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(37, 99, 235, 0.1);
+}
+
+.runner-app-meta-card strong,
+.runner-app-detail-grid strong {
+  color: var(--navy-deep);
+}
+
+.runner-app-meta-card small,
+.runner-app-detail-grid span,
+.runner-app-footnote {
+  color: var(--muted);
+}
+
+.runner-app-footnote {
+  margin: 0;
+}
+
+.runner-app-grid {
+  grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
+}
+
+.runner-app-form,
+.runner-app-highlight,
+.runner-app-feedback,
+.runner-app-notification {
+  display: grid;
+  gap: 1rem;
+}
+
+.runner-app-form .form-field span {
+  color: var(--navy-deep);
+}
+
+.runner-app-form input {
+  padding: 0.95rem 1rem;
+  border-radius: 16px;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  background: #fff;
+  color: var(--text);
+}
+
+.runner-app-form input:focus {
+  outline: 2px solid rgba(37, 99, 235, 0.14);
+  border-color: rgba(37, 99, 235, 0.48);
+}
+
+.runner-app-form input::placeholder {
+  color: #94a3b8;
+}
+
+.runner-app-sidecard {
+  align-content: start;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.98));
+}
+
+.runner-app-highlight {
+  border-color: rgba(37, 99, 235, 0.2);
+  background: linear-gradient(180deg, rgba(239, 246, 255, 0.98), rgba(219, 234, 254, 0.98));
+}
+
+.runner-app-feedback {
+  border-style: dashed;
+}
+
+.runner-app-feedback-error {
+  border-color: rgba(244, 63, 94, 0.22);
+  background: linear-gradient(180deg, rgba(255, 241, 242, 0.98), rgba(254, 226, 226, 0.98));
+}
+
+.runner-app-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.runner-app-notification {
+  border-color: rgba(37, 99, 235, 0.12);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.99), rgba(248, 250, 252, 0.98));
+}
+
+.runner-app-notification-highlighted {
+  border-color: rgba(37, 99, 235, 0.24);
+  box-shadow: 0 18px 36px rgba(37, 99, 235, 0.12);
+}
+
+.runner-app-message {
+  font-size: 0.98rem;
+  line-height: 1.65;
+  color: var(--text);
+}
+
+.runner-app-detail-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 @media (max-width: 768px) {
   .evidence-progress-strip,
   .evidence-slot-grid {
@@ -2920,5 +3178,15 @@ body {
 
   .evidence-action {
     width: 100%;
+  }
+
+  .runner-app-chip-stack {
+    justify-content: flex-start;
+  }
+
+  .runner-app-meta-grid,
+  .runner-app-grid,
+  .runner-app-detail-grid {
+    grid-template-columns: 1fr;
   }
 }

@@ -1,0 +1,16 @@
+{
+  "expo": {
+    "name": "Gadget Seva Runner",
+    "slug": "gadget-seva-runner",
+    "version": "0.0.1",
+    "scheme": "gshrunner",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "android": {
+      "package": "com.gadgetseva.runner"
+    },
+    "ios": {
+      "bundleIdentifier": "com.gadgetseva.runner"
+    }
+  }
+}

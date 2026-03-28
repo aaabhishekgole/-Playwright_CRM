@@ -1,15 +1,31 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { StatusBadge } from '../components/StatusBadge';
+import { useToast } from '../hooks/useToast';
+import { getApiErrorMessage } from '../services/api';
 import { formatDeviceCategory } from '../utils/deviceCatalog';
 import { formatDateTimeIn } from '../utils/formatters';
 import { useRequests } from './useRequests';
 
 export function DeliveryTrackingPage() {
   const { requests, transitionStatus, loading, error } = useRequests();
+  const { showError, showSuccess } = useToast();
+  const [busyId, setBusyId] = useState<number | null>(null);
   const deliveryRequests = requests.filter((request) => request.status.includes('DELIVERY') || request.status === 'OUT_FOR_DELIVERY' || request.status === 'READY_FOR_DISPATCH');
 
   async function handleAction(requestId: number, targetStatus: string) {
-    await transitionStatus(requestId, targetStatus, targetStatus === 'OUT_FOR_DELIVERY' ? 'Delivery started' : 'Delivery completed');
+    try {
+      setBusyId(requestId);
+      await transitionStatus(requestId, targetStatus, targetStatus === 'OUT_FOR_DELIVERY' ? 'Delivery started' : 'Delivery completed');
+      showSuccess(
+        targetStatus === 'OUT_FOR_DELIVERY' ? 'Delivery marked out for delivery successfully.' : 'Delivery marked completed successfully.',
+        targetStatus === 'OUT_FOR_DELIVERY' ? 'Delivery started' : 'Delivery completed',
+      );
+    } catch (nextError) {
+      showError(getApiErrorMessage(nextError), 'Delivery update failed');
+    } finally {
+      setBusyId(null);
+    }
   }
 
   return (
@@ -39,8 +55,8 @@ export function DeliveryTrackingPage() {
             <p>Last update: {formatDateTimeIn(request.updatedAt)}</p>
             <div className="action-row action-row-wrap">
               <Link className="secondary-button" to={`/requests/${request.id}`}>Open request</Link>
-              {request.status === 'DELIVERY_ASSIGNED' ? <button className="primary-button" onClick={() => handleAction(request.id, 'OUT_FOR_DELIVERY')}>Mark Out For Delivery</button> : null}
-              {request.status === 'OUT_FOR_DELIVERY' ? <button className="primary-button" onClick={() => handleAction(request.id, 'DELIVERED')}>Mark Delivered</button> : null}
+              {request.status === 'DELIVERY_ASSIGNED' ? <button className="primary-button" disabled={busyId === request.id} onClick={() => handleAction(request.id, 'OUT_FOR_DELIVERY')}>{busyId === request.id ? 'Saving...' : 'Mark Out For Delivery'}</button> : null}
+              {request.status === 'OUT_FOR_DELIVERY' ? <button className="primary-button" disabled={busyId === request.id} onClick={() => handleAction(request.id, 'DELIVERED')}>{busyId === request.id ? 'Saving...' : 'Mark Delivered'}</button> : null}
             </div>
           </article>
         )) : (!loading && !error ? <div className="workspace-empty"><strong>No delivery records available</strong><p>Requests in dispatch or delivery stages will appear here.</p></div> : null)}
