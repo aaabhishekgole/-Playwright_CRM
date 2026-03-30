@@ -86,3 +86,12 @@ npx expo start
 - `finance`
 
 Password for all demo users: `Admin@123`
+
+## Codex / AI Context
+
+To make project context travel with every fresh `git clone`, this repository now includes:
+
+- `AGENTS.md`
+- `Docs/CODEX-HANDOFF.md`
+
+For any new Codex session on this repo, read those files first.
