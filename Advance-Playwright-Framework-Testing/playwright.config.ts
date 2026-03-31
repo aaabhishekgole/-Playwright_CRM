@@ -15,7 +15,10 @@ export default defineConfig({
     baseURL: config.baseUrl,
     headless: config.headless,
     screenshot: 'only-on-failure',
-    video: 'retain-on-failure',
+    video: {
+      mode: 'retain-on-failure',
+      size: { width: 640, height: 360 },
+    },
     trace: 'retain-on-failure',
     actionTimeout: config.defaultTimeoutMs,
     navigationTimeout: config.defaultTimeoutMs,

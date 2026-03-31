@@ -1,4 +1,13 @@
-import { test as base, expect, type APIRequestContext, type Browser, type BrowserContext, type Page } from '@playwright/test';
+import {
+  test as base,
+  expect,
+  type APIRequestContext,
+  type Browser,
+  type BrowserContext,
+  type BrowserContextOptions,
+  type Page,
+  type TestInfo,
+} from '@playwright/test';
 import { AuthApi } from '@api/AuthApi';
 import { DashboardPage, LoginPage, RunnerInboxPage, ServiceRequestListPage } from '@pages/index';
 import { LoginModule, RunnerInboxModule, ServiceRequestModule } from '@modules/index';
@@ -17,6 +26,17 @@ type FrameworkFixtures = {
   authenticatedContext: BrowserContext;
 };
 
+type VideoMode = 'off' | 'on' | 'retain-on-failure' | 'on-first-retry' | 'retry-with-video';
+type VideoOption =
+  | VideoMode
+  | {
+      mode: VideoMode;
+      size?: {
+        width: number;
+        height: number;
+      };
+    };
+
 function toStoredUser(session: LoginResponse) {
   return JSON.stringify({
     accessToken: session.accessToken,
@@ -28,11 +48,16 @@ function toStoredUser(session: LoginResponse) {
   });
 }
 
-async function createAuthenticatedContext(browser: Browser, request: APIRequestContext, userKey: FrameworkUserKey) {
+async function createAuthenticatedContext(
+  browser: Browser,
+  request: APIRequestContext,
+  userKey: FrameworkUserKey,
+  contextOptions: BrowserContextOptions,
+) {
   const authApi = new AuthApi(request);
   const credentials = config.users[userKey];
   const session = await authApi.login(credentials.username, credentials.password);
-  const context = await browser.newContext({ baseURL: config.baseUrl });
+  const context = await browser.newContext(contextOptions);
 
   await context.addInitScript(
     ({ accessToken, storedUser }) => {
@@ -46,6 +71,41 @@ async function createAuthenticatedContext(browser: Browser, request: APIRequestC
   );
 
   return context;
+}
+
+function normalizeVideoMode(video: VideoOption) {
+  const mode = typeof video === 'string' ? video : video.mode;
+  return mode === 'retry-with-video' ? 'on-first-retry' : mode;
+}
+
+function shouldCaptureVideo(videoMode: ReturnType<typeof normalizeVideoMode>, testInfo: TestInfo) {
+  return videoMode === 'on' || videoMode === 'retain-on-failure' || (videoMode === 'on-first-retry' && testInfo.retry === 1);
+}
+
+function shouldPreserveVideo(videoMode: ReturnType<typeof normalizeVideoMode>, testInfo: TestInfo) {
+  const testFailed = testInfo.status !== testInfo.expectedStatus;
+  return videoMode === 'on' || (videoMode === 'retain-on-failure' && testFailed) || (videoMode === 'on-first-retry' && testInfo.retry === 1);
+}
+
+function buildAuthenticatedContextOptions(
+  contextOptions: BrowserContextOptions,
+  video: VideoOption,
+  testInfo: TestInfo,
+): BrowserContextOptions {
+  const videoMode = normalizeVideoMode(video);
+
+  return {
+    ...contextOptions,
+    baseURL: config.baseUrl,
+    ...(shouldCaptureVideo(videoMode, testInfo)
+      ? {
+          recordVideo: {
+            dir: testInfo.outputDir,
+            size: typeof video === 'string' ? undefined : video.size,
+          },
+        }
+      : {}),
+  };
 }
 
 export const test = base.extend<FrameworkFixtures>({
@@ -77,17 +137,42 @@ export const test = base.extend<FrameworkFixtures>({
     await use(new RunnerInboxModule(page));
   },
 
-  authenticatedContext: async ({ browser, request }, use) => {
-    const context = await createAuthenticatedContext(browser, request, 'admin');
+  authenticatedContext: async ({ browser, request, contextOptions, video }, use, testInfo) => {
+    const context = await createAuthenticatedContext(
+      browser,
+      request,
+      'admin',
+      buildAuthenticatedContextOptions(contextOptions, video as VideoOption, testInfo),
+    );
     await use(context);
     await context.close();
   },
 
-  authenticatedPage: async ({ authenticatedContext }, use) => {
+  authenticatedPage: async ({ authenticatedContext, video }, use, testInfo) => {
     const page = await authenticatedContext.newPage();
     await page.goto(config.routes.dashboard);
+    const recordedVideo = page.video();
     await use(page);
     await page.close();
+
+    if (!recordedVideo) {
+      return;
+    }
+
+    const videoMode = normalizeVideoMode(video as VideoOption);
+    if (!shouldPreserveVideo(videoMode, testInfo)) {
+      await recordedVideo.delete();
+      return;
+    }
+
+    const savedVideoPath = testInfo.outputPath('video.webm');
+    await recordedVideo.saveAs(savedVideoPath);
+    testInfo.attachments.push({
+      name: 'video',
+      path: savedVideoPath,
+      contentType: 'video/webm',
+    });
+    await recordedVideo.delete();
   },
 });
 
