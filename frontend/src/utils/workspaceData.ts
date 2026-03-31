@@ -2,6 +2,7 @@
 import type { ServiceRequest } from '../types/models';
 import { formatDeviceCategory, supportedRepairCategories, usesImei } from './deviceCatalog';
 import type { MenuLeaf, MenuSection } from './menuHierarchy';
+import { isPickupCustomerUpdateStatus } from './pickupStatuses';
 
 type WorkspaceTone = 'default' | 'ok' | 'alert';
 
@@ -100,7 +101,7 @@ const dateTimeFormat = new Intl.DateTimeFormat('en-IN', {
   minute: '2-digit',
 });
 
-const activeStatuses = ['REQUEST', 'PICKUP', 'HUB', 'VERIFY', 'SERVICE_CENTER', 'ESTIMATE', 'QC', 'DELIVERY', 'REPAIR', 'INVOICED'];
+const activeStatuses = ['REQUEST', 'PICKUP', 'CUSTOMER_NOT_AVAILABLE', 'CUSTOMER_RESCHEDULED', 'CUSTOMER_NOT_CONTACTABLE', 'HUB', 'VERIFY', 'SERVICE_CENTER', 'ESTIMATE', 'QC', 'DELIVERY', 'REPAIR', 'INVOICED'];
 
 function text(value?: string | null) {
   return value?.trim() || 'Not assigned';
@@ -202,13 +203,13 @@ function getRequestScope(itemId: string, requests: ServiceRequest[]) {
     case 'cancelled-requests':
       return requests.filter(isCancelled);
     case 'assign-pickup':
-      return requests.filter((request) => !request.pickupAgent || statusMatches(request, ['REQUEST_CREATED', 'PICKUP_ASSIGNED']));
+      return requests.filter((request) => !request.pickupAgent || statusMatches(request, ['REQUEST_CREATED', 'PICKUP_ASSIGNED']) || isPickupCustomerUpdateStatus(request.status));
     case 'pending-pickup':
       return requests.filter((request) => statusMatches(request, ['PICKUP']) && !statusMatches(request, ['PICKED_UP']));
     case 'picked-up-devices':
       return requests.filter((request) => statusMatches(request, ['PICKED_UP', 'HUB', 'INWARD']));
     case 'pickup-failed-cases':
-      return requests.filter((request) => statusMatches(request, ['PICKUP_FAILED']));
+      return requests.filter((request) => isPickupCustomerUpdateStatus(request.status));
     case 'device-received-at-hub':
       return requests.filter((request) => statusMatches(request, ['HUB', 'INWARD']));
     case 'pending-verification':
@@ -664,8 +665,8 @@ function buildReportWorkspace(item: MenuLeaf, requests: ServiceRequest[]): Works
       id: 'pickup-report',
       title: 'Pickup Productivity',
       subtitle: `${requests.filter((request) => !!request.pickupAgent).length} requests already assigned.`,
-      category: `${requests.filter((request) => statusMatches(request, ['PICKUP'])).length} pickup-stage`,
-      owner: `${requests.filter((request) => statusMatches(request, ['PICKUP_FAILED'])).length} failed`,
+      category: `${requests.filter((request) => statusMatches(request, ['PICKUP']) || isPickupCustomerUpdateStatus(request.status)).length} pickup-stage`,
+      owner: `${requests.filter((request) => isPickupCustomerUpdateStatus(request.status)).length} failed`,
       due: `${requests.filter((request) => request.attachments.length > 0).length} with images`,
       amount: 'Operational report',
       status: 'REPORT',

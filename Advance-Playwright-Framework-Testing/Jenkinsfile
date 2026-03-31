@@ -29,7 +29,7 @@ pipeline {
 
   post {
     always {
-      archiveArtifacts artifacts: 'playwright-report/**, test-results/**, tta-report/**', allowEmptyArchive: true
+      archiveArtifacts artifacts: 'Report/**', allowEmptyArchive: true
     }
   }
 }

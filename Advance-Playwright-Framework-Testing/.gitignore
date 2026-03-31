@@ -1,6 +1,10 @@
 node_modules/
+Report/
 playwright-report/
 test-results/
+dashboard-report/
+allure-results/
+allure-report/
 tta-report/
 dist/
 .auth/

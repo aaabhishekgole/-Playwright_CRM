@@ -89,6 +89,15 @@ public class ServiceRequestService {
             "PICKUP_IMAGE_DAMAGE_CLOSEUP",
             "PICKUP_IMAGE_ACCESSORIES"
     );
+    private static final Set<RequestStatus> RUNNER_PICKUP_ACTIVE_STATUSES = Set.of(
+            RequestStatus.PICKUP_ASSIGNED,
+            RequestStatus.PICKUP_IN_PROGRESS
+    );
+    private static final Set<RequestStatus> RUNNER_PICKUP_CUSTOMER_UPDATE_STATUSES = Set.of(
+            RequestStatus.CUSTOMER_NOT_AVAILABLE,
+            RequestStatus.CUSTOMER_RESCHEDULED,
+            RequestStatus.CUSTOMER_NOT_CONTACTABLE
+    );
 
     private final ServiceRequestRepository serviceRequestRepository;
     private final CustomerRepository customerRepository;
@@ -258,7 +267,7 @@ public class ServiceRequestService {
         if (serviceRequest.getStatus() == RequestStatus.PICKUP_COMPLETED) {
             return buildResponse(serviceRequest);
         }
-        if (serviceRequest.getStatus() != RequestStatus.PICKUP_ASSIGNED && serviceRequest.getStatus() != RequestStatus.PICKUP_IN_PROGRESS) {
+        if (!isRunnerPickupOpenForPortal(serviceRequest)) {
             throw new ApiException("This pickup link is no longer available for acceptance.");
         }
 
@@ -280,10 +289,43 @@ public class ServiceRequestService {
         return buildResponse(serviceRequest);
     }
 
+    public ServiceRequestResponse updatePickupStatusByToken(String token, StatusTransitionRequest request) {
+        Pickup pickup = findPickupByToken(token);
+        ServiceRequest serviceRequest = pickup.getServiceRequest();
+        RequestStatus targetStatus = request != null ? request.targetStatus() : null;
+        if (targetStatus == null) {
+            throw new ApiException("Pickup status update target is required.");
+        }
+        if (!RUNNER_PICKUP_CUSTOMER_UPDATE_STATUSES.contains(targetStatus)) {
+            throw new ApiException("Runner portal only supports customer not available, customer reschedule, or customer not contactable updates.");
+        }
+        if (serviceRequest.getStatus() == targetStatus) {
+            return buildResponse(serviceRequest);
+        }
+        if (!isRunnerPickupOpenForPortal(serviceRequest)) {
+            throw new ApiException("This pickup link is no longer available for customer updates.");
+        }
+
+        Map<String, Object> before = pickupSnapshot(pickup);
+        if (pickup.getAcceptedAt() == null) {
+            pickup.setAcceptedAt(Instant.now());
+        }
+        pickup.setCustomerConfirmation(false);
+        pickupRepository.save(pickup);
+
+        String remarks = request.remarks() != null && !request.remarks().isBlank()
+                ? request.remarks().trim()
+                : defaultRunnerPickupUpdateRemark(targetStatus);
+        transition(serviceRequest, targetStatus, remarks, pickup.getAgent());
+        auditTrailService.logChange("Pickup", pickup.getId(), serviceRequest.getId(), "CUSTOMER_UPDATE", before, pickupSnapshot(pickup), pickup.getAgent());
+        queuePickupCustomerUpdateNotifications(serviceRequest, pickup, targetStatus, remarks);
+        return buildResponse(serviceRequest);
+    }
+
     public ServiceRequestResponse uploadPickupAttachmentByToken(String token, String attachmentType, MultipartFile file) {
         Pickup pickup = findPickupByToken(token);
         ServiceRequest serviceRequest = pickup.getServiceRequest();
-        if (serviceRequest.getStatus() != RequestStatus.PICKUP_ASSIGNED && serviceRequest.getStatus() != RequestStatus.PICKUP_IN_PROGRESS) {
+        if (!isRunnerPickupOpenForPortal(serviceRequest)) {
             throw new ApiException("Pickup photos can only be uploaded before pickup completion.");
         }
         if (!attachmentType.startsWith("PICKUP_IMAGE_") && !attachmentType.startsWith("PICKUP_EXTRA_IMAGE_")) {
@@ -298,7 +340,7 @@ public class ServiceRequestService {
     public ServiceRequestResponse deletePickupAttachmentByToken(String token, Long attachmentId) {
         Pickup pickup = findPickupByToken(token);
         ServiceRequest serviceRequest = pickup.getServiceRequest();
-        if (serviceRequest.getStatus() != RequestStatus.PICKUP_ASSIGNED && serviceRequest.getStatus() != RequestStatus.PICKUP_IN_PROGRESS) {
+        if (!isRunnerPickupOpenForPortal(serviceRequest)) {
             throw new ApiException("Pickup photos can only be edited before pickup completion.");
         }
         return deleteAttachmentInternal(serviceRequest, attachmentId, pickup.getAgent());
@@ -310,7 +352,7 @@ public class ServiceRequestService {
         if (serviceRequest.getStatus() == RequestStatus.PICKUP_COMPLETED) {
             return buildResponse(serviceRequest);
         }
-        if (serviceRequest.getStatus() != RequestStatus.PICKUP_ASSIGNED && serviceRequest.getStatus() != RequestStatus.PICKUP_IN_PROGRESS) {
+        if (!isRunnerPickupOpenForPortal(serviceRequest)) {
             throw new ApiException("This pickup link is no longer available for completion.");
         }
         if (pickup.getAcceptedAt() == null) {
@@ -766,6 +808,10 @@ public class ServiceRequestService {
         }
     }
 
+    private boolean isRunnerPickupOpenForPortal(ServiceRequest serviceRequest) {
+        return RUNNER_PICKUP_ACTIVE_STATUSES.contains(serviceRequest.getStatus());
+    }
+
     private boolean hasCompleteCashlessEvidence(ServiceRequest serviceRequest) {
         long cashlessDevicePhotos = attachmentRepository.countByServiceRequestAndAttachmentTypeStartingWith(serviceRequest, "CASHLESS_DEVICE_IMAGE_");
         long cashlessDamagePhotos = attachmentRepository.countByServiceRequestAndAttachmentTypeStartingWith(serviceRequest, "CASHLESS_DAMAGE_IMAGE_");
@@ -812,6 +858,23 @@ public class ServiceRequestService {
         queueAdminNotifications(serviceRequest, "Pickup Completed", message);
     }
 
+    private void queuePickupCustomerUpdateNotifications(ServiceRequest serviceRequest,
+                                                        Pickup pickup,
+                                                        RequestStatus targetStatus,
+                                                        String remarks) {
+        String statusLabel = pickupStatusLabel(targetStatus);
+        String defaultRemark = defaultRunnerPickupUpdateRemark(targetStatus);
+        String message = "Pickup for request " + serviceRequest.getRequestNumber()
+                + " was updated as " + statusLabel + " by "
+                + (pickup.getAgent() != null ? pickup.getAgent().getFullName() : "the runner")
+                + ". Admin team can review the next pickup action.";
+        if (remarks != null && !remarks.isBlank() && !remarks.equals(defaultRemark)) {
+            message += " Note: " + remarks;
+        }
+        queueCustomerNotifications(serviceRequest, "Pickup Update - " + statusLabel, message);
+        queueAdminNotifications(serviceRequest, "Pickup Update - " + statusLabel, message);
+    }
+
     private void queueCustomerNotifications(ServiceRequest serviceRequest, String subject, String message) {
         Customer customer = serviceRequest.getCustomer();
         queueDirectNotification(serviceRequest, "SMS", customer.getPhone(), subject, message, Map.of("audience", "customer"));
@@ -856,6 +919,24 @@ public class ServiceRequestService {
 
     private String resolveRunnerPortalLink(String token) {
         return token == null || token.isBlank() ? null : runnerPortalBaseUrl + "/" + token;
+    }
+
+    private String defaultRunnerPickupUpdateRemark(RequestStatus targetStatus) {
+        return switch (targetStatus) {
+            case CUSTOMER_NOT_AVAILABLE -> "Runner marked customer as not available at the pickup location";
+            case CUSTOMER_RESCHEDULED -> "Runner marked pickup as customer reschedule requested";
+            case CUSTOMER_NOT_CONTACTABLE -> "Runner marked customer as not contactable for pickup";
+            default -> "Runner updated pickup status";
+        };
+    }
+
+    private String pickupStatusLabel(RequestStatus status) {
+        return switch (status) {
+            case CUSTOMER_NOT_AVAILABLE -> "Customer Not Available";
+            case CUSTOMER_RESCHEDULED -> "Customer Reschedule";
+            case CUSTOMER_NOT_CONTACTABLE -> "Customer Not Contactable";
+            default -> status.name().replace('_', ' ');
+        };
     }
 
     private String resolveWhatsappRecipient(User user) {

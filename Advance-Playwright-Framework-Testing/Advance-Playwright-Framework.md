@@ -298,9 +298,11 @@ The README describes more than `src/`. A faithful clone of this framework should
 
 The current repo generates or expects these runtime/build directories:
 
-- `playwright-report/`
-- `test-results/`
-- `tta-report/`
+- `Report/`
+- `Report/playwright/`
+- `Report/test-results/`
+- `Report/dashboard/`
+- `Report/allure/`
 - `dist/`
 - `.auth/` when storage state is persisted
 
@@ -360,15 +362,15 @@ The framework config wires in:
 
 ```ts
 reporter: [
-    ['./src/utils/CustomTTAReporter.ts'],
-    ['html', { open: 'never' }],
-    ['json', { outputFile: 'test-results/results.json' }],
+    ['./src/utils/CustomTTAReporter.ts', { outputFolder: 'Report/dashboard' }],
+    ['html', { open: 'never', outputFolder: 'Report/playwright' }],
+    ['json', { outputFile: 'Report/test-results/results.json' }],
     ['list'],
 ],
 ```
 
 The custom reporter in this repo supports:
-- timestamped report generation under `tta-report/`
+- timestamped report generation under `Report/dashboard/`
 - real-time HTML updates
 - step-level status capture
 - screenshot, video, and trace linking
@@ -410,9 +412,10 @@ These are optional for a normal test framework, but valuable when the framework 
 
 The README treats reporting as a first-class part of the framework. Preserve these output concepts:
 
-- `tta-report/` for the custom HTML report and copied artifacts
-- `playwright-report/` for Playwright's standard HTML report
-- `test-results/` for JSON results, traces, screenshots, and raw execution artifacts
+- `Report/dashboard/` for the custom HTML dashboard
+- `Report/playwright/` for Playwright's standard HTML report
+- `Report/allure/` for the single-file Allure report
+- `Report/test-results/` for JSON results, traces, screenshots, videos, and raw execution artifacts
 
 Recommended commands:
 

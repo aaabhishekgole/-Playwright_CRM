@@ -12,8 +12,22 @@ public final class StatusTransitionRules {
 
     static {
         ALLOWED.put(RequestStatus.REQUEST_CREATED, EnumSet.of(RequestStatus.PICKUP_ASSIGNED));
-        ALLOWED.put(RequestStatus.PICKUP_ASSIGNED, EnumSet.of(RequestStatus.PICKUP_IN_PROGRESS, RequestStatus.PICKUP_COMPLETED));
-        ALLOWED.put(RequestStatus.PICKUP_IN_PROGRESS, EnumSet.of(RequestStatus.PICKUP_COMPLETED));
+        ALLOWED.put(RequestStatus.PICKUP_ASSIGNED, EnumSet.of(
+                RequestStatus.PICKUP_IN_PROGRESS,
+                RequestStatus.CUSTOMER_NOT_AVAILABLE,
+                RequestStatus.CUSTOMER_RESCHEDULED,
+                RequestStatus.CUSTOMER_NOT_CONTACTABLE,
+                RequestStatus.PICKUP_COMPLETED
+        ));
+        ALLOWED.put(RequestStatus.PICKUP_IN_PROGRESS, EnumSet.of(
+                RequestStatus.CUSTOMER_NOT_AVAILABLE,
+                RequestStatus.CUSTOMER_RESCHEDULED,
+                RequestStatus.CUSTOMER_NOT_CONTACTABLE,
+                RequestStatus.PICKUP_COMPLETED
+        ));
+        ALLOWED.put(RequestStatus.CUSTOMER_NOT_AVAILABLE, EnumSet.of(RequestStatus.PICKUP_ASSIGNED));
+        ALLOWED.put(RequestStatus.CUSTOMER_RESCHEDULED, EnumSet.of(RequestStatus.PICKUP_ASSIGNED));
+        ALLOWED.put(RequestStatus.CUSTOMER_NOT_CONTACTABLE, EnumSet.of(RequestStatus.PICKUP_ASSIGNED));
         ALLOWED.put(RequestStatus.PICKUP_COMPLETED, EnumSet.of(RequestStatus.RECEIVED_AT_HUB, RequestStatus.DIAGNOSIS_IN_PROGRESS));
         ALLOWED.put(RequestStatus.RECEIVED_AT_HUB, EnumSet.of(RequestStatus.DIAGNOSIS_IN_PROGRESS));
         ALLOWED.put(RequestStatus.DIAGNOSIS_IN_PROGRESS, EnumSet.of(RequestStatus.ESTIMATE_PREPARED, RequestStatus.TOTAL_LOSS));

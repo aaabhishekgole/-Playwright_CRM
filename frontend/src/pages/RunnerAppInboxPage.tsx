@@ -188,7 +188,7 @@ export function RunnerAppInboxPage() {
             </div>
             <div className="runner-app-meta-card">
               <strong>Pickup Flow</strong>
-              <small>Open the same pickup acceptance and 10-photo flow used inside the hybrid app.</small>
+              <small>Open the same accept, customer update, 10-photo, and pickup-done flow used inside the hybrid app.</small>
             </div>
           </div>
 
@@ -273,7 +273,7 @@ export function RunnerAppInboxPage() {
                 </div>
                 <div>
                   <strong>Direct Flow</strong>
-                  <small>After opening a pickup, the same 10-photo and pickup-done portal flow is used everywhere.</small>
+                  <small>After opening a pickup, the same customer update, 10-photo, and pickup-done portal flow is used everywhere.</small>
                 </div>
               </div>
               {directPickupPath ? <Link className="secondary-button" to={directPickupPath}>Open Linked Pickup Now</Link> : null}

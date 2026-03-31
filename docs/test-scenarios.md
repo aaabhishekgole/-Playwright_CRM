@@ -167,7 +167,25 @@ Expected result
 - completion is blocked
 - clear validation feedback is shown
 
-### Scenario 6.3 Optional extra photos
+### Scenario 6.3 Runner customer doorstep updates
+
+Steps
+
+1. Open `/runner-portal/:token`
+2. Submit one of these statuses from the shared runner flow:
+3. `CUSTOMER_NOT_AVAILABLE`
+4. `CUSTOMER_RESCHEDULED`
+5. `CUSTOMER_NOT_CONTACTABLE`
+
+Expected result
+
+- request status updates immediately to the selected pickup customer-update status
+- pickup acceptance timestamp is stored if it was not already captured
+- customer and admin notification records are logged
+- case appears in `Pickup Failed Cases`
+- case can be reassigned later from `Assign Pickup`
+
+### Scenario 6.4 Optional extra photos
 
 Steps
 
@@ -207,7 +225,7 @@ Steps
 Expected result
 
 - same web runner portal UI is shown in WebView
-- same accept, upload, and complete flow is available
+- same accept, customer update, upload, and complete flow is available
 - same backend APIs are used
 
 ### Scenario 7.3 Rider app notification targeting

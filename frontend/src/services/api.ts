@@ -234,6 +234,14 @@ export async function acceptRunnerPickup(token: string): Promise<ServiceRequest>
   return response.data;
 }
 
+export async function updateRunnerPickupStatus(token: string, targetStatus: string, remarks?: string): Promise<ServiceRequest> {
+  const response = await api.post<ServiceRequest>(`/public/pickups/${token}/status`, {
+    targetStatus,
+    remarks,
+  });
+  return response.data;
+}
+
 export async function uploadRunnerPickupAttachment(token: string, attachmentType: string, file: File): Promise<ServiceRequest> {
   const formData = new FormData();
   formData.append('attachmentType', attachmentType);

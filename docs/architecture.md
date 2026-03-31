@@ -85,6 +85,7 @@ The live portal currently centers around this operational lifecycle:
 REQUEST_CREATED
 -> PICKUP_ASSIGNED
 -> PICKUP_IN_PROGRESS
+-> CUSTOMER_NOT_AVAILABLE / CUSTOMER_RESCHEDULED / CUSTOMER_NOT_CONTACTABLE
 -> PICKUP_COMPLETED
 -> RECEIVED_AT_HUB
 -> DIAGNOSIS_IN_PROGRESS
@@ -115,7 +116,7 @@ Cashless and total-loss branches are also supported.
 - admin or back-end team assigns a runner, schedule, and notes
 - pickup runner receives a smart link by SMS, WhatsApp, and rider app inbox
 - only the scheduled runner receives the rider inbox notification
-- the runner can accept pickup, upload 10 mandatory photos plus optional extras, and mark pickup complete
+- the runner can accept pickup, upload 10 mandatory photos plus optional extras, mark pickup complete, or log customer doorstep outcomes such as not available, reschedule, or not contactable
 
 ### 3. Hub And Service Center
 

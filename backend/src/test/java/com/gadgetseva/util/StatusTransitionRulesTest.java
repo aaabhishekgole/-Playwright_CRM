@@ -16,6 +16,22 @@ class StatusTransitionRulesTest {
     }
 
     @Test
+    void allowsRunnerCustomerUpdateTransition() {
+        Assertions.assertDoesNotThrow(() -> StatusTransitionRules.assertAllowed(
+                RequestStatus.PICKUP_ASSIGNED,
+                RequestStatus.CUSTOMER_NOT_AVAILABLE
+        ));
+    }
+
+    @Test
+    void allowsReassignAfterRunnerCustomerUpdate() {
+        Assertions.assertDoesNotThrow(() -> StatusTransitionRules.assertAllowed(
+                RequestStatus.CUSTOMER_RESCHEDULED,
+                RequestStatus.PICKUP_ASSIGNED
+        ));
+    }
+
+    @Test
     void rejectsInvalidTransition() {
         Assertions.assertThrows(InvalidTransitionException.class, () -> StatusTransitionRules.assertAllowed(
                 RequestStatus.REQUEST_CREATED,

@@ -1,6 +1,7 @@
 package com.gadgetseva.controller;
 
 import com.gadgetseva.dto.ServiceRequestResponse;
+import com.gadgetseva.dto.StatusTransitionRequest;
 import com.gadgetseva.service.ServiceRequestService;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -8,6 +9,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
@@ -32,6 +34,12 @@ public class PublicPickupPortalController {
     @PostMapping("/{token}/accept")
     public ResponseEntity<ServiceRequestResponse> acceptPickup(@PathVariable String token) {
         return ResponseEntity.ok(serviceRequestService.acceptPickupByToken(token));
+    }
+
+    @PostMapping("/{token}/status")
+    public ResponseEntity<ServiceRequestResponse> updatePickupStatus(@PathVariable String token,
+                                                                     @RequestBody StatusTransitionRequest request) {
+        return ResponseEntity.ok(serviceRequestService.updatePickupStatusByToken(token, request));
     }
 
     @PostMapping(value = "/{token}/attachments", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

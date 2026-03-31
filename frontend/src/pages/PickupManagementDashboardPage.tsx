@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { formatDeviceCategory } from '../utils/deviceCatalog';
 import { formatCurrencyInr, formatDateTimeIn } from '../utils/formatters';
+import { isPickupCustomerUpdateStatus, isPickupRunnerPendingStatus } from '../utils/pickupStatuses';
 import { getWorkflowStageMeta } from '../utils/workflowStages';
 import { useRequests } from './useRequests';
 
@@ -25,9 +26,9 @@ export function PickupManagementDashboardPage() {
 
   const queues = useMemo(() => {
     const newCaseRequests = requests.filter((request) => request.status === 'REQUEST_CREATED');
-    const pendingPickup = requests.filter((request) => ['PICKUP_ASSIGNED', 'PICKUP_IN_PROGRESS'].includes(request.status));
+    const pendingPickup = requests.filter((request) => isPickupRunnerPendingStatus(request.status));
     const pickedUpDevices = requests.filter((request) => countByPrefix(request.attachments.map((attachment) => attachment.attachmentType), 'PICKUP_IMAGE_') > 0);
-    const pickupFailedCases = requests.filter((request) => timelineContains(request, ['pickup failed', 'failed pickup', 'pickup rescheduled']));
+    const pickupFailedCases = requests.filter((request) => isPickupCustomerUpdateStatus(request.status) || timelineContains(request, ['pickup failed', 'failed pickup', 'pickup rescheduled']));
     const pickupHistory = requests.filter((request) => hasReachedStatus(request, ['PICKUP_COMPLETED', 'RECEIVED_AT_HUB', 'DIAGNOSIS_IN_PROGRESS', 'ESTIMATE_PREPARED', 'ESTIMATE_APPROVED', 'CASHLESS_PENDING_APPROVAL', 'CASHLESS_APPROVED', 'REPAIR_IN_PROGRESS', 'REPAIR_COMPLETED', 'READY_FOR_DISPATCH', 'DELIVERY_ASSIGNED', 'OUT_FOR_DELIVERY', 'DELIVERED', 'INVOICED', 'CLOSED']));
 
     return {
@@ -76,14 +77,14 @@ export function PickupManagementDashboardPage() {
 
   const recentPickupCases = useMemo(
     () => requests
-      .filter((request) => ['REQUEST_CREATED', 'PICKUP_ASSIGNED', 'PICKUP_IN_PROGRESS', 'PICKUP_COMPLETED'].includes(request.status) || timelineContains(request, ['pickup failed', 'pickup rescheduled']))
+      .filter((request) => ['REQUEST_CREATED', 'PICKUP_COMPLETED'].includes(request.status) || isPickupRunnerPendingStatus(request.status) || isPickupCustomerUpdateStatus(request.status) || timelineContains(request, ['pickup failed', 'pickup rescheduled']))
       .slice(0, 8),
     [requests],
   );
 
   const pickupExposure = useMemo(
     () => requests
-      .filter((request) => ['REQUEST_CREATED', 'PICKUP_ASSIGNED', 'PICKUP_IN_PROGRESS', 'PICKUP_COMPLETED'].includes(request.status))
+      .filter((request) => ['REQUEST_CREATED', 'PICKUP_COMPLETED'].includes(request.status) || isPickupRunnerPendingStatus(request.status) || isPickupCustomerUpdateStatus(request.status))
       .reduce((sum, request) => sum + (request.invoice?.amountDue ?? 0), 0),
     [requests],
   );
@@ -121,7 +122,7 @@ export function PickupManagementDashboardPage() {
           </div>
           <div className="workflow-step">
             <span>3</span>
-            <p><strong>Runner Action</strong><br />Runner accepts the task, customer and admin are notified, and the runner captures 10 required device photos plus optional extras.</p>
+            <p><strong>Runner Action</strong><br />Runner accepts the task, can update customer not available / reschedule / not contactable when needed, and captures 10 required device photos plus optional extras once pickup proceeds.</p>
           </div>
           <div className="workflow-step">
             <span>4</span>
@@ -149,7 +150,7 @@ export function PickupManagementDashboardPage() {
         <article className="summary-stat">
           <span>Pickup Failed</span>
           <strong>{queues.pickupFailedCases.length}</strong>
-          <small>Cases with reschedule or failed doorstep attempts recorded in the live timeline.</small>
+          <small>Cases with explicit customer doorstep-update statuses or failed doorstep attempts recorded in the live flow.</small>
         </article>
         <article className="summary-stat">
           <span>Pickup Exposure</span>
@@ -214,7 +215,7 @@ export function PickupManagementDashboardPage() {
                     <div>{request.pickupAgent ?? workflowMeta.owner}</div>
                     <div>{pickupImages}/10 photos</div>
                     <div>{formatDateTimeIn(request.updatedAt)}</div>
-                    <div><Link to={request.status === 'REQUEST_CREATED' ? '/workspace/pickup-management/assign-pickup' : '/workspace/pickup-management/pending-pickup'}>Open stage</Link></div>
+                    <div><Link to={request.status === 'REQUEST_CREATED' ? '/workspace/pickup-management/assign-pickup' : isPickupCustomerUpdateStatus(request.status) ? '/workspace/pickup-management/pickup-failed-cases' : '/workspace/pickup-management/pending-pickup'}>Open stage</Link></div>
                   </div>
                 );
               })}

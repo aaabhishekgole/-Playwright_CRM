@@ -92,11 +92,11 @@ $slides = @{
     "ppt/slides/slide4.xml" = (New-SlideXml "API Surface" @(
         "- /api/auth/login for portal and runner authentication",
         "- /api/service-requests for create, list, detail, pickup, estimate, status, delivery, attachments, invoice, payment, reconcile, and refund actions",
-        "- /api/public/pickups/{token} for runner accept, evidence upload, delete, and pickup completion",
+        "- /api/public/pickups/{token} for runner accept, customer updates, evidence upload, delete, and pickup completion",
         "- /api/mobile/runner/notifications, /api/users, /api/users/pickup-runners, /api/devices/scan-qr, and /api/files/access"
     ));
     "ppt/slides/slide5.xml" = (New-SlideXml "End-To-End Workflow" @(
-        "- REQUEST_CREATED -> PICKUP_ASSIGNED -> PICKUP_IN_PROGRESS -> PICKUP_COMPLETED",
+        "- REQUEST_CREATED -> PICKUP_ASSIGNED -> PICKUP_IN_PROGRESS -> CUSTOMER_NOT_AVAILABLE / CUSTOMER_RESCHEDULED / CUSTOMER_NOT_CONTACTABLE -> PICKUP_COMPLETED",
         "- RECEIVED_AT_HUB -> DIAGNOSIS_IN_PROGRESS -> ESTIMATE_PREPARED",
         "- CASHLESS_PENDING_APPROVAL, ESTIMATE_APPROVED, and TOTAL_LOSS branches are supported",
         "- REPAIR_IN_PROGRESS -> REPAIR_COMPLETED -> READY_FOR_DISPATCH -> DELIVERY_ASSIGNED -> OUT_FOR_DELIVERY -> DELIVERED -> INVOICED -> CLOSED",
@@ -106,6 +106,7 @@ $slides = @{
         "- Admin onboards runner with mandatory mobile number and optional WhatsApp number",
         "- Assign Pickup sends a smart link by SMS, WhatsApp, and rider APP only to the scheduled runner",
         "- Runner opens the link in browser or hybrid mobile app and accepts the pickup",
+        "- Runner can mark Customer Not Available, Customer Reschedule, or Customer Not Contactable from the same shared flow",
         "- Runner uploads 10 mandatory device photos plus optional extra photos before pickup completion",
         "- Pickup done updates DB and API state and stores customer and admin notification records"
     ));

@@ -8,6 +8,7 @@ import type { ServiceRequest, UserSummary } from '../types/models';
 import { useRequests } from './useRequests';
 import { formatDeviceCategory } from '../utils/deviceCatalog';
 import { formatCurrencyInr, formatDateTimeIn } from '../utils/formatters';
+import { isPickupCustomerUpdateStatus, isPickupRunnerPendingStatus } from '../utils/pickupStatuses';
 import { getWorkflowStageMeta } from '../utils/workflowStages';
 
 const supportedItems = new Set([
@@ -133,11 +134,11 @@ function timelineContains(request: ServiceRequest, patterns: string[]) {
 function resolveRequests(itemId: string, requests: ServiceRequest[]) {
   switch (itemId) {
     case 'assign-pickup':
-      return requests.filter((request) => request.status === 'REQUEST_CREATED');
+      return requests.filter((request) => request.status === 'REQUEST_CREATED' || isPickupCustomerUpdateStatus(request.status));
     case 'pending-pickup':
-      return requests.filter((request) => ['PICKUP_ASSIGNED', 'PICKUP_IN_PROGRESS'].includes(request.status));
+      return requests.filter((request) => isPickupRunnerPendingStatus(request.status));
     case 'pickup-failed-cases':
-      return requests.filter((request) => timelineContains(request, ['pickup failed', 'failed pickup', 'pickup rescheduled']));
+      return requests.filter((request) => isPickupCustomerUpdateStatus(request.status) || timelineContains(request, ['pickup failed', 'failed pickup', 'pickup rescheduled']));
     case 'pickup-history':
       return requests.filter((request) => hasReachedStatus(request, pickupCompletedOrLater));
     case 'picked-up-devices':
@@ -234,7 +235,7 @@ function getSummaryLabel(itemId: string) {
 function getEmptyStageCopy(itemId: string) {
   switch (itemId) {
     case 'assign-pickup':
-      return 'Assign Pickup only shows requests in REQUEST_CREATED. If this looks empty, the current demo claims have already been assigned or moved forward in the workflow.';
+      return 'Assign Pickup shows fresh REQUEST_CREATED claims and customer-update pickup cases that need a reschedule or another runner attempt.';
     case 'pending-pickup':
       return 'Assigned pickup jobs will appear here for runner acceptance, customer/admin notifications, and 10-photo evidence upload.';
     case 'device-received-at-hub':
@@ -269,6 +270,7 @@ function getStagePlaybook(itemId: string) {
         title: 'Pickup Execution Flow',
         steps: [
           'Runner accepts the assigned pickup job from the live queue or runner portal link.',
+          'If pickup cannot continue, the runner can mark Customer Not Available, Customer Reschedule, or Customer Not Contactable from the same shared portal flow.',
           'Field pickup is completed with 10 required device photos plus optional supporting images.',
           'Completed pickup automatically feeds hub receiving, history, and evidence views.',
         ],
@@ -785,10 +787,16 @@ export function OperationalWorkspacePage({
         );
       case 'pickup-failed-cases':
         return (
-          <div className="action-row action-row-wrap">
-            <Link className="secondary-button" to={`/requests/${request.id}`}>Open request</Link>
-            <Link className="secondary-button" to="/workspace/pickup-management/assign-pickup">Reschedule Pickup</Link>
-          </div>
+          <>
+            <div className="workspace-chip-row">
+              <span className="workspace-chip">Doorstep update: {request.status.replaceAll('_', ' ')}</span>
+              <span className="workspace-chip">Runner: {request.pickupAgent ?? 'Awaiting follow-up'}</span>
+            </div>
+            <div className="action-row action-row-wrap">
+              <Link className="secondary-button" to={`/requests/${request.id}`}>Open request</Link>
+              <Link className="secondary-button" to="/workspace/pickup-management/assign-pickup">Reschedule Pickup</Link>
+            </div>
+          </>
         );
       case 'pickup-history':
         return (

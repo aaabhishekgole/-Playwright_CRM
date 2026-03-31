@@ -44,3 +44,6 @@ uploads/
 # Test / reports
 playwright-report/
 test-results/
+allure-report/
+allure-results/
+Report/

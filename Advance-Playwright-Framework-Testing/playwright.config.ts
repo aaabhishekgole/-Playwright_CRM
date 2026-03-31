@@ -1,6 +1,9 @@
 import { defineConfig, devices } from '@playwright/test';
 import { config } from './src/config';
 
+const reportRoot = 'Report';
+const testResultsPath = `${reportRoot}/test-results`;
+
 export default defineConfig({
   testDir: './src/tests',
   timeout: config.defaultTimeoutMs * 2,
@@ -10,23 +13,32 @@ export default defineConfig({
   fullyParallel: true,
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 2 : undefined,
-  outputDir: 'test-results',
+  outputDir: testResultsPath,
   use: {
     baseURL: config.baseUrl,
     headless: config.headless,
-    screenshot: 'only-on-failure',
+    screenshot: 'off',
     video: {
-      mode: 'retain-on-failure',
-      size: { width: 640, height: 360 },
+      mode: 'on',
+      size: { width: 1280, height: 720 },
     },
     trace: 'retain-on-failure',
     actionTimeout: config.defaultTimeoutMs,
     navigationTimeout: config.defaultTimeoutMs,
   },
   reporter: [
-    ['./src/utils/CustomTTAReporter.ts'],
-    ['html', { open: 'never', outputFolder: 'playwright-report' }],
-    ['json', { outputFile: 'test-results/results.json' }],
+    [
+      './src/utils/CustomTTAReporter.ts',
+      {
+        outputFolder: `${reportRoot}/dashboard`,
+        reportTitle: 'Gadget Seva Hub QA Execution Dashboard',
+        playwrightReportPath: '../playwright/index.html',
+        allureReportPath: '../allure/index.html',
+      },
+    ],
+    ['html', { open: 'never', outputFolder: `${reportRoot}/playwright` }],
+    ['allure-playwright', { detail: true, resultsDir: `${reportRoot}/allure-results`, suiteTitle: false }],
+    ['json', { outputFile: `${testResultsPath}/results.json` }],
     ['list'],
   ],
   projects: [

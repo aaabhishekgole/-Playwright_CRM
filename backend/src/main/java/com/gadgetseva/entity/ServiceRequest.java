@@ -47,7 +47,7 @@ public class ServiceRequest extends BaseAuditableEntity {
     private RequestPriority priority;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 40)
+    @Column(nullable = false, length = 40, columnDefinition = "VARCHAR(40)")
     private RequestStatus status;
 
     @Column(nullable = false, length = 40)

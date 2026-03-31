@@ -108,7 +108,74 @@ function buildAuthenticatedContextOptions(
   };
 }
 
+async function attachFinalScreenshot(page: Page, testInfo: TestInfo, attachmentName: string) {
+  if (page.isClosed()) {
+    return;
+  }
+
+  try {
+    const screenshotPath = testInfo.outputPath(`${attachmentName}.png`);
+    await page.screenshot({
+      fullPage: true,
+      path: screenshotPath,
+    });
+    await testInfo.attach(attachmentName, {
+      contentType: 'image/png',
+      path: screenshotPath,
+    });
+  } catch {
+    // Some failure states close or detach the page before teardown; skip the screenshot silently in that case.
+  }
+}
+
+async function closePageSafely(page: Page) {
+  if (page.isClosed()) {
+    return;
+  }
+
+  try {
+    await page.close();
+  } catch {
+    // Ignore teardown-time close failures so the original test result remains intact.
+  }
+}
+
+async function attachRecordedVideo(recordedVideo: ReturnType<Page['video']>, testInfo: TestInfo, attachmentName: string) {
+  if (!recordedVideo) {
+    return;
+  }
+
+  const savedVideoPath = testInfo.outputPath(`${attachmentName}.webm`);
+  await recordedVideo.saveAs(savedVideoPath);
+  await testInfo.attach(attachmentName, {
+    contentType: 'video/webm',
+    path: savedVideoPath,
+  });
+  await recordedVideo.delete();
+}
+
 export const test = base.extend<FrameworkFixtures>({
+  page: async ({ page, video }, use, testInfo) => {
+    const recordedVideo = page.video();
+    await use(page);
+
+    await attachFinalScreenshot(page, testInfo, 'flow-screenshot');
+
+    const videoMode = normalizeVideoMode(video as VideoOption);
+    const preserveVideo = shouldPreserveVideo(videoMode, testInfo);
+
+    await closePageSafely(page);
+
+    if (!preserveVideo) {
+      if (recordedVideo) {
+        await recordedVideo.delete();
+      }
+      return;
+    }
+
+    await attachRecordedVideo(recordedVideo, testInfo, 'flow-video');
+  },
+
   loginPage: async ({ page }, use) => {
     await use(new LoginPage(page));
   },
@@ -153,7 +220,8 @@ export const test = base.extend<FrameworkFixtures>({
     await page.goto(config.routes.dashboard);
     const recordedVideo = page.video();
     await use(page);
-    await page.close();
+    await attachFinalScreenshot(page, testInfo, 'authenticated-flow-screenshot');
+    await closePageSafely(page);
 
     if (!recordedVideo) {
       return;
@@ -165,14 +233,7 @@ export const test = base.extend<FrameworkFixtures>({
       return;
     }
 
-    const savedVideoPath = testInfo.outputPath('video.webm');
-    await recordedVideo.saveAs(savedVideoPath);
-    testInfo.attachments.push({
-      name: 'video',
-      path: savedVideoPath,
-      contentType: 'video/webm',
-    });
-    await recordedVideo.delete();
+    await attachRecordedVideo(recordedVideo, testInfo, 'authenticated-flow-video');
   },
 });
 

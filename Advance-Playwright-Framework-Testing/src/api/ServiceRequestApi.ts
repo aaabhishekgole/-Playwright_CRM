@@ -33,4 +33,11 @@ export class ServiceRequestApi {
       Authorization: `Bearer ${accessToken}`,
     });
   }
+
+  async updateRunnerPickupStatus(token: string, targetStatus: string, remarks?: string) {
+    return this.api.post<ServiceRequestRecord>(`/public/pickups/${token}/status`, {
+      targetStatus,
+      remarks,
+    });
+  }
 }

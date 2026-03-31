@@ -159,6 +159,9 @@ Common statuses used in the live portal
 - `REQUEST_CREATED`
 - `PICKUP_ASSIGNED`
 - `PICKUP_IN_PROGRESS`
+- `CUSTOMER_NOT_AVAILABLE`
+- `CUSTOMER_RESCHEDULED`
+- `CUSTOMER_NOT_CONTACTABLE`
 - `PICKUP_COMPLETED`
 - `RECEIVED_AT_HUB`
 - `DIAGNOSIS_IN_PROGRESS`
@@ -278,6 +281,32 @@ System effect
 - can move request from `PICKUP_ASSIGNED` to `PICKUP_IN_PROGRESS`
 - stores customer and admin notification history
 
+### `POST /api/public/pickups/{token}/status`
+
+Updates pickup execution with runner-visible customer doorstep outcomes.
+
+Allowed public runner statuses
+
+- `CUSTOMER_NOT_AVAILABLE`
+- `CUSTOMER_RESCHEDULED`
+- `CUSTOMER_NOT_CONTACTABLE`
+
+Request body
+
+```json
+{
+  "targetStatus": "CUSTOMER_RESCHEDULED",
+  "remarks": "Customer requested a later pickup window."
+}
+```
+
+System effect
+
+- records the runner customer-update status on the same request
+- captures pickup acceptance timestamp if the runner had not accepted yet
+- stores customer and admin notification history for the update
+- keeps the request available for admin reassignment back to `PICKUP_ASSIGNED`
+
 ### `POST /api/public/pickups/{token}/attachments`
 
 Uploads pickup evidence from the runner portal.
@@ -389,6 +418,8 @@ When pickup is assigned, the system creates targeted notification records for th
 - app inbox notification to the runner account
 
 The same assignment also supports customer and admin notifications during accept and pickup completion.
+
+Runner customer updates from the shared portal also create customer/admin notification records and keep the request in pickup follow-up flow until reassigned.
 
 If the live provider is not configured, these notifications are still stored in the database and available through logs and runner inbox flows.
 

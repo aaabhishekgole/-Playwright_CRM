@@ -9,11 +9,18 @@ import {
   deleteRunnerPickupAttachment,
   fetchRunnerPickupPortal,
   getApiErrorMessage,
+  updateRunnerPickupStatus,
   uploadRunnerPickupAttachment,
 } from '../services/api';
 import type { ServiceRequest } from '../types/models';
 import { formatDeviceCategory, usesImei } from '../utils/deviceCatalog';
 import { formatDateTimeIn } from '../utils/formatters';
+import {
+  isPickupCustomerUpdateStatus,
+  isPickupRunnerPendingStatus,
+  pickupCustomerUpdateOptions,
+  type PickupCustomerUpdateStatus,
+} from '../utils/pickupStatuses';
 
 function countByPrefix(types: string[], prefix: string) {
   return types.filter((type) => type.startsWith(prefix)).length;
@@ -25,8 +32,9 @@ export function PickupRunnerPortalPage() {
   const [request, setRequest] = useState<ServiceRequest | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [busyAction, setBusyAction] = useState<'accept' | 'complete' | null>(null);
+  const [busyAction, setBusyAction] = useState<'accept' | 'complete' | PickupCustomerUpdateStatus | null>(null);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
+  const [customerUpdateNote, setCustomerUpdateNote] = useState('');
 
   useEffect(() => {
     let active = true;
@@ -109,6 +117,28 @@ export function PickupRunnerPortalPage() {
     }
   }
 
+  async function handleCustomerUpdate(targetStatus: PickupCustomerUpdateStatus, label: string) {
+    if (!token) {
+      return;
+    }
+
+    try {
+      setBusyAction(targetStatus);
+      const updated = await updateRunnerPickupStatus(token, targetStatus, customerUpdateNote.trim() || undefined);
+      setRequest(updated);
+      setCustomerUpdateNote('');
+      const nextMessage = `${label} updated successfully. Customer and admin notifications were queued.`;
+      setActionMessage(nextMessage);
+      showSuccess(nextMessage, label);
+    } catch (nextError) {
+      const nextMessage = getApiErrorMessage(nextError);
+      setActionMessage(nextMessage);
+      showError(nextMessage, `${label} update failed`);
+    } finally {
+      setBusyAction(null);
+    }
+  }
+
   if (loading) {
     return (
       <section className="runner-portal-shell">
@@ -141,8 +171,10 @@ export function PickupRunnerPortalPage() {
   const requiredPickupPhotos = request.pickup?.requiredPhotoCount ?? 10;
   const pickupAccepted = Boolean(request.pickup?.acceptedAt);
   const pickupCompleted = Boolean(request.pickup?.completedAt) || request.status === 'PICKUP_COMPLETED';
-  const canAccept = ['PICKUP_ASSIGNED', 'PICKUP_IN_PROGRESS'].includes(request.status) && !pickupAccepted;
-  const canComplete = ['PICKUP_ASSIGNED', 'PICKUP_IN_PROGRESS'].includes(request.status) && pickupAccepted && pickupPhotos >= requiredPickupPhotos;
+  const pickupCustomerUpdated = isPickupCustomerUpdateStatus(request.status);
+  const canAccept = isPickupRunnerPendingStatus(request.status) && !pickupAccepted;
+  const canComplete = isPickupRunnerPendingStatus(request.status) && pickupAccepted && pickupPhotos >= requiredPickupPhotos;
+  const canSendCustomerUpdate = isPickupRunnerPendingStatus(request.status);
   const imeiExpected = usesImei(request.deviceCategory);
 
   return (
@@ -250,7 +282,7 @@ export function PickupRunnerPortalPage() {
           <div className="split-row">
             <div>
               <h3>Pickup Actions</h3>
-              <p>Accept the job first, then upload all required images before submitting pickup done.</p>
+              <p>Accept the job first, then upload all required images before submitting pickup done. If pickup cannot continue, use the customer update actions below.</p>
             </div>
             {actionMessage ? <span className="workspace-chip">{actionMessage}</span> : null}
           </div>
@@ -266,31 +298,84 @@ export function PickupRunnerPortalPage() {
 
           {!pickupAccepted ? <p className="runner-portal-hint">Accept the pickup before uploading or submitting the device handoff.</p> : null}
           {pickupAccepted && pickupPhotos < requiredPickupPhotos ? <p className="runner-portal-hint">Upload all {requiredPickupPhotos} required pickup photos before submitting pickup completion.</p> : null}
+          {pickupCustomerUpdated ? <p className="runner-portal-hint">This pickup is waiting for admin follow-up after the runner submitted a customer doorstep update.</p> : null}
         </article>
 
-        <TypedEvidenceUploadPanel
-          requestId={request.id}
-          attachments={request.attachments}
-          mode="runner"
-          role="PICKUP_AGENT"
-          allowedSectionIds={['pickup']}
-          onUpload={(attachmentType, file) => {
-            if (!token) {
-              return Promise.reject(new Error('Runner link is missing.'));
-            }
-            return uploadRunnerPickupAttachment(token, attachmentType, file).then((updated) => {
-              setRequest(updated);
-            });
-          }}
-          onRemove={(attachmentId) => {
-            if (!token) {
-              return Promise.reject(new Error('Runner link is missing.'));
-            }
-            return deleteRunnerPickupAttachment(token, attachmentId).then((updated) => {
-              setRequest(updated);
-            });
-          }}
-        />
+        <article className="card runner-portal-actions">
+          <div className="split-row">
+            <div>
+              <h3>Customer Update</h3>
+              <p>Use these options when the customer is unavailable, asks to reschedule, or cannot be reached on the provided numbers.</p>
+            </div>
+            <span className="workspace-chip">Same flow in app + link</span>
+          </div>
+
+          <label className="action-field">
+            <span>Runner Note</span>
+            <textarea
+              value={customerUpdateNote}
+              onChange={(event) => setCustomerUpdateNote(event.target.value)}
+              placeholder="Optional note for admin follow-up, contact attempt details, or requested reschedule slot"
+            />
+          </label>
+
+          <div className="action-row action-row-wrap">
+            {pickupCustomerUpdateOptions.map((option) => (
+              <button
+                key={option.status}
+                type="button"
+                className="secondary-button"
+                disabled={!canSendCustomerUpdate || busyAction !== null}
+                onClick={() => void handleCustomerUpdate(option.status, option.label)}
+              >
+                {busyAction === option.status ? 'Saving...' : option.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="mini-list">
+            {pickupCustomerUpdateOptions.map((option) => (
+              <div key={`${option.status}-helper`}>
+                <strong>{option.label}</strong>
+                <small>{option.helper}</small>
+              </div>
+            ))}
+          </div>
+        </article>
+
+        {!pickupCustomerUpdated ? (
+          <TypedEvidenceUploadPanel
+            requestId={request.id}
+            attachments={request.attachments}
+            mode="runner"
+            role="PICKUP_AGENT"
+            allowedSectionIds={['pickup']}
+            onUpload={(attachmentType, file) => {
+              if (!token) {
+                return Promise.reject(new Error('Runner link is missing.'));
+              }
+              return uploadRunnerPickupAttachment(token, attachmentType, file).then((updated) => {
+                setRequest(updated);
+              });
+            }}
+            onRemove={(attachmentId) => {
+              if (!token) {
+                return Promise.reject(new Error('Runner link is missing.'));
+              }
+              return deleteRunnerPickupAttachment(token, attachmentId).then((updated) => {
+                setRequest(updated);
+              });
+            }}
+          />
+        ) : (
+          <article className="card">
+            <div className="split-row">
+              <h3>Pickup Evidence</h3>
+              <span className="workspace-chip">{pickupPhotos}/{requiredPickupPhotos} required photos</span>
+            </div>
+            <p>Evidence upload is paused while this pickup is in a customer update status. Admin can reassign the pickup from the assign board for the next attempt.</p>
+          </article>
+        )}
 
         <article className="card">
           <div className="split-row">

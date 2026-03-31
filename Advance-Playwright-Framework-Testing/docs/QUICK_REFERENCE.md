@@ -9,12 +9,22 @@
 ## Commands
 
 - `npm test`
+- `npm run test:raw`
 - `npm run test:chromium`
 - `npm run test:smoke`
 - `npm run test:regression`
 - `npm run typecheck`
 - `npm run rules:check`
 - `npm run test:report`
+- `npm run report:allure`
+
+## Generated reports
+
+- Root folder: `Report/`
+- Dashboard: `Report/dashboard/index.html`
+- Playwright HTML: `Report/playwright/index.html`
+- Allure: `Report/allure/index.html` and it can be opened directly as a local file
+- Raw result artifacts: `Report/test-results/`
 
 ## Default local credentials
 
