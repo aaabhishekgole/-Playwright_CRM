@@ -51,6 +51,42 @@ function printReportLocation(label, reportPath) {
   }
 }
 
+function escapeInlineScript(scriptContent) {
+  return scriptContent.replace(/<\/script/gi, '<\\/script');
+}
+
+function inlineDashboardAssets() {
+  const dashboardDirectory = path.join(workingDirectory, reportPaths.dashboard);
+  const dashboardIndexPath = path.join(dashboardDirectory, 'index.html');
+
+  if (!fs.existsSync(dashboardIndexPath)) {
+    return;
+  }
+
+  let html = fs.readFileSync(dashboardIndexPath, 'utf8');
+  const stylesheetMatch = html.match(/<link rel="stylesheet"[^>]*href="(.+?)"[^>]*>/i);
+  const scriptMatch = html.match(/<script type="module"[^>]*src="(.+?)"[^>]*><\/script>/i);
+
+  if (stylesheetMatch) {
+    const stylesheetPath = path.resolve(dashboardDirectory, stylesheetMatch[1]);
+    const stylesheetContent = fs.readFileSync(stylesheetPath, 'utf8');
+    html = html.replace(stylesheetMatch[0], () => `<style>\n${stylesheetContent}\n</style>`);
+  }
+
+  if (scriptMatch) {
+    const scriptPath = path.resolve(dashboardDirectory, scriptMatch[1]);
+    const scriptContent = fs.readFileSync(scriptPath, 'utf8');
+    html = html.replace(scriptMatch[0], () => `<script type="module">\n${escapeInlineScript(scriptContent)}\n</script>`);
+  }
+
+  fs.writeFileSync(dashboardIndexPath, html, 'utf8');
+
+  const assetsDirectory = path.join(dashboardDirectory, 'assets');
+  if (fs.existsSync(assetsDirectory)) {
+    fs.rmSync(assetsDirectory, { force: true, recursive: true });
+  }
+}
+
 let allureExitCode = 0;
 const allureResultsPath = path.join(workingDirectory, reportPaths.allureResults);
 
@@ -65,6 +101,9 @@ const jsonReportPath = path.join(workingDirectory, reportPaths.testResultsJson);
 
 if (fs.existsSync(jsonReportPath)) {
   dashboardExitCode = await runCommand(viteBin, ['build', '--config', 'report-ui/vite.config.mjs'], 'dashboard');
+  if (dashboardExitCode === 0) {
+    inlineDashboardAssets();
+  }
 } else {
   console.warn('[dashboard] Skipping generation because Report/test-results/results.json is missing.');
 }
