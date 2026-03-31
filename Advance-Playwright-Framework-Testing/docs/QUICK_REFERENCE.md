@@ -17,11 +17,14 @@
 - `npm run rules:check`
 - `npm run test:report`
 - `npm run report:allure`
+- `npm run report:dashboard`
+- `npm run report:generate`
 
 ## Generated reports
 
 - Root folder: `Report/`
 - Dashboard: `Report/dashboard/index.html`
+- Dashboard source UI: `playwright_pulse_dashboard.jsx`
 - Playwright HTML: `Report/playwright/index.html`
 - Allure: `Report/allure/index.html` and it can be opened directly as a local file
 - Raw result artifacts: `Report/test-results/`

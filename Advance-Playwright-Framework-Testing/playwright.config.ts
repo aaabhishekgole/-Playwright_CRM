@@ -27,15 +27,6 @@ export default defineConfig({
     navigationTimeout: config.defaultTimeoutMs,
   },
   reporter: [
-    [
-      './src/utils/CustomTTAReporter.ts',
-      {
-        outputFolder: `${reportRoot}/dashboard`,
-        reportTitle: 'Gadget Seva Hub QA Execution Dashboard',
-        playwrightReportPath: '../playwright/index.html',
-        allureReportPath: '../allure/index.html',
-      },
-    ],
     ['html', { open: 'never', outputFolder: `${reportRoot}/playwright` }],
     ['allure-playwright', { detail: true, resultsDir: `${reportRoot}/allure-results`, suiteTitle: false }],
     ['json', { outputFile: `${testResultsPath}/results.json` }],

@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
+import reportDashboardData from "virtual:report-dashboard-data";
 import {
   AlertTriangle,
   BarChart3,
@@ -159,6 +160,24 @@ const demoRuns = [
   },
 ];
 
+const seededRuns =
+  Array.isArray(reportDashboardData?.initialRuns) && reportDashboardData.initialRuns.length
+    ? reportDashboardData.initialRuns
+    : demoRuns;
+const reportLinks = reportDashboardData?.reportLinks || {};
+const reportSourceLabel = reportDashboardData?.sourceLabel || "Demo or imported Playwright JSON";
+const liveDataAvailable = Boolean(reportDashboardData?.initialRuns?.length);
+const dashboardGeneratedAt = reportDashboardData?.generatedAt
+  ? new Date(reportDashboardData.generatedAt).toLocaleString("en-IN", {
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      month: "short",
+      second: "2-digit",
+      year: "numeric",
+    })
+  : "";
+
 const themeStyles = {
   light: {
     page: "bg-[#f7f8ef] text-slate-900",
@@ -291,8 +310,8 @@ function StatCard({ title, value, subtext, icon: Icon, valueClassName = "", pane
 
 export default function PlaywrightPulseDashboard() {
   const [theme, setTheme] = useState("light");
-  const [runs, setRuns] = useState(demoRuns);
-  const [selectedRunId, setSelectedRunId] = useState(demoRuns[0].id);
+  const [runs, setRuns] = useState(seededRuns);
+  const [selectedRunId, setSelectedRunId] = useState(seededRuns[0].id);
   const [browserFilter, setBrowserFilter] = useState("all");
   const [failedSearch, setFailedSearch] = useState("");
   const fileInputRef = useRef(null);
@@ -367,7 +386,9 @@ export default function PlaywrightPulseDashboard() {
       `${passRate}% pass rate indicates ${passRate >= 90 ? "strong" : "moderate"} suite stability for the selected run.`,
       `${flakyCount} failed tests look flaky based on repeated appearance or retry-driven behavior.`,
       `${worstBrowser?.name || "Current browser"} has the highest failure count in this run and should be prioritized.`,
-      "Imported Playwright JSON can be used to replace demo data without changing the dashboard UI.",
+      liveDataAvailable
+        ? "Playwright HTML and Allure links stay aligned with this generated run for fast drill-down."
+        : "Build the report after a suite run to replace demo data automatically, or import Playwright JSON manually.",
     ];
   }, [selectedRun, passRate]);
 
@@ -417,6 +438,10 @@ export default function PlaywrightPulseDashboard() {
   }, [theme]);
 
   const COLORS = ["#22c55e", "#ef4444", "#f59e0b"];
+  const reportLinkClass =
+    theme === "dark"
+      ? "inline-flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-950 px-4 py-2 text-sm font-medium text-slate-100 transition hover:bg-slate-900"
+      : "inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50";
 
   return (
     <div className={`min-h-screen p-4 md:p-8 transition-colors ${styles.page}`}>
@@ -432,7 +457,7 @@ export default function PlaywrightPulseDashboard() {
                     </div>
                     <div>
                       <h1 className="text-2xl font-bold tracking-tight">Playwright Pulse Report</h1>
-                      <p className={`text-sm ${styles.textMuted}`}>Reusable dashboard for any Playwright project with real JSON import, exports, and flakiness insights</p>
+                      <p className={`text-sm ${styles.textMuted}`}>React dashboard generated from the latest suite with Playwright JSON import, exports, and local report drill-downs</p>
                     </div>
                   </div>
                 </div>
@@ -465,6 +490,26 @@ export default function PlaywrightPulseDashboard() {
                 </div>
               </div>
 
+              {(reportLinks.playwright || reportLinks.allure || reportLinks.rawJson) && (
+                <div className="mt-5 flex flex-wrap items-center gap-3">
+                  {reportLinks.playwright && (
+                    <a className={reportLinkClass} href={reportLinks.playwright} rel="noreferrer" target="_blank">
+                      <LayoutDashboard className="h-4 w-4 text-indigo-500" /> Open Playwright HTML
+                    </a>
+                  )}
+                  {reportLinks.allure && (
+                    <a className={reportLinkClass} href={reportLinks.allure} rel="noreferrer" target="_blank">
+                      <TrendingUp className="h-4 w-4 text-indigo-500" /> Open Allure Report
+                    </a>
+                  )}
+                  {reportLinks.rawJson && (
+                    <a className={reportLinkClass} href={reportLinks.rawJson} rel="noreferrer" target="_blank">
+                      <FileJson className="h-4 w-4 text-indigo-500" /> Open Raw JSON
+                    </a>
+                  )}
+                </div>
+              )}
+
               <div className={`mt-5 grid grid-cols-1 gap-3 rounded-2xl border p-4 md:grid-cols-4 ${styles.softPanel}`}>
                 <div>
                   <div className={`text-xs uppercase tracking-wide ${styles.textMuted}`}>Run date</div>
@@ -480,7 +525,8 @@ export default function PlaywrightPulseDashboard() {
                 </div>
                 <div>
                   <div className={`text-xs uppercase tracking-wide ${styles.textMuted}`}>Source</div>
-                  <div className="mt-1 flex items-center gap-2 font-semibold"><FileJson className="h-4 w-4 text-indigo-500" /> Demo or imported Playwright JSON</div>
+                  <div className="mt-1 flex items-center gap-2 font-semibold"><FileJson className="h-4 w-4 text-indigo-500" /> {reportSourceLabel}</div>
+                  {dashboardGeneratedAt && <div className={`mt-1 text-xs ${styles.textMuted}`}>Built {dashboardGeneratedAt}</div>}
                 </div>
               </div>
             </CardContent>

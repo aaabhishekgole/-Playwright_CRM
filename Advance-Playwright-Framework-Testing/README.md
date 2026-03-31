@@ -30,9 +30,11 @@ This project materializes the `Advance-Playwright-Framework.md` blueprint into a
 
 - `npm test` now runs the suite and generates reports only after the execution completes
 - All report output is stored under `Report/`
+- The dashboard build now uses the JSX design in `playwright_pulse_dashboard.jsx` through a small React/Vite report app
 - HTML dashboard: `Report/dashboard/index.html`
 - Playwright HTML report: `Report/playwright/index.html`
 - Allure report: `Report/allure/index.html` generated in single-file mode so it can be opened directly from the folder
+- `npm run report:generate` rebuilds the dashboard and Allure reports from the latest stored results
 - Each UI flow stores a final screenshot and recorded video as test attachments
 
 ## Runtime note
