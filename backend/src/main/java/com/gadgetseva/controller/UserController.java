@@ -3,7 +3,7 @@ package com.gadgetseva.controller;
 import com.gadgetseva.dto.CreatePickupRunnerRequest;
 import com.gadgetseva.dto.UserSummaryResponse;
 import com.gadgetseva.entity.RoleName;
-import com.gadgetseva.repository.UserRepository;
+import com.gadgetseva.persistence.UserStore;
 import com.gadgetseva.service.UserManagementService;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
@@ -22,11 +22,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/users")
 public class UserController {
 
-    private final UserRepository userRepository;
+    private final UserStore userStore;
     private final UserManagementService userManagementService;
 
-    public UserController(UserRepository userRepository, UserManagementService userManagementService) {
-        this.userRepository = userRepository;
+    public UserController(UserStore userStore, UserManagementService userManagementService) {
+        this.userStore = userStore;
         this.userManagementService = userManagementService;
     }
 
@@ -36,8 +36,8 @@ public class UserController {
     public ResponseEntity<List<UserSummaryResponse>> list(@RequestParam(required = false) RoleName role,
                                                           @RequestParam(defaultValue = "false") boolean activeOnly) {
         List<UserSummaryResponse> users = (role == null
-                ? (activeOnly ? userRepository.findByActiveTrueOrderByFullNameAsc() : userRepository.findAllByOrderByFullNameAsc())
-                : (activeOnly ? userRepository.findByRole_NameAndActiveTrueOrderByFullNameAsc(role) : userRepository.findByRole_NameOrderByFullNameAsc(role)))
+                ? (activeOnly ? userStore.findActiveOrderByFullNameAsc() : userStore.findAllOrderByFullNameAsc())
+                : (activeOnly ? userStore.findActiveByRoleOrderByFullNameAsc(role) : userStore.findByRoleOrderByFullNameAsc(role)))
                 .stream()
                 .map(userManagementService::toSummary)
                 .toList();

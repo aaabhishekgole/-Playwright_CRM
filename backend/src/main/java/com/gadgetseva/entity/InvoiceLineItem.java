@@ -11,11 +11,14 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import lombok.Getter;
+import org.springframework.data.mongodb.core.mapping.DBRef;
+import org.springframework.data.mongodb.core.mapping.Document;
 import lombok.Setter;
 
 @Getter
 @Setter
 @Entity
+@Document(collection = "invoice_items")
 @Table(name = "invoice_items")
 public class InvoiceLineItem {
 
@@ -25,6 +28,7 @@ public class InvoiceLineItem {
 
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "invoice_id")
+    @DBRef(lazy = true)
     private Invoice invoice;
 
     @Column(nullable = false, length = 120)

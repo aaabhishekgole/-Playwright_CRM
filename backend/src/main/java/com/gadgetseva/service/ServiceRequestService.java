@@ -35,19 +35,19 @@ import com.gadgetseva.entity.User;
 import com.gadgetseva.exception.ApiException;
 import com.gadgetseva.exception.NotFoundException;
 import com.gadgetseva.mapper.ServiceRequestMapper;
-import com.gadgetseva.repository.AttachmentRepository;
-import com.gadgetseva.repository.CustomerRepository;
-import com.gadgetseva.repository.DeliveryRepository;
-import com.gadgetseva.repository.DeviceRepository;
-import com.gadgetseva.repository.EstimateRepository;
-import com.gadgetseva.repository.InvoiceLineItemRepository;
-import com.gadgetseva.repository.InvoiceRepository;
-import com.gadgetseva.repository.PaymentTransactionRepository;
-import com.gadgetseva.repository.PickupRepository;
-import com.gadgetseva.repository.ServiceRequestRepository;
-import com.gadgetseva.repository.StatusHistoryRepository;
-import com.gadgetseva.repository.TenantRepository;
-import com.gadgetseva.repository.UserRepository;
+import com.gadgetseva.persistence.AttachmentStore;
+import com.gadgetseva.persistence.CustomerStore;
+import com.gadgetseva.persistence.DeliveryStore;
+import com.gadgetseva.persistence.DeviceStore;
+import com.gadgetseva.persistence.EstimateStore;
+import com.gadgetseva.persistence.InvoiceLineItemStore;
+import com.gadgetseva.persistence.InvoiceStore;
+import com.gadgetseva.persistence.PaymentTransactionStore;
+import com.gadgetseva.persistence.PickupStore;
+import com.gadgetseva.persistence.ServiceRequestStore;
+import com.gadgetseva.persistence.StatusHistoryStore;
+import com.gadgetseva.persistence.TenantStore;
+import com.gadgetseva.persistence.UserStore;
 import com.gadgetseva.security.AuthenticatedUser;
 import com.gadgetseva.util.ImeiTools;
 import com.gadgetseva.util.RequestNumberGenerator;
@@ -99,19 +99,19 @@ public class ServiceRequestService {
             RequestStatus.CUSTOMER_NOT_CONTACTABLE
     );
 
-    private final ServiceRequestRepository serviceRequestRepository;
-    private final CustomerRepository customerRepository;
-    private final DeviceRepository deviceRepository;
-    private final UserRepository userRepository;
-    private final PickupRepository pickupRepository;
-    private final EstimateRepository estimateRepository;
-    private final DeliveryRepository deliveryRepository;
-    private final StatusHistoryRepository statusHistoryRepository;
-    private final AttachmentRepository attachmentRepository;
-    private final InvoiceRepository invoiceRepository;
-    private final InvoiceLineItemRepository invoiceLineItemRepository;
-    private final PaymentTransactionRepository paymentTransactionRepository;
-    private final TenantRepository tenantRepository;
+    private final ServiceRequestStore serviceRequestStore;
+    private final CustomerStore customerStore;
+    private final DeviceStore deviceStore;
+    private final UserStore userStore;
+    private final PickupStore pickupStore;
+    private final EstimateStore estimateStore;
+    private final DeliveryStore deliveryStore;
+    private final StatusHistoryStore statusHistoryStore;
+    private final AttachmentStore attachmentStore;
+    private final InvoiceStore invoiceStore;
+    private final InvoiceLineItemStore invoiceLineItemStore;
+    private final PaymentTransactionStore paymentTransactionStore;
+    private final TenantStore tenantStore;
     private final ServiceRequestMapper mapper;
     private final RequestNumberGenerator requestNumberGenerator;
     private final FileStorageService fileStorageService;
@@ -120,19 +120,19 @@ public class ServiceRequestService {
     private final String repairCenterStateCode;
     private final String runnerPortalBaseUrl;
 
-    public ServiceRequestService(ServiceRequestRepository serviceRequestRepository,
-                                 CustomerRepository customerRepository,
-                                 DeviceRepository deviceRepository,
-                                 UserRepository userRepository,
-                                 PickupRepository pickupRepository,
-                                 EstimateRepository estimateRepository,
-                                 DeliveryRepository deliveryRepository,
-                                 StatusHistoryRepository statusHistoryRepository,
-                                 AttachmentRepository attachmentRepository,
-                                 InvoiceRepository invoiceRepository,
-                                 InvoiceLineItemRepository invoiceLineItemRepository,
-                                 PaymentTransactionRepository paymentTransactionRepository,
-                                 TenantRepository tenantRepository,
+    public ServiceRequestService(ServiceRequestStore serviceRequestStore,
+                                 CustomerStore customerStore,
+                                 DeviceStore deviceStore,
+                                 UserStore userStore,
+                                 PickupStore pickupStore,
+                                 EstimateStore estimateStore,
+                                 DeliveryStore deliveryStore,
+                                 StatusHistoryStore statusHistoryStore,
+                                 AttachmentStore attachmentStore,
+                                 InvoiceStore invoiceStore,
+                                 InvoiceLineItemStore invoiceLineItemStore,
+                                 PaymentTransactionStore paymentTransactionStore,
+                                 TenantStore tenantStore,
                                  ServiceRequestMapper mapper,
                                  RequestNumberGenerator requestNumberGenerator,
                                  FileStorageService fileStorageService,
@@ -140,19 +140,19 @@ public class ServiceRequestService {
                                  AuditTrailService auditTrailService,
                                  @Value("${app.repair-center-state-code}") String repairCenterStateCode,
                                  @Value("${app.runner-portal-base-url:http://localhost:5173/runner-access}") String runnerPortalBaseUrl) {
-        this.serviceRequestRepository = serviceRequestRepository;
-        this.customerRepository = customerRepository;
-        this.deviceRepository = deviceRepository;
-        this.userRepository = userRepository;
-        this.pickupRepository = pickupRepository;
-        this.estimateRepository = estimateRepository;
-        this.deliveryRepository = deliveryRepository;
-        this.statusHistoryRepository = statusHistoryRepository;
-        this.attachmentRepository = attachmentRepository;
-        this.invoiceRepository = invoiceRepository;
-        this.invoiceLineItemRepository = invoiceLineItemRepository;
-        this.paymentTransactionRepository = paymentTransactionRepository;
-        this.tenantRepository = tenantRepository;
+        this.serviceRequestStore = serviceRequestStore;
+        this.customerStore = customerStore;
+        this.deviceStore = deviceStore;
+        this.userStore = userStore;
+        this.pickupStore = pickupStore;
+        this.estimateStore = estimateStore;
+        this.deliveryStore = deliveryStore;
+        this.statusHistoryStore = statusHistoryStore;
+        this.attachmentStore = attachmentStore;
+        this.invoiceStore = invoiceStore;
+        this.invoiceLineItemStore = invoiceLineItemStore;
+        this.paymentTransactionStore = paymentTransactionStore;
+        this.tenantStore = tenantStore;
         this.mapper = mapper;
         this.requestNumberGenerator = requestNumberGenerator;
         this.fileStorageService = fileStorageService;
@@ -185,10 +185,10 @@ public class ServiceRequestService {
         customer.setCity(request.customer().city());
         customer.setState(request.customer().state());
         customer.setPostalCode(request.customer().postalCode());
-        customerRepository.save(customer);
+        customerStore.save(customer);
 
         Device device = buildValidatedDevice(request);
-        deviceRepository.save(device);
+        deviceStore.save(device);
 
         ServiceRequest serviceRequest = new ServiceRequest();
         serviceRequest.setRequestNumber(requestNumberGenerator.next());
@@ -211,7 +211,7 @@ public class ServiceRequestService {
         serviceRequest.setCommittedAt(now);
         serviceRequest.setExpectedCompletionAt(now.plusSeconds(slaHours * 3600L));
         serviceRequest.setSlaDeadlineAt(now.plusSeconds(slaHours * 3600L));
-        serviceRequestRepository.save(serviceRequest);
+        serviceRequestStore.save(serviceRequest);
 
         Map<String, Object> after = requestSnapshot(serviceRequest);
         recordHistory(serviceRequest, null, RequestStatus.REQUEST_CREATED, "Service request created", null, after);
@@ -222,8 +222,8 @@ public class ServiceRequestService {
 
     public List<ServiceRequestResponse> list(RequestStatus status) {
         List<ServiceRequest> requests = status == null
-                ? serviceRequestRepository.findAllByOrderByCreatedAtDesc()
-                : serviceRequestRepository.findByStatusOrderByCreatedAtDesc(status);
+                ? serviceRequestStore.findAllOrderByCreatedAtDesc()
+                : serviceRequestStore.findByStatusOrderByCreatedAtDesc(status);
         return requests.stream().map(this::buildResponse).toList();
     }
 
@@ -239,7 +239,7 @@ public class ServiceRequestService {
     public ServiceRequestResponse assignPickup(Long requestId, AssignPickupRequest request) {
         ServiceRequest serviceRequest = findRequest(requestId);
         User agent = findUser(request.agentId());
-        Pickup pickup = pickupRepository.findByServiceRequest(serviceRequest).orElseGet(Pickup::new);
+        Pickup pickup = pickupStore.findByServiceRequest(serviceRequest).orElseGet(Pickup::new);
         Map<String, Object> before = pickupSnapshot(pickup);
         pickup.setServiceRequest(serviceRequest);
         pickup.setAgent(agent);
@@ -253,7 +253,7 @@ public class ServiceRequestService {
         pickup.setCustomerConfirmation(false);
         pickup.setRunnerPortalToken(generateRunnerPortalToken());
         pickup.setRunnerLinkSentAt(Instant.now());
-        pickupRepository.save(pickup);
+        pickupStore.save(pickup);
         serviceRequest.setAssignedPickupAgent(agent);
         transition(serviceRequest, RequestStatus.PICKUP_ASSIGNED, "Pickup assigned");
         auditTrailService.logChange("Pickup", pickup.getId(), serviceRequest.getId(), "UPSERT", before, pickupSnapshot(pickup), currentUserOrNull());
@@ -276,7 +276,7 @@ public class ServiceRequestService {
         if (pickup.getAcceptedAt() == null) {
             pickup.setAcceptedAt(Instant.now());
         }
-        pickupRepository.save(pickup);
+        pickupStore.save(pickup);
 
         if (serviceRequest.getStatus() == RequestStatus.PICKUP_ASSIGNED) {
             transition(serviceRequest, RequestStatus.PICKUP_IN_PROGRESS, "Runner accepted pickup assignment", pickup.getAgent());
@@ -311,7 +311,7 @@ public class ServiceRequestService {
             pickup.setAcceptedAt(Instant.now());
         }
         pickup.setCustomerConfirmation(false);
-        pickupRepository.save(pickup);
+        pickupStore.save(pickup);
 
         String remarks = request.remarks() != null && !request.remarks().isBlank()
                 ? request.remarks().trim()
@@ -365,7 +365,7 @@ public class ServiceRequestService {
         }
         pickup.setCompletedAt(Instant.now());
         pickup.setCustomerConfirmation(true);
-        pickupRepository.save(pickup);
+        pickupStore.save(pickup);
         transition(serviceRequest, RequestStatus.PICKUP_COMPLETED, "Pickup completed from runner portal with 10 device photos", pickup.getAgent());
         auditTrailService.logChange("Pickup", pickup.getId(), serviceRequest.getId(), "COMPLETE", before, pickupSnapshot(pickup), pickup.getAgent());
         queuePickupCompletedNotifications(serviceRequest, pickup);
@@ -375,7 +375,7 @@ public class ServiceRequestService {
     public ServiceRequestResponse createEstimate(Long requestId, CreateEstimateRequest request) {
         ServiceRequest serviceRequest = findRequest(requestId);
         BigDecimal total = request.partsCost().add(request.laborCost()).add(request.taxAmount());
-        Estimate estimate = estimateRepository.findByServiceRequest(serviceRequest).orElseGet(Estimate::new);
+        Estimate estimate = estimateStore.findByServiceRequest(serviceRequest).orElseGet(Estimate::new);
         Map<String, Object> before = estimateSnapshot(estimate);
         estimate.setServiceRequest(serviceRequest);
         estimate.setDiagnosisSummary(request.diagnosisSummary());
@@ -383,7 +383,7 @@ public class ServiceRequestService {
         estimate.setLaborCost(request.laborCost());
         estimate.setTaxAmount(request.taxAmount());
         estimate.setTotalAmount(total);
-        estimateRepository.save(estimate);
+        estimateStore.save(estimate);
         transition(serviceRequest, RequestStatus.ESTIMATE_PREPARED, "Estimate prepared");
         auditTrailService.logChange("Estimate", estimate.getId(), serviceRequest.getId(), "UPSERT", before, estimateSnapshot(estimate), currentUserOrNull());
         return buildResponse(serviceRequest);
@@ -391,13 +391,13 @@ public class ServiceRequestService {
 
     public ServiceRequestResponse approveEstimate(Long requestId, String remarks) {
         ServiceRequest serviceRequest = findRequest(requestId);
-        Estimate estimate = estimateRepository.findByServiceRequest(serviceRequest)
+        Estimate estimate = estimateStore.findByServiceRequest(serviceRequest)
                 .orElseThrow(() -> new NotFoundException("Estimate not found for request " + requestId));
         Map<String, Object> before = estimateSnapshot(estimate);
         estimate.setApproved(true);
         estimate.setApprovedAt(Instant.now());
         estimate.setApprovedBy(currentUser());
-        estimateRepository.save(estimate);
+        estimateStore.save(estimate);
         RequestStatus targetStatus = serviceRequest.getStatus() == RequestStatus.CASHLESS_PENDING_APPROVAL
                 ? RequestStatus.CASHLESS_APPROVED
                 : RequestStatus.ESTIMATE_APPROVED;
@@ -415,14 +415,14 @@ public class ServiceRequestService {
     public ServiceRequestResponse assignDelivery(Long requestId, AssignDeliveryRequest request) {
         ServiceRequest serviceRequest = findRequest(requestId);
         User agent = findUser(request.agentId());
-        Delivery delivery = deliveryRepository.findByServiceRequest(serviceRequest).orElseGet(Delivery::new);
+        Delivery delivery = deliveryStore.findByServiceRequest(serviceRequest).orElseGet(Delivery::new);
         Map<String, Object> before = deliverySnapshot(delivery);
         delivery.setServiceRequest(serviceRequest);
         delivery.setAgent(agent);
         delivery.setScheduledAt(request.scheduledAt());
         delivery.setOtpCode(request.otpCode());
         delivery.setNotes(request.notes());
-        deliveryRepository.save(delivery);
+        deliveryStore.save(delivery);
         serviceRequest.setAssignedDeliveryAgent(agent);
         transition(serviceRequest, RequestStatus.DELIVERY_ASSIGNED, "Delivery assigned");
         auditTrailService.logChange("Delivery", delivery.getId(), serviceRequest.getId(), "UPSERT", before, deliverySnapshot(delivery), currentUserOrNull());
@@ -441,9 +441,9 @@ public class ServiceRequestService {
 
     public ServiceRequestResponse createInvoice(Long requestId, CreateInvoiceRequest request) {
         ServiceRequest serviceRequest = findRequest(requestId);
-        Estimate estimate = estimateRepository.findByServiceRequest(serviceRequest)
+        Estimate estimate = estimateStore.findByServiceRequest(serviceRequest)
                 .orElseThrow(() -> new NotFoundException("Estimate not found for request " + requestId));
-        if (invoiceRepository.findByServiceRequest(serviceRequest).isPresent()) {
+        if (invoiceStore.findByServiceRequest(serviceRequest).isPresent()) {
             throw new ApiException("Invoice already exists for request " + requestId);
         }
         BigDecimal subtotal = estimate.getLaborCost().add(estimate.getPartsCost());
@@ -471,7 +471,7 @@ public class ServiceRequestService {
         invoice.setAmountDue(total);
         invoice.setPaymentStatus(PaymentStatus.PENDING.name());
         invoice.setIssuedAt(Instant.now());
-        invoiceRepository.save(invoice);
+        invoiceStore.save(invoice);
         persistInvoiceItems(invoice, estimate, request, gstType == GstType.CGST_SGST ? request.gstRate().divide(new BigDecimal("2"), 2, RoundingMode.HALF_UP) : request.gstRate());
         auditTrailService.logChange("Invoice", invoice.getId(), serviceRequest.getId(), "CREATE", null, invoiceSnapshot(invoice), currentUserOrNull());
         if (serviceRequest.getStatus() == RequestStatus.DELIVERED || serviceRequest.getStatus() == RequestStatus.TOTAL_LOSS) {
@@ -483,7 +483,7 @@ public class ServiceRequestService {
 
     public ServiceRequestResponse recordPayment(Long requestId, RecordPaymentRequest request) {
         ServiceRequest serviceRequest = findRequest(requestId);
-        Invoice invoice = invoiceRepository.findByServiceRequest(serviceRequest)
+        Invoice invoice = invoiceStore.findByServiceRequest(serviceRequest)
                 .orElseThrow(() -> new NotFoundException("Invoice not found for request " + requestId));
         PaymentTransaction payment = new PaymentTransaction();
         payment.setTenant(serviceRequest.getTenant());
@@ -497,7 +497,7 @@ public class ServiceRequestService {
         payment.setReconciliationStatus(com.gadgetseva.entity.PaymentReconciliationStatus.PENDING);
         payment.setPaidAt(Instant.now());
         payment.setMetadataJson(request.metadataJson());
-        paymentTransactionRepository.save(payment);
+        paymentTransactionStore.save(payment);
 
         invoice.setAmountPaid(invoice.getAmountPaid().add(request.amount()));
         invoice.setAmountDue(invoice.getTotalAmount().subtract(invoice.getAmountPaid()).max(BigDecimal.ZERO));
@@ -505,7 +505,7 @@ public class ServiceRequestService {
         if (invoice.getAmountDue().compareTo(BigDecimal.ZERO) == 0) {
             invoice.setPaidAt(Instant.now());
         }
-        invoiceRepository.save(invoice);
+        invoiceStore.save(invoice);
         auditTrailService.logChange("Payment", payment.getId(), serviceRequest.getId(), "CAPTURE", null, paymentSnapshot(payment), currentUserOrNull());
         notificationService.queueStatusUpdate(serviceRequest, "Payment Recorded", "Payment received against invoice " + invoice.getInvoiceNumber());
         return buildResponse(serviceRequest);
@@ -513,7 +513,7 @@ public class ServiceRequestService {
 
     public ServiceRequestResponse reconcilePayment(Long requestId, Long paymentId, com.gadgetseva.dto.ReconcilePaymentRequest request) {
         ServiceRequest serviceRequest = findRequest(requestId);
-        PaymentTransaction payment = paymentTransactionRepository.findById(paymentId)
+        PaymentTransaction payment = paymentTransactionStore.findById(paymentId)
                 .orElseThrow(() -> new NotFoundException("Payment not found: " + paymentId));
         if (!payment.getServiceRequest().getId().equals(serviceRequest.getId())) {
             throw new ApiException("Payment does not belong to request " + requestId);
@@ -521,14 +521,14 @@ public class ServiceRequestService {
         payment.setReconciliationStatus(request.reconciliationStatus());
         payment.setReconciliationRemarks(request.remarks());
         payment.setReconciledAt(Instant.now());
-        paymentTransactionRepository.save(payment);
+        paymentTransactionStore.save(payment);
         auditTrailService.logChange("Payment", payment.getId(), serviceRequest.getId(), "RECONCILE", null, paymentSnapshot(payment), currentUserOrNull());
         notificationService.queueStatusUpdate(serviceRequest, "Payment Reconciled", "Payment " + payment.getPaymentReference() + " was marked as " + request.reconciliationStatus().name());
         return buildResponse(serviceRequest);
     }
     public ServiceRequestResponse refundPayment(Long requestId, RefundPaymentRequest request) {
         ServiceRequest serviceRequest = findRequest(requestId);
-        PaymentTransaction payment = paymentTransactionRepository.findById(request.paymentId())
+        PaymentTransaction payment = paymentTransactionStore.findById(request.paymentId())
                 .orElseThrow(() -> new NotFoundException("Payment not found: " + request.paymentId()));
         if (!payment.getServiceRequest().getId().equals(serviceRequest.getId())) {
             throw new ApiException("Payment does not belong to request " + requestId);
@@ -539,13 +539,13 @@ public class ServiceRequestService {
         payment.setRefundStatus(RefundStatus.PROCESSED);
         payment.setRefundedAt(Instant.now());
         payment.setPaymentStatus(payment.getRefundAmount().compareTo(payment.getAmount()) >= 0 ? PaymentStatus.REFUNDED : PaymentStatus.PARTIALLY_REFUNDED);
-        paymentTransactionRepository.save(payment);
+        paymentTransactionStore.save(payment);
 
         invoice.setRefundAmount(invoice.getRefundAmount().add(request.amount()));
         invoice.setAmountPaid(invoice.getAmountPaid().subtract(request.amount()).max(BigDecimal.ZERO));
         invoice.setAmountDue(invoice.getTotalAmount().subtract(invoice.getAmountPaid()).max(BigDecimal.ZERO));
         invoice.setPaymentStatus(payment.getPaymentStatus().name());
-        invoiceRepository.save(invoice);
+        invoiceStore.save(invoice);
         auditTrailService.logChange("Payment", payment.getId(), serviceRequest.getId(), "REFUND", null, paymentSnapshot(payment), currentUserOrNull());
         notificationService.queueStatusUpdate(serviceRequest, "Refund Processed", "Refund processed for invoice " + invoice.getInvoiceNumber());
         return buildResponse(serviceRequest);
@@ -559,19 +559,19 @@ public class ServiceRequestService {
 
     @Scheduled(fixedDelay = 300000)
     public void evaluateSlaBreaches() {
-        List<ServiceRequest> overdue = serviceRequestRepository.findBySlaBreachedFalseAndStatusNotInAndSlaDeadlineAtBefore(List.of(RequestStatus.CLOSED), Instant.now());
+        List<ServiceRequest> overdue = serviceRequestStore.findBySlaBreachedFalseAndStatusNotInAndSlaDeadlineAtBefore(List.of(RequestStatus.CLOSED), Instant.now());
         for (ServiceRequest serviceRequest : overdue) {
             serviceRequest.setSlaBreached(true);
             serviceRequest.setBreachReason("SLA breached at " + Instant.now());
             serviceRequest.setLastSlaAlertAt(Instant.now());
-            serviceRequestRepository.save(serviceRequest);
+            serviceRequestStore.save(serviceRequest);
             auditTrailService.logChange("ServiceRequest", serviceRequest.getId(), serviceRequest.getId(), "SLA_BREACH", null, requestSnapshot(serviceRequest), null);
             notificationService.queueAlert(serviceRequest, "ops@" + serviceRequest.getTenant().getCode().toLowerCase() + ".local", "SLA Breach Alert", "Request " + serviceRequest.getRequestNumber() + " has breached its SLA.");
         }
     }
 
     private Device buildValidatedDevice(CreateServiceRequestRequest request) {
-        Device device = deviceRepository.findBySerialNumber(request.device().serialNumber()).orElseGet(Device::new);
+        Device device = deviceStore.findBySerialNumber(request.device().serialNumber()).orElseGet(Device::new);
         device.setBrand(request.device().brand());
         device.setModel(request.device().model());
         device.setDeviceCategory(request.device().deviceCategory() != null ? request.device().deviceCategory() : DeviceCategory.MOBILE);
@@ -607,7 +607,7 @@ public class ServiceRequestService {
         labor.setTaxableValue(estimate.getLaborCost());
         labor.setGstRate(effectiveRate);
         labor.setLineTotal(estimate.getLaborCost());
-        invoiceLineItemRepository.save(labor);
+        invoiceLineItemStore.save(labor);
         if (estimate.getPartsCost().compareTo(BigDecimal.ZERO) > 0) {
             InvoiceLineItem parts = new InvoiceLineItem();
             parts.setInvoice(invoice);
@@ -617,29 +617,29 @@ public class ServiceRequestService {
             parts.setTaxableValue(estimate.getPartsCost());
             parts.setGstRate(effectiveRate);
             parts.setLineTotal(estimate.getPartsCost());
-            invoiceLineItemRepository.save(parts);
+            invoiceLineItemStore.save(parts);
         }
     }
 
     private ServiceRequest findRequest(Long id) {
-        return serviceRequestRepository.findById(id).orElseThrow(() -> new NotFoundException("Service request not found: " + id));
+        return serviceRequestStore.findById(id).orElseThrow(() -> new NotFoundException("Service request not found: " + id));
     }
 
     private User findUser(Long userId) {
-        return userRepository.findById(userId).orElseThrow(() -> new NotFoundException("User not found: " + userId));
+        return userStore.findById(userId).orElseThrow(() -> new NotFoundException("User not found: " + userId));
     }
 
     private Pickup findPickupByToken(String token) {
         if (token == null || token.isBlank()) {
             throw new NotFoundException("Runner pickup link is invalid");
         }
-        return pickupRepository.findByRunnerPortalToken(token)
+        return pickupStore.findByRunnerPortalToken(token)
                 .orElseThrow(() -> new NotFoundException("Runner pickup link not found"));
     }
 
     private Tenant resolveTenant(String tenantCode) {
         String effectiveCode = tenantCode != null && !tenantCode.isBlank() ? tenantCode : "GSH-CORE";
-        return tenantRepository.findByCode(effectiveCode).orElseThrow(() -> new NotFoundException("Tenant not found: " + effectiveCode));
+        return tenantStore.findByCode(effectiveCode).orElseThrow(() -> new NotFoundException("Tenant not found: " + effectiveCode));
     }
 
     private void transition(ServiceRequest serviceRequest, RequestStatus targetStatus, String remarks) {
@@ -649,7 +649,7 @@ public class ServiceRequestService {
     private void transition(ServiceRequest serviceRequest, RequestStatus targetStatus, String remarks, User actor) {
         Map<String, Object> before = requestSnapshot(serviceRequest);
         if (targetStatus == RequestStatus.PICKUP_COMPLETED) {
-            long pickupPhotos = attachmentRepository.countByServiceRequestAndAttachmentTypeStartingWith(serviceRequest, "PICKUP_IMAGE_");
+            long pickupPhotos = attachmentStore.countByServiceRequestAndAttachmentTypeStartingWith(serviceRequest, "PICKUP_IMAGE_");
             if (pickupPhotos < REQUIRED_PICKUP_PHOTO_COUNT) {
                 throw new ApiException("Upload all 10 required pickup photos before marking pickup completed");
             }
@@ -665,7 +665,7 @@ public class ServiceRequestService {
                 serviceRequest.setBreachReason("Closed after SLA deadline");
             }
         }
-        serviceRequestRepository.save(serviceRequest);
+        serviceRequestStore.save(serviceRequest);
         Map<String, Object> after = requestSnapshot(serviceRequest);
         recordHistory(serviceRequest, previous, targetStatus, remarks, before, after, actor);
         auditTrailService.logChange("ServiceRequest", serviceRequest.getId(), serviceRequest.getId(), "STATUS_CHANGE", before, after, actor);
@@ -692,21 +692,21 @@ public class ServiceRequestService {
         history.setChangedAt(Instant.now());
         history.setBeforeValueJson(auditTrailService.toJson(before));
         history.setAfterValueJson(auditTrailService.toJson(after));
-        statusHistoryRepository.save(history);
+        statusHistoryStore.save(history);
     }
 
     private ServiceRequestResponse buildResponse(ServiceRequest serviceRequest) {
-        Pickup pickup = pickupRepository.findByServiceRequest(serviceRequest).orElse(null);
+        Pickup pickup = pickupStore.findByServiceRequest(serviceRequest).orElse(null);
         if (pickup != null && (pickup.getRunnerPortalToken() == null || pickup.getRunnerPortalToken().isBlank())) {
             pickup.setRunnerPortalToken(generateRunnerPortalToken());
             pickup.setRunnerLinkSentAt(pickup.getRunnerLinkSentAt() != null ? pickup.getRunnerLinkSentAt() : Instant.now());
-            pickupRepository.save(pickup);
+            pickupStore.save(pickup);
         }
-        List<StatusHistory> history = statusHistoryRepository.findByServiceRequestOrderByChangedAtAsc(serviceRequest);
-        List<Attachment> attachments = attachmentRepository.findByServiceRequest(serviceRequest);
-        Invoice invoice = invoiceRepository.findByServiceRequest(serviceRequest).orElse(null);
-        List<InvoiceLineItem> invoiceItems = invoice != null ? invoiceLineItemRepository.findByInvoiceOrderByIdAsc(invoice) : List.of();
-        List<PaymentTransaction> payments = paymentTransactionRepository.findByServiceRequestOrderByCreatedAtDesc(serviceRequest);
+        List<StatusHistory> history = statusHistoryStore.findByServiceRequestOrderByChangedAtAsc(serviceRequest);
+        List<Attachment> attachments = attachmentStore.findByServiceRequest(serviceRequest);
+        Invoice invoice = invoiceStore.findByServiceRequest(serviceRequest).orElse(null);
+        List<InvoiceLineItem> invoiceItems = invoice != null ? invoiceLineItemStore.findByInvoiceOrderByIdAsc(invoice) : List.of();
+        List<PaymentTransaction> payments = paymentTransactionStore.findByServiceRequestOrderByCreatedAtDesc(serviceRequest);
         List<NotificationLog> notifications = notificationService.listForRequest(serviceRequest.getId());
         return mapper.toResponse(serviceRequest, pickup, runnerPortalBaseUrl, history, attachments, invoice, invoiceItems, payments, notifications, auditTrailService.listForRequest(serviceRequest.getId()));
     }
@@ -729,14 +729,14 @@ public class ServiceRequestService {
         attachment.setSignedUrlExpiresAt(Instant.now().plusSeconds(900));
         attachment.setUploadedBy(actor);
         attachment.setUploadedAt(Instant.now());
-        attachmentRepository.save(attachment);
+        attachmentStore.save(attachment);
         maybeAdvanceEvidenceWorkflow(serviceRequest, actor);
         auditTrailService.logChange("Attachment", attachment.getId(), serviceRequest.getId(), "UPLOAD", null, attachmentSnapshot(attachment), actor);
         return buildResponse(serviceRequest);
     }
 
     private ServiceRequestResponse deleteAttachmentInternal(ServiceRequest serviceRequest, Long attachmentId, User actor) {
-        Attachment attachment = attachmentRepository.findByIdAndServiceRequest(attachmentId, serviceRequest)
+        Attachment attachment = attachmentStore.findByIdAndServiceRequest(attachmentId, serviceRequest)
                 .orElseThrow(() -> new NotFoundException("Attachment not found: " + attachmentId));
         if (serviceRequest.getStatus() == RequestStatus.CASHLESS_APPROVED && attachment.getAttachmentType().startsWith("CASHLESS_")) {
             throw new ApiException("Approved cashless evidence cannot be removed");
@@ -750,7 +750,7 @@ public class ServiceRequestService {
 
         Map<String, Object> before = attachmentSnapshot(attachment);
         fileStorageService.delete(attachment.getObjectKey());
-        attachmentRepository.delete(attachment);
+        attachmentStore.delete(attachment);
 
         if (serviceRequest.getStatus() == RequestStatus.CASHLESS_PENDING_APPROVAL && attachment.getAttachmentType().startsWith("CASHLESS_") && !hasCompleteCashlessEvidence(serviceRequest)) {
             transition(serviceRequest, RequestStatus.CASHLESS_REVISION_REQUIRED, "Cashless evidence removed and requires revision", actor);
@@ -765,7 +765,7 @@ public class ServiceRequestService {
             throw new ApiException("Attachment type is required");
         }
         validateAttachmentType(attachmentType);
-        if (attachmentRepository.existsByServiceRequestAndAttachmentType(serviceRequest, attachmentType)) {
+        if (attachmentStore.existsByServiceRequestAndAttachmentType(serviceRequest, attachmentType)) {
             throw new ApiException("Attachment already uploaded for type " + attachmentType);
         }
         enforceGroupedAttachmentLimit(serviceRequest, attachmentType, "PICKUP_IMAGE_", REQUIRED_PICKUP_PHOTO_COUNT, "Pickup requires exactly 10 required device photos");
@@ -782,7 +782,7 @@ public class ServiceRequestService {
         if (!attachmentType.startsWith(prefix)) {
             return;
         }
-        long existing = attachmentRepository.countByServiceRequestAndAttachmentTypeStartingWith(serviceRequest, prefix);
+        long existing = attachmentStore.countByServiceRequestAndAttachmentTypeStartingWith(serviceRequest, prefix);
         if (existing >= maxAllowed) {
             throw new ApiException(message);
         }
@@ -813,8 +813,8 @@ public class ServiceRequestService {
     }
 
     private boolean hasCompleteCashlessEvidence(ServiceRequest serviceRequest) {
-        long cashlessDevicePhotos = attachmentRepository.countByServiceRequestAndAttachmentTypeStartingWith(serviceRequest, "CASHLESS_DEVICE_IMAGE_");
-        long cashlessDamagePhotos = attachmentRepository.countByServiceRequestAndAttachmentTypeStartingWith(serviceRequest, "CASHLESS_DAMAGE_IMAGE_");
+        long cashlessDevicePhotos = attachmentStore.countByServiceRequestAndAttachmentTypeStartingWith(serviceRequest, "CASHLESS_DEVICE_IMAGE_");
+        long cashlessDamagePhotos = attachmentStore.countByServiceRequestAndAttachmentTypeStartingWith(serviceRequest, "CASHLESS_DAMAGE_IMAGE_");
         return cashlessDevicePhotos >= 6 && cashlessDamagePhotos >= 4;
     }
 
@@ -887,7 +887,7 @@ public class ServiceRequestService {
     private void queueAdminNotifications(ServiceRequest serviceRequest, String subject, String message) {
         Set<String> dispatched = new LinkedHashSet<>();
         for (RoleName roleName : List.of(RoleName.ADMIN, RoleName.BACKEND_TEAM)) {
-            for (User user : userRepository.findByRole_NameOrderByFullNameAsc(roleName)) {
+            for (User user : userStore.findByRoleOrderByFullNameAsc(roleName)) {
                 if (!user.isActive()) {
                     continue;
                 }

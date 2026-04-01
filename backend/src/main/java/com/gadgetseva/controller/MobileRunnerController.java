@@ -6,9 +6,9 @@ import com.gadgetseva.entity.NotificationLog;
 import com.gadgetseva.entity.Pickup;
 import com.gadgetseva.entity.RoleName;
 import com.gadgetseva.entity.ServiceRequest;
-import com.gadgetseva.repository.NotificationLogRepository;
-import com.gadgetseva.repository.PickupRepository;
-import com.gadgetseva.repository.ServiceRequestRepository;
+import com.gadgetseva.persistence.NotificationLogStore;
+import com.gadgetseva.persistence.PickupStore;
+import com.gadgetseva.persistence.ServiceRequestStore;
 import com.gadgetseva.security.AuthenticatedUser;
 import java.util.List;
 import org.springframework.security.access.AccessDeniedException;
@@ -22,16 +22,16 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/mobile/runner")
 public class MobileRunnerController {
 
-    private final NotificationLogRepository notificationLogRepository;
-    private final ServiceRequestRepository serviceRequestRepository;
-    private final PickupRepository pickupRepository;
+    private final NotificationLogStore notificationLogStore;
+    private final ServiceRequestStore serviceRequestStore;
+    private final PickupStore pickupStore;
 
-    public MobileRunnerController(NotificationLogRepository notificationLogRepository,
-                                  ServiceRequestRepository serviceRequestRepository,
-                                  PickupRepository pickupRepository) {
-        this.notificationLogRepository = notificationLogRepository;
-        this.serviceRequestRepository = serviceRequestRepository;
-        this.pickupRepository = pickupRepository;
+    public MobileRunnerController(NotificationLogStore notificationLogStore,
+                                  ServiceRequestStore serviceRequestStore,
+                                  PickupStore pickupStore) {
+        this.notificationLogStore = notificationLogStore;
+        this.serviceRequestStore = serviceRequestStore;
+        this.pickupStore = pickupStore;
     }
 
     @GetMapping("/notifications")
@@ -40,7 +40,7 @@ public class MobileRunnerController {
         if (user == null || user.getUser().getRole() == null || user.getUser().getRole().getName() != RoleName.PICKUP_AGENT) {
             throw new AccessDeniedException("Only pickup riders can open the runner mobile inbox.");
         }
-        return notificationLogRepository.findTop50ByChannelAndRecipientOrderByCreatedAtDesc("APP", user.getUsername())
+        return notificationLogStore.findTop50ByChannelAndRecipientOrderByCreatedAtDesc("APP", user.getUsername())
                 .stream()
                 .map(this::toResponse)
                 .toList();
@@ -49,8 +49,8 @@ public class MobileRunnerController {
     private MobileRunnerNotificationResponse toResponse(NotificationLog notificationLog) {
         ServiceRequest serviceRequest = notificationLog.getServiceRequestId() == null
                 ? null
-                : serviceRequestRepository.findById(notificationLog.getServiceRequestId()).orElse(null);
-        Pickup pickup = serviceRequest == null ? null : pickupRepository.findByServiceRequest(serviceRequest).orElse(null);
+                : serviceRequestStore.findById(notificationLog.getServiceRequestId()).orElse(null);
+        Pickup pickup = serviceRequest == null ? null : pickupStore.findByServiceRequest(serviceRequest).orElse(null);
         return new MobileRunnerNotificationResponse(
                 notificationLog.getId(),
                 notificationLog.getChannel(),

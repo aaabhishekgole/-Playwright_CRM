@@ -11,11 +11,14 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.time.Instant;
 import lombok.Getter;
+import org.springframework.data.mongodb.core.mapping.DBRef;
+import org.springframework.data.mongodb.core.mapping.Document;
 import lombok.Setter;
 
 @Getter
 @Setter
 @Entity
+@Document(collection = "pickups")
 @Table(name = "pickups")
 public class Pickup extends BaseAuditableEntity {
 
@@ -25,10 +28,12 @@ public class Pickup extends BaseAuditableEntity {
 
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "service_request_id")
+    @DBRef(lazy = true)
     private ServiceRequest serviceRequest;
 
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "agent_id")
+    @DBRef(lazy = true)
     private User agent;
 
     @Column(nullable = false)

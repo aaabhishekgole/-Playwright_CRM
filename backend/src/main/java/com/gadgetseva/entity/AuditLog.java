@@ -11,11 +11,14 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.time.Instant;
 import lombok.Getter;
+import org.springframework.data.mongodb.core.mapping.DBRef;
+import org.springframework.data.mongodb.core.mapping.Document;
 import lombok.Setter;
 
 @Getter
 @Setter
 @Entity
+@Document(collection = "audit_logs")
 @Table(name = "audit_logs")
 public class AuditLog {
 
@@ -42,6 +45,7 @@ public class AuditLog {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "changed_by")
+    @DBRef(lazy = true)
     private User changedBy;
 
     @Column(nullable = false)

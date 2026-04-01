@@ -3,8 +3,8 @@ package com.gadgetseva.service;
 import com.gadgetseva.entity.NotificationDeliveryStatus;
 import com.gadgetseva.entity.NotificationLog;
 import com.gadgetseva.entity.ServiceRequest;
-import com.gadgetseva.repository.NotificationLogRepository;
-import com.gadgetseva.repository.ServiceRequestRepository;
+import com.gadgetseva.persistence.NotificationLogStore;
+import com.gadgetseva.persistence.ServiceRequestStore;
 import java.time.Instant;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
@@ -15,15 +15,15 @@ import org.springframework.stereotype.Service;
 @Service
 public class LoggingNotificationService implements NotificationService {
 
-    private final NotificationLogRepository notificationLogRepository;
-    private final ServiceRequestRepository serviceRequestRepository;
+    private final NotificationLogStore notificationLogStore;
+    private final ServiceRequestStore serviceRequestStore;
     private final RoutingNotificationDeliveryGateway routingNotificationDeliveryGateway;
 
-    public LoggingNotificationService(NotificationLogRepository notificationLogRepository,
-                                      ServiceRequestRepository serviceRequestRepository,
+    public LoggingNotificationService(NotificationLogStore notificationLogStore,
+                                      ServiceRequestStore serviceRequestStore,
                                       RoutingNotificationDeliveryGateway routingNotificationDeliveryGateway) {
-        this.notificationLogRepository = notificationLogRepository;
-        this.serviceRequestRepository = serviceRequestRepository;
+        this.notificationLogStore = notificationLogStore;
+        this.serviceRequestStore = serviceRequestStore;
         this.routingNotificationDeliveryGateway = routingNotificationDeliveryGateway;
     }
 
@@ -59,17 +59,17 @@ public class LoggingNotificationService implements NotificationService {
         logEntry.setMaxAttempts(3);
         logEntry.setNextRetryAt(Instant.now());
         logEntry.setPayloadJson(payloadJson);
-        notificationLogRepository.save(logEntry);
+        notificationLogStore.save(logEntry);
     }
 
     @Override
     public List<NotificationLog> listForRequest(Long serviceRequestId) {
-        return notificationLogRepository.findByServiceRequestIdOrderByCreatedAtDesc(serviceRequestId);
+        return notificationLogStore.findByServiceRequestIdOrderByCreatedAtDesc(serviceRequestId);
     }
 
     @Scheduled(fixedDelay = 60000)
     public void processQueue() {
-        List<NotificationLog> dueItems = notificationLogRepository.findTop20ByDeliveryStatusInAndNextRetryAtBeforeOrderByCreatedAtAsc(
+        List<NotificationLog> dueItems = notificationLogStore.findTop20ByDeliveryStatusInAndNextRetryAtBeforeOrderByCreatedAtAsc(
                 List.of(NotificationDeliveryStatus.QUEUED, NotificationDeliveryStatus.RETRYING),
                 Instant.now().plusSeconds(1)
         );
@@ -77,13 +77,13 @@ public class LoggingNotificationService implements NotificationService {
             try {
                 item.setAttemptCount(item.getAttemptCount() + 1);
                 ServiceRequest serviceRequest = item.getServiceRequestId() != null
-                        ? serviceRequestRepository.findById(item.getServiceRequestId()).orElse(null)
+                        ? serviceRequestStore.findById(item.getServiceRequestId()).orElse(null)
                         : null;
                 NotificationDeliveryGateway.DeliveryResult deliveryResult = routingNotificationDeliveryGateway.deliver(item, serviceRequest);
                 if (deliveryResult.delivered()) {
                     item.setDeliveryStatus(NotificationDeliveryStatus.SENT);
                     item.setErrorMessage(null);
-                    notificationLogRepository.save(item);
+                    notificationLogStore.save(item);
                     log.info("Delivered {} notification {} to {}", item.getChannel(), item.getId(), item.getRecipient());
                     continue;
                 }
@@ -95,7 +95,7 @@ public class LoggingNotificationService implements NotificationService {
                     item.setDeliveryStatus(NotificationDeliveryStatus.RETRYING);
                     item.setNextRetryAt(Instant.now().plusSeconds(item.getAttemptCount() * 300L));
                 }
-                notificationLogRepository.save(item);
+                notificationLogStore.save(item);
             } catch (Exception exception) {
                 item.setErrorMessage(exception.getMessage());
                 if (item.getAttemptCount() >= item.getMaxAttempts()) {
@@ -104,7 +104,7 @@ public class LoggingNotificationService implements NotificationService {
                     item.setDeliveryStatus(NotificationDeliveryStatus.RETRYING);
                     item.setNextRetryAt(Instant.now().plusSeconds(item.getAttemptCount() * 300L));
                 }
-                notificationLogRepository.save(item);
+                notificationLogStore.save(item);
             }
         }
     }

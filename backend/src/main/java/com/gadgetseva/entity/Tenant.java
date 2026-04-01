@@ -7,11 +7,13 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.Getter;
+import org.springframework.data.mongodb.core.mapping.Document;
 import lombok.Setter;
 
 @Getter
 @Setter
 @Entity
+@Document(collection = "tenants")
 @Table(name = "tenants")
 public class Tenant extends BaseAuditableEntity {
 

@@ -30,4 +30,8 @@ export class PickupAssignmentModule {
     await this.assignPickupPage.assignPickup(requestNumber, runnerName, scheduledAt, notes);
     await this.appLayoutPage.expectToast('Assign Pickup', /Runner link sent over SMS and WhatsApp/i);
   }
+
+  async expectRequestRemoved(requestNumber: string) {
+    await this.assignPickupPage.expectRequestRemoved(requestNumber);
+  }
 }

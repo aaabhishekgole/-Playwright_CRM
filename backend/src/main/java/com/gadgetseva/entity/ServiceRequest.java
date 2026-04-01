@@ -13,11 +13,14 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.time.Instant;
 import lombok.Getter;
+import org.springframework.data.mongodb.core.mapping.DBRef;
+import org.springframework.data.mongodb.core.mapping.Document;
 import lombok.Setter;
 
 @Getter
 @Setter
 @Entity
+@Document(collection = "service_requests")
 @Table(name = "service_requests")
 public class ServiceRequest extends BaseAuditableEntity {
 
@@ -30,10 +33,12 @@ public class ServiceRequest extends BaseAuditableEntity {
 
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "customer_id")
+    @DBRef(lazy = true)
     private Customer customer;
 
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "device_id")
+    @DBRef(lazy = true)
     private Device device;
 
     @Column(nullable = false, length = 255)
@@ -55,18 +60,22 @@ public class ServiceRequest extends BaseAuditableEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "assigned_pickup_agent_id")
+    @DBRef(lazy = true)
     private User assignedPickupAgent;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "assigned_technician_id")
+    @DBRef(lazy = true)
     private User assignedTechnician;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "assigned_delivery_agent_id")
+    @DBRef(lazy = true)
     private User assignedDeliveryAgent;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "tenant_id")
+    @DBRef(lazy = true)
     private Tenant tenant;
 
     @Column(length = 60)

@@ -14,11 +14,14 @@ import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.time.Instant;
 import lombok.Getter;
+import org.springframework.data.mongodb.core.mapping.DBRef;
+import org.springframework.data.mongodb.core.mapping.Document;
 import lombok.Setter;
 
 @Getter
 @Setter
 @Entity
+@Document(collection = "payments")
 @Table(name = "payments")
 public class PaymentTransaction extends BaseAuditableEntity {
 
@@ -28,14 +31,17 @@ public class PaymentTransaction extends BaseAuditableEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "tenant_id")
+    @DBRef(lazy = true)
     private Tenant tenant;
 
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "service_request_id")
+    @DBRef(lazy = true)
     private ServiceRequest serviceRequest;
 
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "invoice_id")
+    @DBRef(lazy = true)
     private Invoice invoice;
 
     @Column(nullable = false, length = 40)

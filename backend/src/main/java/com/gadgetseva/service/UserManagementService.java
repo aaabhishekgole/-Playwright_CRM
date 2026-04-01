@@ -8,9 +8,9 @@ import com.gadgetseva.entity.Tenant;
 import com.gadgetseva.entity.User;
 import com.gadgetseva.exception.ApiException;
 import com.gadgetseva.exception.NotFoundException;
-import com.gadgetseva.repository.RoleRepository;
-import com.gadgetseva.repository.TenantRepository;
-import com.gadgetseva.repository.UserRepository;
+import com.gadgetseva.persistence.RoleStore;
+import com.gadgetseva.persistence.TenantStore;
+import com.gadgetseva.persistence.UserStore;
 import jakarta.transaction.Transactional;
 import java.text.Normalizer;
 import java.util.Locale;
@@ -21,25 +21,25 @@ import org.springframework.stereotype.Service;
 @Transactional
 public class UserManagementService {
 
-    private final UserRepository userRepository;
-    private final RoleRepository roleRepository;
-    private final TenantRepository tenantRepository;
+    private final UserStore userStore;
+    private final RoleStore roleStore;
+    private final TenantStore tenantStore;
     private final PasswordEncoder passwordEncoder;
 
-    public UserManagementService(UserRepository userRepository,
-                                 RoleRepository roleRepository,
-                                 TenantRepository tenantRepository,
+    public UserManagementService(UserStore userStore,
+                                 RoleStore roleStore,
+                                 TenantStore tenantStore,
                                  PasswordEncoder passwordEncoder) {
-        this.userRepository = userRepository;
-        this.roleRepository = roleRepository;
-        this.tenantRepository = tenantRepository;
+        this.userStore = userStore;
+        this.roleStore = roleStore;
+        this.tenantStore = tenantStore;
         this.passwordEncoder = passwordEncoder;
     }
 
     public UserSummaryResponse createPickupRunner(CreatePickupRunnerRequest request) {
-        Role pickupRole = roleRepository.findByName(RoleName.PICKUP_AGENT)
+        Role pickupRole = roleStore.findByName(RoleName.PICKUP_AGENT)
                 .orElseThrow(() -> new NotFoundException("Pickup runner role is not configured"));
-        Tenant tenant = tenantRepository.findByCode("GSH-CORE")
+        Tenant tenant = tenantStore.findByCode("GSH-CORE")
                 .orElseThrow(() -> new NotFoundException("Default tenant GSH-CORE is not configured"));
 
         String normalizedPhone = normalizeIndianMobile(request.phone(), "Mobile number");
@@ -47,17 +47,17 @@ public class UserManagementService {
                 ? normalizedPhone
                 : normalizeIndianMobile(request.whatsappNumber(), "WhatsApp number");
 
-        userRepository.findByPhone(normalizedPhone).ifPresent(existing -> {
+        userStore.findByPhone(normalizedPhone).ifPresent(existing -> {
             throw new ApiException("A pickup runner already exists with mobile number " + normalizedPhone);
         });
 
         String username = resolveUsername(request.username(), request.fullName(), normalizedPhone);
-        if (userRepository.findByUsername(username).isPresent()) {
+        if (userStore.findByUsername(username).isPresent()) {
             throw new ApiException("Username " + username + " is already in use");
         }
 
         String email = resolveEmail(request.email(), username);
-        userRepository.findByEmailIgnoreCase(email).ifPresent(existing -> {
+        userStore.findByEmailIgnoreCase(email).ifPresent(existing -> {
             throw new ApiException("Email " + email + " is already in use");
         });
 
@@ -71,7 +71,7 @@ public class UserManagementService {
         user.setRole(pickupRole);
         user.setTenant(tenant);
         user.setActive(request.active() == null || request.active());
-        userRepository.save(user);
+        userStore.save(user);
 
         return toSummary(user);
     }
@@ -103,7 +103,7 @@ public class UserManagementService {
 
         String candidate = base;
         int suffix = 2;
-        while (userRepository.findByUsername(candidate).isPresent()) {
+        while (userStore.findByUsername(candidate).isPresent()) {
             candidate = base + suffix;
             suffix++;
         }

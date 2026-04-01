@@ -1,6 +1,6 @@
 package com.gadgetseva.util;
 
-import com.gadgetseva.repository.ServiceRequestRepository;
+import com.gadgetseva.persistence.ServiceRequestStore;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -9,12 +9,12 @@ import org.springframework.stereotype.Component;
 @Component
 public class RequestNumberGenerator {
 
-    private final ServiceRequestRepository serviceRequestRepository;
+    private final ServiceRequestStore serviceRequestStore;
     private final AtomicInteger counter = new AtomicInteger(1000);
     private LocalDate sequenceDate;
 
-    public RequestNumberGenerator(ServiceRequestRepository serviceRequestRepository) {
-        this.serviceRequestRepository = serviceRequestRepository;
+    public RequestNumberGenerator(ServiceRequestStore serviceRequestStore) {
+        this.serviceRequestStore = serviceRequestStore;
     }
 
     public synchronized String next() {
@@ -30,7 +30,7 @@ public class RequestNumberGenerator {
 
     private int resolveCurrentCounter(LocalDate date) {
         String prefix = "GSH-" + date.format(DateTimeFormatter.BASIC_ISO_DATE) + "-";
-        return serviceRequestRepository.findAllByOrderByCreatedAtDesc().stream()
+        return serviceRequestStore.findAllOrderByCreatedAtDesc().stream()
                 .map(serviceRequest -> serviceRequest.getRequestNumber())
                 .filter(requestNumber -> requestNumber != null && requestNumber.startsWith(prefix))
                 .map(requestNumber -> requestNumber.substring(prefix.length()))

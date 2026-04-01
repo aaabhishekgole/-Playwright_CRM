@@ -12,11 +12,14 @@ import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.time.Instant;
 import lombok.Getter;
+import org.springframework.data.mongodb.core.mapping.DBRef;
+import org.springframework.data.mongodb.core.mapping.Document;
 import lombok.Setter;
 
 @Getter
 @Setter
 @Entity
+@Document(collection = "estimates")
 @Table(name = "estimates")
 public class Estimate extends BaseAuditableEntity {
 
@@ -26,6 +29,7 @@ public class Estimate extends BaseAuditableEntity {
 
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "service_request_id")
+    @DBRef(lazy = true)
     private ServiceRequest serviceRequest;
 
     @Column(nullable = false, columnDefinition = "TEXT")
@@ -50,5 +54,6 @@ public class Estimate extends BaseAuditableEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "approved_by")
+    @DBRef(lazy = true)
     private User approvedBy;
 }

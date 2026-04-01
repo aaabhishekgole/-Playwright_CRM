@@ -11,11 +11,14 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.time.Instant;
 import lombok.Getter;
+import org.springframework.data.mongodb.core.mapping.DBRef;
+import org.springframework.data.mongodb.core.mapping.Document;
 import lombok.Setter;
 
 @Getter
 @Setter
 @Entity
+@Document(collection = "status_history")
 @Table(name = "status_history")
 public class StatusHistory {
 
@@ -25,6 +28,7 @@ public class StatusHistory {
 
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "service_request_id")
+    @DBRef(lazy = true)
     private ServiceRequest serviceRequest;
 
     @Column(length = 40)
@@ -38,6 +42,7 @@ public class StatusHistory {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "changed_by")
+    @DBRef(lazy = true)
     private User changedBy;
 
     @Column(nullable = false)

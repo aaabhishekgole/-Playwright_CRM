@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gadgetseva.entity.AuditLog;
 import com.gadgetseva.entity.User;
-import com.gadgetseva.repository.AuditLogRepository;
+import com.gadgetseva.persistence.AuditLogStore;
 import java.time.Instant;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
@@ -14,11 +14,11 @@ import org.springframework.stereotype.Service;
 @Service
 public class AuditTrailService {
 
-    private final AuditLogRepository auditLogRepository;
+    private final AuditLogStore auditLogStore;
     private final ObjectMapper objectMapper;
 
-    public AuditTrailService(AuditLogRepository auditLogRepository, ObjectMapper objectMapper) {
-        this.auditLogRepository = auditLogRepository;
+    public AuditTrailService(AuditLogStore auditLogStore, ObjectMapper objectMapper) {
+        this.auditLogStore = auditLogStore;
         this.objectMapper = objectMapper;
     }
 
@@ -32,11 +32,11 @@ public class AuditTrailService {
         logEntry.setAfterJson(toJson(after));
         logEntry.setChangedBy(changedBy);
         logEntry.setChangedAt(Instant.now());
-        auditLogRepository.save(logEntry);
+        auditLogStore.save(logEntry);
     }
 
     public List<AuditLog> listForRequest(Long serviceRequestId) {
-        return auditLogRepository.findByServiceRequestIdOrderByChangedAtDesc(serviceRequestId);
+        return auditLogStore.findByServiceRequestIdOrderByChangedAtDesc(serviceRequestId);
     }
 
     public String toJson(Object value) {

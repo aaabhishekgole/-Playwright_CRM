@@ -4,7 +4,7 @@ import com.gadgetseva.dto.AuthResponse;
 import com.gadgetseva.dto.LoginRequest;
 import com.gadgetseva.entity.User;
 import com.gadgetseva.exception.ApiException;
-import com.gadgetseva.repository.UserRepository;
+import com.gadgetseva.persistence.UserStore;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.stereotype.Service;
@@ -13,14 +13,14 @@ import org.springframework.stereotype.Service;
 public class AuthService {
 
     private final AuthenticationManager authenticationManager;
-    private final UserRepository userRepository;
+    private final UserStore userStore;
     private final com.gadgetseva.security.JwtService jwtService;
 
     public AuthService(AuthenticationManager authenticationManager,
-                       UserRepository userRepository,
+                       UserStore userStore,
                        com.gadgetseva.security.JwtService jwtService) {
         this.authenticationManager = authenticationManager;
-        this.userRepository = userRepository;
+        this.userStore = userStore;
         this.jwtService = jwtService;
     }
 
@@ -39,8 +39,8 @@ public class AuthService {
 
     private User resolveLoginUser(String loginIdentifier) {
         String candidate = loginIdentifier == null ? "" : loginIdentifier.trim();
-        return userRepository.findByUsername(candidate)
-                .or(() -> userRepository.findByPhone(normalizePhone(candidate)))
+        return userStore.findByUsername(candidate)
+                .or(() -> userStore.findByPhone(normalizePhone(candidate)))
                 .orElseThrow(() -> new ApiException("Invalid username or mobile number"));
     }
 

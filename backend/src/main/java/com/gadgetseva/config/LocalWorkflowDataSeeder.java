@@ -19,10 +19,10 @@ import com.gadgetseva.entity.ServiceRequest;
 import com.gadgetseva.entity.StatusHistory;
 import com.gadgetseva.entity.Tenant;
 import com.gadgetseva.entity.User;
-import com.gadgetseva.repository.AttachmentRepository;
-import com.gadgetseva.repository.ServiceRequestRepository;
-import com.gadgetseva.repository.StatusHistoryRepository;
-import com.gadgetseva.repository.UserRepository;
+import com.gadgetseva.persistence.AttachmentStore;
+import com.gadgetseva.persistence.ServiceRequestStore;
+import com.gadgetseva.persistence.StatusHistoryStore;
+import com.gadgetseva.persistence.UserStore;
 import com.gadgetseva.security.AuthenticatedUser;
 import com.gadgetseva.service.ServiceRequestService;
 import java.math.BigDecimal;
@@ -80,23 +80,23 @@ public class LocalWorkflowDataSeeder {
     );
 
     private final ServiceRequestService serviceRequestService;
-    private final ServiceRequestRepository serviceRequestRepository;
-    private final UserRepository userRepository;
-    private final StatusHistoryRepository statusHistoryRepository;
-    private final AttachmentRepository attachmentRepository;
+    private final ServiceRequestStore serviceRequestStore;
+    private final UserStore userStore;
+    private final StatusHistoryStore statusHistoryStore;
+    private final AttachmentStore attachmentStore;
     private final Path storageRootPath;
 
     public LocalWorkflowDataSeeder(ServiceRequestService serviceRequestService,
-                                   ServiceRequestRepository serviceRequestRepository,
-                                   UserRepository userRepository,
-                                   StatusHistoryRepository statusHistoryRepository,
-                                   AttachmentRepository attachmentRepository,
+                                   ServiceRequestStore serviceRequestStore,
+                                   UserStore userStore,
+                                   StatusHistoryStore statusHistoryStore,
+                                   AttachmentStore attachmentStore,
                                    @Value("${app.storage.root-path:uploads}") String storageRootPath) {
         this.serviceRequestService = serviceRequestService;
-        this.serviceRequestRepository = serviceRequestRepository;
-        this.userRepository = userRepository;
-        this.statusHistoryRepository = statusHistoryRepository;
-        this.attachmentRepository = attachmentRepository;
+        this.serviceRequestStore = serviceRequestStore;
+        this.userStore = userStore;
+        this.statusHistoryStore = statusHistoryStore;
+        this.attachmentStore = attachmentStore;
         this.storageRootPath = Path.of(storageRootPath);
     }
 
@@ -104,9 +104,9 @@ public class LocalWorkflowDataSeeder {
     @Order(2)
     CommandLineRunner seedLocalWorkflowData() {
         return args -> {
-            User admin = userRepository.findByUsername("admin").orElse(null);
-            User pickupAgent = userRepository.findByUsername("pickup").orElse(null);
-            User deliveryAgent = userRepository.findByUsername("delivery").orElse(null);
+            User admin = userStore.findByUsername("admin").orElse(null);
+            User pickupAgent = userStore.findByUsername("pickup").orElse(null);
+            User deliveryAgent = userStore.findByUsername("delivery").orElse(null);
 
             if (admin == null || pickupAgent == null || deliveryAgent == null) {
                 return;
@@ -199,7 +199,7 @@ public class LocalWorkflowDataSeeder {
                               String model,
                               String issueSummary,
                               ScenarioSeeder scenarioSeeder) {
-        List<ServiceRequest> matchingRequests = serviceRequestRepository.findAllByPartnerReferenceStartingWithOrderByCreatedAtDesc(partnerReference);
+        List<ServiceRequest> matchingRequests = serviceRequestStore.findAllByPartnerReferenceStartingWithOrderByCreatedAtDesc(partnerReference);
         if (matchingRequests.stream().anyMatch(visibilityRule)) {
             return;
         }
@@ -347,7 +347,7 @@ public class LocalWorkflowDataSeeder {
     }
 
     private void addRemark(Long requestId, String remarks, User changedBy) {
-        ServiceRequest request = serviceRequestRepository.findById(requestId).orElseThrow();
+        ServiceRequest request = serviceRequestStore.findById(requestId).orElseThrow();
         StatusHistory history = new StatusHistory();
         history.setServiceRequest(request);
         history.setFromStatus(request.getStatus().name());
@@ -355,15 +355,15 @@ public class LocalWorkflowDataSeeder {
         history.setRemarks(remarks);
         history.setChangedBy(changedBy);
         history.setChangedAt(Instant.now());
-        statusHistoryRepository.save(history);
+        statusHistoryStore.save(history);
     }
 
     private void addEvidence(Long requestId, List<String> attachmentTypes, User uploadedBy, String labelPrefix) {
-        ServiceRequest request = serviceRequestRepository.findById(requestId).orElseThrow();
+        ServiceRequest request = serviceRequestStore.findById(requestId).orElseThrow();
         Tenant tenant = request.getTenant();
 
         for (String attachmentType : attachmentTypes) {
-            if (attachmentRepository.existsByServiceRequestAndAttachmentType(request, attachmentType)) {
+            if (attachmentStore.existsByServiceRequestAndAttachmentType(request, attachmentType)) {
                 continue;
             }
 
@@ -391,12 +391,12 @@ public class LocalWorkflowDataSeeder {
             attachment.setSignedUrlExpiresAt(Instant.now().plusSeconds(900));
             attachment.setUploadedBy(uploadedBy);
             attachment.setUploadedAt(Instant.now());
-            attachmentRepository.save(attachment);
+            attachmentStore.save(attachment);
         }
     }
 
     private void backfillExpandedPickupEvidence(User uploadedBy) {
-        serviceRequestRepository.findAllByOrderByCreatedAtDesc().stream()
+        serviceRequestStore.findAllOrderByCreatedAtDesc().stream()
                 .filter(request -> request.getPartnerReference() != null && request.getPartnerReference().startsWith("DEMO-WORKSPACE-"))
                 .filter(request -> request.getStatus() == RequestStatus.PICKUP_COMPLETED
                         || request.getStatus() == RequestStatus.RECEIVED_AT_HUB
