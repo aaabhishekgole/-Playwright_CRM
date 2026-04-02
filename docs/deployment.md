@@ -104,6 +104,43 @@ APP_CORS_ALLOWED_ORIGIN_PATTERNS=https://your-vercel-project.vercel.app,https://
 APP_RUNNER_PORTAL_BASE_URL=https://your-vercel-project.vercel.app/runner-access
 ```
 
+### Render Step-by-Step
+
+Use this order when deploying the backend on Render:
+
+1. Create a PostgreSQL database in Render.
+2. If you need Redis in production, create a Render Key Value service.
+3. Create a new `Web Service`.
+4. Connect this GitHub repository.
+5. Set `Root Directory` to `backend`.
+6. Choose `Java 21`.
+7. Set:
+   - Build Command: `mvn -q -DskipTests package`
+   - Start Command: `java -jar target/gadget-seva-hub-0.0.1-SNAPSHOT.jar`
+8. Add environment variables using [backend/.env.render.example](/d:/Test%20Abhishek/AI_Frameworl/local/gadget-seva-hub/gadget-seva-hub/backend/.env.render.example).
+9. For the first deploy, make sure these are set correctly:
+   - `APP_PERSISTENCE_TYPE=jpa`
+   - `DB_URL=jdbc:postgresql://<render-host>:5432/gadget_seva_hub`
+   - `DB_USERNAME=<render-db-user>`
+   - `DB_PASSWORD=<render-db-password>`
+   - `JWT_SECRET=<your-32+-character-secret>`
+   - `STORAGE_ROOT=/var/data/uploads`
+   - `STORAGE_BASE_URL=https://<your-render-service>.onrender.com`
+   - `STORAGE_SIGNING_SECRET=<your-storage-signing-secret>`
+   - `APP_CORS_ALLOWED_ORIGIN_PATTERNS=https://<your-vercel-project>.vercel.app`
+   - `APP_RUNNER_PORTAL_BASE_URL=https://<your-vercel-project>.vercel.app/runner-access`
+10. Attach a persistent disk and keep uploads under `/var/data/uploads`.
+11. Deploy the service.
+12. After the service is live, open:
+    - `https://<your-render-service>.onrender.com/swagger-ui/index.html`
+13. Copy the Render service URL. That becomes your backend public URL for Vercel.
+
+Important:
+
+- the backend now reads `PORT` automatically from platform envs
+- uploads are stored locally by the backend, so a persistent disk is strongly recommended on Render
+- once the Render URL is known, use it for `BACKEND_API_ORIGIN` in Vercel and `STORAGE_BASE_URL` in the backend
+
 ## Backend Deployment On Railway
 
 Use [backend/.env.railway.example](/d:/Test%20Abhishek/AI_Frameworl/local/gadget-seva-hub/gadget-seva-hub/backend/.env.railway.example) as the starting template.
