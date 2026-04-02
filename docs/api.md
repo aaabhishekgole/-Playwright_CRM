@@ -181,6 +181,16 @@ Common statuses used in the live portal
 - `INVOICED`
 - `CLOSED`
 
+Notable operational transitions now used directly by the live workspace
+
+- `ESTIMATE_PREPARED -> DIAGNOSIS_IN_PROGRESS` for estimate revision
+- `REPAIR_COMPLETED -> REPAIR_IN_PROGRESS` for QC failure and rework
+- `REPAIR_COMPLETED -> READY_FOR_DISPATCH` for QC pass
+- `READY_FOR_DISPATCH -> DELIVERY_ASSIGNED` for delivery assignment
+- `DELIVERY_ASSIGNED -> OUT_FOR_DELIVERY` for runner dispatch
+- `OUT_FOR_DELIVERY -> READY_FOR_DISPATCH` for failed delivery / reassignment
+- `OUT_FOR_DELIVERY -> DELIVERED` for successful handover
+
 ### `POST /api/service-requests/{id}/delivery`
 
 Assigns or updates delivery scheduling and owner.
@@ -224,6 +234,11 @@ Deletes a request attachment when allowed by workflow rules.
 ### `POST /api/service-requests/{id}/invoice`
 
 Creates a GST-ready invoice.
+
+Workflow impact
+
+- supports invoice generation for delivered requests
+- also supports invoice generation for total-loss cases that require billing follow-up
 
 Access
 

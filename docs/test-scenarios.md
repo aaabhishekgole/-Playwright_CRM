@@ -307,7 +307,9 @@ Expected result
 Expected result
 
 - repaired device appears in pending QC
-- QC pass or rework path updates the request stage correctly
+- QC pass updates the request to `READY_FOR_DISPATCH`
+- QC fail moves the request back to `REPAIR_IN_PROGRESS`
+- QC-failed and rework boards reflect the same request history correctly
 
 ## 11. Delivery Flow
 
@@ -332,6 +334,15 @@ Expected result
 - then `DELIVERED`
 - delivery history and tracking screens update
 
+### Scenario 11.3 Delivery failure and reassignment
+
+Expected result
+
+- request can move from `OUT_FOR_DELIVERY` back to `READY_FOR_DISPATCH`
+- delivery-failed board shows the failed attempt using request history remarks
+- request can be assigned again from the delivery assignment board
+- reassigned delivery continues through the normal `OUT_FOR_DELIVERY -> DELIVERED` flow
+
 ## 12. Billing And Finance
 
 ### Scenario 12.1 Generate invoice
@@ -341,6 +352,7 @@ Expected result
 - invoice is created in `invoices`
 - invoice items are stored
 - request moves to `INVOICED`
+- billing works for delivered cases and supported total-loss billing cases
 - success popup appears
 
 ### Scenario 12.2 Record payment

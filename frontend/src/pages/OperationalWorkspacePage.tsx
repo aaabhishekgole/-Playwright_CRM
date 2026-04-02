@@ -181,11 +181,14 @@ function resolveRequests(itemId: string, requests: ServiceRequest[]) {
       return requests.filter((request) => request.status === 'REPAIR_IN_PROGRESS' && timelineContains(request, ['qc failed', 'rework']));
     case 'assign-delivery':
     case 'ready-for-dispatch':
-      return requests.filter((request) => ['REPAIR_COMPLETED', 'READY_FOR_DISPATCH'].includes(request.status));
+      return requests.filter((request) => request.status === 'READY_FOR_DISPATCH');
     case 'delivered':
       return requests.filter((request) => ['DELIVERED', 'INVOICED', 'CLOSED'].includes(request.status));
     case 'delivery-failed':
-      return requests.filter((request) => timelineContains(request, ['delivery failed', 'customer unavailable', 'return to hub']));
+      return requests.filter((request) =>
+        request.status === 'READY_FOR_DISPATCH'
+        && timelineContains(request, ['delivery failed', 'customer unavailable', 'return to hub', 'reassign delivery']),
+      );
     case 'delivery-history':
       return requests.filter((request) => hasReachedStatus(request, ['DELIVERY_ASSIGNED', 'OUT_FOR_DELIVERY', 'DELIVERED', 'INVOICED', 'CLOSED']));
     case 'generate-invoice':
@@ -213,11 +216,35 @@ function resolveRequests(itemId: string, requests: ServiceRequest[]) {
 
 function getSummaryLabel(itemId: string) {
   switch (itemId) {
+    case 'new-estimates':
+      return 'Submission queue';
+    case 'approved-estimates':
+      return 'Approved queue';
+    case 'rejected-estimates':
+      return 'Rejected queue';
+    case 'estimate-history':
+      return 'History queue';
+    case 'pending-qc':
+      return 'Validation queue';
+    case 'qc-passed':
+      return 'Dispatch-ready queue';
+    case 'qc-failed':
+      return 'Failure queue';
+    case 'rework-required':
+      return 'Rework queue';
+    case 'assign-delivery':
+      return 'Assignment queue';
+    case 'ready-for-dispatch':
+      return 'Dispatch queue';
+    case 'delivered':
+      return 'Delivered queue';
+    case 'delivery-failed':
+      return 'Exception queue';
+    case 'delivery-history':
+      return 'History queue';
     case 'pending-pickup':
       return 'Runner queue';
     case 'assign-pickup':
-    case 'assign-delivery':
-    case 'ready-for-dispatch':
       return 'Assignment queue';
     case 'generate-invoice':
       return 'Invoice-ready queue';
@@ -234,6 +261,32 @@ function getSummaryLabel(itemId: string) {
 
 function getEmptyStageCopy(itemId: string) {
   switch (itemId) {
+    case 'new-estimates':
+      return 'Fresh estimate submissions will appear here once the service center completes diagnosis and sends the costing forward for review.';
+    case 'approved-estimates':
+      return 'Approved estimates will appear here after customer or operations consent is captured and the case is authorized for repair.';
+    case 'rejected-estimates':
+      return 'Rejected, declined, or total-loss estimate outcomes will appear here for closure, revision, or billing follow-up.';
+    case 'estimate-history':
+      return 'Historical estimate activity will appear here once estimate decisions begin moving through approval, rejection, or downstream repair states.';
+    case 'pending-qc':
+      return 'Completed repairs will appear here once they are ready for quality validation before dispatch clearance.';
+    case 'qc-passed':
+      return 'QC-passed repairs will appear here after validation is completed and the case is cleared for dispatch handoff.';
+    case 'qc-failed':
+      return 'QC failures will appear here when validation finds unresolved repair issues, cosmetic gaps, or missing evidence.';
+    case 'rework-required':
+      return 'Rework cases will appear here after a QC failure sends the request back to the technician for correction and re-validation.';
+    case 'assign-delivery':
+      return 'Assign Delivery will show dispatch-ready cases that need final-mile owner allocation, schedule locking, and route notes.';
+    case 'ready-for-dispatch':
+      return 'Dispatch-cleared cases will appear here after repair and QC are complete and the device is ready for delivery planning.';
+    case 'delivered':
+      return 'Delivered handovers will appear here once the final-mile outcome is completed and the request is ready for billing or closure follow-up.';
+    case 'delivery-failed':
+      return 'Failed delivery attempts will appear here when the customer is unavailable, the drop cannot be completed, or re-assignment is needed.';
+    case 'delivery-history':
+      return 'Historical delivery movement will appear here after delivery jobs begin flowing through dispatch, in-transit, completed, and failed outcomes.';
     case 'assign-pickup':
       return 'Assign Pickup shows fresh REQUEST_CREATED claims and customer-update pickup cases that need a reschedule or another runner attempt.';
     case 'pending-pickup':
@@ -256,6 +309,123 @@ function getEmptyStageCopy(itemId: string) {
 
 function getStagePlaybook(itemId: string) {
   switch (itemId) {
+    case 'new-estimates':
+      return {
+        title: 'New Estimate Intake',
+        steps: [
+          'Repair partners submit diagnosis, parts, labour, and tax values for review.',
+          'Operations validates estimate completeness, evidence, and commercial correctness.',
+          'Qualified submissions move to customer or internal approval without leaving the request trail.',
+        ],
+      };
+    case 'approved-estimates':
+      return {
+        title: 'Approved Estimate Execution',
+        steps: [
+          'Approved estimates represent authorized commercial scope for the request.',
+          'The approved amount becomes the working basis for repair, billing, and customer communication.',
+          'Authorized cases should move quickly into repair execution to avoid unnecessary TAT slippage.',
+        ],
+      };
+    case 'rejected-estimates':
+      return {
+        title: 'Rejected Or Declined Outcome',
+        steps: [
+          'Rejected estimates capture customer decline, commercial mismatch, or total-loss routing.',
+          'Operations should review the reason, supporting notes, and downstream closure requirement.',
+          'These cases typically move into revision, closure, or billing resolution rather than active repair.',
+        ],
+      };
+    case 'estimate-history':
+      return {
+        title: 'Estimate Decision Timeline',
+        steps: [
+          'This view tracks how estimate decisions move across submission, approval, rejection, and downstream execution.',
+          'Every action remains tied to the same request, timeline, billing, and attachment record.',
+          'Use this queue to review estimate throughput, decision quality, and audit continuity.',
+        ],
+      };
+    case 'pending-qc':
+      return {
+        title: 'Pending Quality Validation',
+        steps: [
+          'Repairs completed by technicians enter this queue for post-repair validation.',
+          'Quality reviewers should confirm functional readiness, cosmetic closure, and evidence completeness.',
+          'Only validated cases should move forward to dispatch so downstream delivery remains clean.',
+        ],
+      };
+    case 'qc-passed':
+      return {
+        title: 'QC Passed And Ready For Dispatch',
+        steps: [
+          'Validated repairs represent cases that have passed post-repair quality checks.',
+          'These requests are operationally ready for dispatch planning, final customer communication, and delivery assignment.',
+          'Use this board to monitor dispatch readiness and avoid approved devices sitting idle after QC clearance.',
+        ],
+      };
+    case 'qc-failed':
+      return {
+        title: 'QC Failure Review',
+        steps: [
+          'QC failures capture cases where the repair outcome did not meet validation expectations.',
+          'Operations should review the failure reason, remarks, and technician handback requirements immediately.',
+          'These cases should not move to dispatch until the underlying repair or evidence issue is corrected.',
+        ],
+      };
+    case 'rework-required':
+      return {
+        title: 'Rework Recovery Flow',
+        steps: [
+          'Rework cases are failed QC outcomes that have been sent back for corrective technician action.',
+          'The repair team should resolve the flagged issues and return the case to quality validation quickly.',
+          'Use this board to control repeat failures and prevent repair loops from extending TAT unnecessarily.',
+        ],
+      };
+    case 'assign-delivery':
+      return {
+        title: 'Final-Mile Allocation',
+        steps: [
+          'Dispatch-ready cases are assigned to a delivery owner with route timing, handover notes, and customer context.',
+          'The assigned delivery agent becomes responsible for the final-mile outcome and communication trail.',
+          'Only correctly assigned cases should move into active delivery execution to avoid failed handoffs.',
+        ],
+      };
+    case 'ready-for-dispatch':
+      return {
+        title: 'Dispatch Preparation Board',
+        steps: [
+          'Completed and QC-cleared devices enter this queue before they are handed to delivery.',
+          'Operations should confirm readiness, documents, customer contact details, and final dispatch planning.',
+          'This board is the final control point before last-mile execution begins.',
+        ],
+      };
+    case 'delivered':
+      return {
+        title: 'Completed Handover Board',
+        steps: [
+          'Delivered cases represent successful last-mile completion and customer handover.',
+          'These requests should flow quickly into billing, reconciliation, and closure activities without losing proof of completion.',
+          'Use this queue to watch post-delivery throughput and prevent delivered jobs from stalling downstream.',
+        ],
+      };
+    case 'delivery-failed':
+      return {
+        title: 'Delivery Exception Handling',
+        steps: [
+          'Failed deliveries capture customer unavailability, route issues, or incomplete last-mile handover attempts.',
+          'Operations should review the reason, reschedule need, and reassignment requirement as early as possible.',
+          'These cases should remain visible until a clean re-attempt or alternate resolution is confirmed.',
+        ],
+      };
+    case 'delivery-history':
+      return {
+        title: 'Delivery Movement History',
+        steps: [
+          'This board tracks delivery execution from dispatch assignment through in-transit, delivered, and failed outcomes.',
+          'Every delivery action remains tied to the same request, customer communication, and billing trail.',
+          'Use it to review delivery throughput, exception rates, and operational follow-through over time.',
+        ],
+      };
     case 'assign-pickup':
       return {
         title: 'New Case Request To Pickup Assignment',
@@ -289,9 +459,6 @@ function getStagePlaybook(itemId: string) {
     case 'devices-under-inspection':
     case 'estimate-pending':
     case 'estimate-submitted':
-    case 'new-estimates':
-    case 'approved-estimates':
-    case 'rejected-estimates':
       return {
         title: 'Estimate And Approval Flow',
         steps: [
@@ -302,29 +469,12 @@ function getStagePlaybook(itemId: string) {
       };
     case 'under-repair':
     case 'repair-completed':
-    case 'pending-qc':
-    case 'qc-passed':
-    case 'qc-failed':
-    case 'rework-required':
       return {
         title: 'Repair And QC Flow',
         steps: [
           'Approved estimates move into active repair with technician ownership.',
           'Completed repairs are validated through quality check before dispatch.',
           'QC failures return to rework, while passed cases move to dispatch and delivery.',
-        ],
-      };
-    case 'assign-delivery':
-    case 'ready-for-dispatch':
-    case 'delivered':
-    case 'delivery-failed':
-    case 'delivery-history':
-      return {
-        title: 'Dispatch And Drop Flow',
-        steps: [
-          'Ready-for-dispatch cases are handed to delivery with OTP and route notes.',
-          'Runner updates out-for-delivery and delivered outcomes from the live request.',
-          'Failed drops stay visible for re-assignment while delivered cases move to billing.',
         ],
       };
     case 'generate-invoice':
@@ -446,7 +596,7 @@ export function OperationalWorkspacePage({
 
   const stageRequests = useMemo(() => resolveRequests(item.id, requests) ?? [], [item.id, requests]);
   const isAssignmentPage = item.id === 'assign-pickup';
-  const isDeliveryAssignmentPage = item.id === 'assign-delivery' || item.id === 'ready-for-dispatch';
+  const isDeliveryAssignmentPage = item.id === 'assign-delivery' || item.id === 'ready-for-dispatch' || item.id === 'delivery-failed';
   const stagePlaybook = useMemo(() => getStagePlaybook(item.id), [item.id]);
   const visibleRequests = useMemo(() => {
     if (item.id === 'pending-pickup' && role === 'PICKUP_AGENT') {
@@ -1020,12 +1170,7 @@ export function OperationalWorkspacePage({
           </div>
         );
       case 'delivery-failed':
-        return (
-          <div className="action-row action-row-wrap">
-            <Link className="secondary-button" to={`/requests/${request.id}`}>Open request</Link>
-            <Link className="secondary-button" to="/workspace/delivery/assign-delivery">Reassign delivery</Link>
-          </div>
-        );
+        return renderAssignmentBlock(request);
       case 'generate-invoice':
         return (
           <>
@@ -1251,7 +1396,7 @@ export function OperationalWorkspacePage({
   }
 
   return (
-    <section className="workspace-page">
+    <section className="workspace-page dense-ops-page ops-workspace-page">
       <div className="page-header merchant-page-header">
         <div>
           <p className="eyebrow">{section.label}</p>
@@ -1264,7 +1409,7 @@ export function OperationalWorkspacePage({
         </div>
       </div>
 
-      <article className="card workflow-playbook">
+      <article className="card workflow-playbook ops-workspace-playbook">
         <div className="split-row">
           <div>
             <p className="eyebrow">Inner Flow</p>
@@ -1282,18 +1427,18 @@ export function OperationalWorkspacePage({
         </div>
       </article>
 
-      <div className="summary-grid">
-        <article className="summary-stat">
+      <div className="summary-grid ops-workspace-summary-grid">
+        <article className="summary-stat compact-stat">
           <span>Visible requests</span>
           <strong>{visibleRequests.length}</strong>
           <small>Live requests mapped to this stage.</small>
         </article>
-        <article className="summary-stat">
+        <article className="summary-stat compact-stat">
           <span>Open requests</span>
           <strong>{visibleRequests.filter((request) => !['CLOSED', 'CANCELLED'].includes(request.status)).length}</strong>
           <small>Requests still needing action in this workflow.</small>
         </article>
-        <article className="summary-stat">
+        <article className="summary-stat compact-stat">
           <span>Outstanding value</span>
           <strong>{formatCurrencyInr(visibleRequests.reduce((sum, request) => sum + (request.invoice?.amountDue ?? 0), 0))}</strong>
           <small>Visible financial exposure for this stage.</small>
@@ -1308,7 +1453,7 @@ export function OperationalWorkspacePage({
         {visibleRequests.length > 0 ? visibleRequests.map((request) => {
           const workflowMeta = getWorkflowStageMeta(request);
           return (
-            <article className="card action-card" key={request.id}>
+            <article className="card action-card ops-work-card" key={request.id}>
               <div className="split-row">
                 <div>
                   <h3>{request.requestNumber}</h3>

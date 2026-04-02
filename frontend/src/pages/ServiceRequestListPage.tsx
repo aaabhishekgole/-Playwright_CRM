@@ -123,7 +123,7 @@ function MultiSelectFilter({ label, options, values, open, onToggle, onChange }:
       <span>{label}</span>
       <button className="portal-multiselect-trigger" type="button" onClick={onToggle}>
         <strong>{values.length > 0 ? `${values.length} Selected` : 'Select'}</strong>
-        <span>{open ? '▲' : '▼'}</span>
+        <span>{open ? '-' : '+'}</span>
       </button>
       {open ? (
         <div className="portal-multiselect-menu">
@@ -183,6 +183,10 @@ export function ServiceRequestListPage({
   const filteredRequests = useMemo(() => applyFilters(baseRequests, activeFilters), [activeFilters, baseRequests]);
   const pendingSettlements = filteredRequests.filter((request) => getClaimSettlement(request).includes('Pending')).length;
   const totalDue = filteredRequests.reduce((sum, request) => sum + (request.invoice?.amountDue ?? 0), 0);
+  const activeFilterCount = activeFilters.statuses.length
+    + activeFilters.settlements.length
+    + [activeFilters.loanNumber, activeFilters.mobileNumber, activeFilters.certificateOfInsuranceNumber, activeFilters.ticketNumber, activeFilters.deviceIdentifier]
+      .filter((value) => value.trim()).length;
 
   function updateDraft<K extends keyof QueueFilters>(key: K, value: QueueFilters[K]) {
     setDraftFilters((current) => ({ ...current, [key]: value }));
@@ -200,12 +204,20 @@ export function ServiceRequestListPage({
   }
 
   return (
-    <section className="portal-page">
-      <div className="portal-titlebar">
-        <h2>{title}</h2>
+    <section className="portal-page dense-ops-page service-request-queue-page">
+      <div className="portal-titlebar dense-ops-titlebar">
+        <div>
+          <p className="eyebrow">Claims queue</p>
+          <h2>{title}</h2>
+          <p>{description}</p>
+        </div>
+        <div className="workspace-chip-row">
+          <span className="workspace-chip">Records: {filteredRequests.length}</span>
+          <span className="workspace-chip">Active filters: {activeFilterCount}</span>
+        </div>
       </div>
 
-      <article className="card portal-panel">
+      <article className="card portal-panel dense-ops-filter-panel">
         <div className="portal-filter-grid">
           <label className="portal-field">
             <span>Loan No.</span>
@@ -273,11 +285,11 @@ export function ServiceRequestListPage({
         </article>
       </div>
 
-      <article className="card portal-results-panel">
+      <article className="card portal-results-panel dense-ops-results-panel">
         <div className="split-row">
           <div>
             <h3>Claims Queue</h3>
-            <p>{description}</p>
+            <p>Search by ticket, customer, identifier, live call status, and settlement position without leaving the queue.</p>
           </div>
           <Link className="secondary-button" to="/workspace/service-requests/create-request">Register New Claim</Link>
         </div>

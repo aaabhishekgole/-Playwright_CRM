@@ -7,14 +7,14 @@ import { useAuth } from '../hooks/useAuth';
 
 const signalCards = [
   { value: '22', label: 'workflow states', detail: 'from intake to final delivery' },
-  { value: '8', label: 'seeded operator roles', detail: 'admin, support, tech, finance and more' },
-  { value: '<4h', label: 'triage target', detail: 'built for fast local debugging' },
+  { value: '8', label: 'operator roles', detail: 'admin, support, tech, finance and more' },
+  { value: '24x7', label: 'ops posture', detail: 'built for repeat daily handling' },
 ];
 
 const railItems = [
-  'Repair intake, diagnostics, approval, dispatch and reconciliation in one command surface.',
-  'JWT-based access with seeded local operators for quick role testing.',
-  'Traceable service-request history so each state transition stays visible.',
+  'Repair intake, diagnostics, approval, dispatch, and reconciliation in one command surface.',
+  'JWT-based access with seeded local operators for controlled role testing.',
+  'Traceable service-request history so each status transition stays visible.',
 ];
 
 const operatorRoles = ['admin', 'support', 'backend', 'pickup', 'tech', 'delivery', 'mse', 'finance'];
@@ -46,7 +46,7 @@ export function LoginPage() {
   }
 
   return (
-    <div className="login-shell">
+    <div className="login-shell dense-ops-login">
       <div className="login-grid" aria-hidden="true" />
       <div className="login-layout">
         <section className="login-brand-panel">
@@ -55,10 +55,10 @@ export function LoginPage() {
               <GadgetSevaLogo className="login-logo" />
             </div>
             <div className="login-brand-copy">
-              <p className="login-overline">Repair Command Center</p>
+              <p className="login-overline">Enterprise Service Operations</p>
               <h1>Gadget Seva Hub</h1>
               <p className="login-copy">
-                Operate service intake, diagnostics, approvals, dispatch, and billing from one high-clarity control surface.
+                Run claim intake, pickup coordination, repair tracking, dispatch, and billing from one compact operations workspace.
               </p>
             </div>
           </div>
@@ -76,7 +76,7 @@ export function LoginPage() {
           <div className="login-console-card">
             <div className="login-console-head">
               <span className="login-console-badge">Ops Matrix</span>
-              <span className="login-console-status">Local stack ready</span>
+              <span className="login-console-status">Workspace available</span>
             </div>
             <ul className="login-console-list">
               {railItems.map((item) => (
@@ -88,9 +88,9 @@ export function LoginPage() {
 
         <form className="login-card" onSubmit={handleSubmit}>
           <div className="login-card-head">
-            <p className="login-card-eyebrow">Secure access node</p>
-            <h2 className="login-card-title">Sign in</h2>
-            <p className="login-card-copy">Use a seeded operator account to enter the dashboard and test real workflow routes.</p>
+            <p className="login-card-eyebrow">Secure operator access</p>
+            <h2 className="login-card-title">Sign in to Ops Console</h2>
+            <p className="login-card-copy">Use a seeded operator account to enter live workflow queues, billing screens, and request controls.</p>
           </div>
 
           <label className="form-field">
@@ -125,7 +125,7 @@ export function LoginPage() {
 
           <div className="login-devnote">
             <div className="login-devnote-head">
-              <span className="login-devnote-badge">Local dev</span>
+              <span className="login-devnote-badge">Local access</span>
               <strong>Seeded password: `Admin@123`</strong>
             </div>
             <div className="login-role-pills">

@@ -37,8 +37,8 @@ export function ServiceRequestDetailsPage() {
   const workflowMeta = getWorkflowStageMeta(request);
 
   return (
-    <section className="workspace-page">
-      <div className="page-header">
+    <section className="workspace-page dense-ops-page request-detail-page">
+      <div className="page-header request-detail-hero">
         <div>
           <p className="eyebrow">Request details</p>
           <h2>{request.requestNumber}</h2>
@@ -50,14 +50,15 @@ export function ServiceRequestDetailsPage() {
             <span className="workspace-chip">Device: {request.deviceLabel}</span>
           </div>
         </div>
-        <div className="status-stack">
+        <div className="status-stack request-detail-status-stack">
           <StatusBadge status={request.status} />
           {request.slaBreached ? <span className="alert-badge">SLA Breached</span> : <span className="ok-badge">SLA On Track</span>}
+          <Link className="secondary-button" to="/workspace/service-requests/open-requests">Back to Queue</Link>
         </div>
       </div>
 
-      <div className="details-grid triple-grid">
-        <article className="card">
+      <div className="details-grid triple-grid request-detail-grid">
+        <article className="card detail-card">
           <h3>Customer and Device</h3>
           <div className="data-grid">
             <span>Customer</span><strong>{request.customerName}</strong>
@@ -78,7 +79,7 @@ export function ServiceRequestDetailsPage() {
           <p className="muted-line">QR payload: {request.qrCodePayload ?? 'Not scanned yet'}</p>
         </article>
 
-        <article className="card">
+        <article className="card detail-card">
           <h3>SLA / TAT</h3>
           <div className="data-grid">
             <span>Loan No.</span><strong>{request.loanNumber ?? 'N/A'}</strong>
@@ -97,7 +98,7 @@ export function ServiceRequestDetailsPage() {
           </div>
         </article>
 
-        <article className="card">
+        <article className="card detail-card detail-card-files">
           <h3>Assignments and Files</h3>
           <p>Pickup: {request.pickupAgent ?? 'Unassigned'}</p>
           <p>Pickup Schedule: {request.pickup?.scheduledAt ? formatDateTimeIn(request.pickup.scheduledAt) : 'Not scheduled'}</p>
@@ -114,7 +115,7 @@ export function ServiceRequestDetailsPage() {
         </article>
       </div>
 
-      <div className="summary-grid">
+      <div className="summary-grid request-detail-summary-grid">
         <article className="summary-stat compact-stat">
           <span>Pickup photos</span>
           <strong>{pickupPhotos}/10</strong>
@@ -147,8 +148,8 @@ export function ServiceRequestDetailsPage() {
         onRemove={(attachmentId) => deleteAttachment(request.id, attachmentId).then(() => undefined)}
       />
 
-      <div className="details-grid two-one-grid">
-        <article className="card">
+      <div className="details-grid two-one-grid request-detail-lower-grid">
+        <article className="card detail-card">
           <div className="split-row">
             <h3>Status timeline</h3>
             <Link to="/timeline">Open timeline view</Link>
@@ -156,7 +157,7 @@ export function ServiceRequestDetailsPage() {
           <Timeline items={request.timeline} />
         </article>
 
-        <article className="card">
+        <article className="card detail-card">
           <h3>Notification Queue</h3>
           <div className="mini-list">
             {request.notifications.map((notification, index) => (
@@ -171,8 +172,8 @@ export function ServiceRequestDetailsPage() {
         </article>
       </div>
 
-      <div className="details-grid two-one-grid">
-        <article className="card">
+      <div className="details-grid two-one-grid request-detail-lower-grid">
+        <article className="card detail-card">
           <div className="split-row">
             <h3>Invoice and Payments</h3>
             <StatusBadge status={request.invoice?.paymentStatus ?? 'PENDING'} />
@@ -211,7 +212,7 @@ export function ServiceRequestDetailsPage() {
           )}
         </article>
 
-        <article className="card">
+        <article className="card detail-card">
           <h3>Audit Trail</h3>
           <div className="mini-list">
             {request.auditTrail.map((item, index) => (

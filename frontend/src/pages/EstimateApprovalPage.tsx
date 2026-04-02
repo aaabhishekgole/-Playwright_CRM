@@ -44,21 +44,67 @@ export function EstimateApprovalPage() {
   }
 
   return (
-    <section className="workspace-page">
+    <section className="workspace-page dense-ops-page estimate-approval-workspace">
       <div className="page-header merchant-page-header">
         <div>
           <p className="eyebrow">Approval desk</p>
           <h2>Estimate Approval Queue</h2>
           <p>Review submitted estimates and either approve them or send them back for diagnosis revision.</p>
         </div>
+        <div className="workspace-chip-row">
+          <span className="workspace-chip">Awaiting review: {estimateQueue.length}</span>
+          <span className="workspace-chip">Workflow: Estimate approval</span>
+        </div>
       </div>
+
+      <div className="summary-grid ops-workspace-summary-grid">
+        <article className="summary-stat compact-stat">
+          <span>Awaiting approval</span>
+          <strong>{estimateQueue.length}</strong>
+          <small>Estimates currently waiting for a commercial or customer-facing decision.</small>
+        </article>
+        <article className="summary-stat compact-stat">
+          <span>Revision path</span>
+          <strong>Diagnosis</strong>
+          <small>Revision requests send the case back into diagnosis without losing estimate history.</small>
+        </article>
+        <article className="summary-stat compact-stat">
+          <span>Approval outcome</span>
+          <strong>Repair</strong>
+          <small>Approved estimates continue into downstream repair execution and billing readiness.</small>
+        </article>
+      </div>
+
+      <article className="card ops-workspace-playbook">
+        <div className="split-row">
+          <div>
+            <p className="eyebrow">Approval flow</p>
+            <h3>Estimate review desk</h3>
+          </div>
+          <span className="workspace-chip">Action enabled</span>
+        </div>
+        <div className="workflow-step-list">
+          <div className="workflow-step">
+            <span>1</span>
+            <p>Validate the submitted estimate against diagnosis notes, parts, labour, and commercial context.</p>
+          </div>
+          <div className="workflow-step">
+            <span>2</span>
+            <p>Approve clean cases for onward repair, or push unclear submissions back for revision.</p>
+          </div>
+          <div className="workflow-step">
+            <span>3</span>
+            <p>Keep the decision inside the same request trail so timeline, notifications, and finance remain aligned.</p>
+          </div>
+        </div>
+      </article>
 
       {error ? <div className="workspace-empty"><strong>Unable to load estimates</strong><p>{error}</p></div> : null}
       {loading && estimateQueue.length === 0 ? <div className="workspace-empty"><strong>Loading estimates</strong><p>Please wait while the approval queue loads.</p></div> : null}
 
       <div className="stack-grid">
         {estimateQueue.length > 0 ? estimateQueue.map((request) => (
-          <article className="card action-card" key={request.id}>
+          <article className="card action-card ops-work-card" key={request.id}>
             <div className="split-row">
               <div>
                 <h3>{request.requestNumber}</h3>

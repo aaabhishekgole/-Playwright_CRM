@@ -48,11 +48,15 @@ public final class StatusTransitionRules {
         ALLOWED.put(RequestStatus.CASHLESS_APPROVED, EnumSet.of(RequestStatus.REPAIR_IN_PROGRESS));
         ALLOWED.put(RequestStatus.ESTIMATE_APPROVED, EnumSet.of(RequestStatus.REPAIR_IN_PROGRESS));
         ALLOWED.put(RequestStatus.REPAIR_IN_PROGRESS, EnumSet.of(RequestStatus.REPAIR_COMPLETED));
-        ALLOWED.put(RequestStatus.REPAIR_COMPLETED, EnumSet.of(RequestStatus.READY_FOR_DISPATCH, RequestStatus.DELIVERY_ASSIGNED));
-        ALLOWED.put(RequestStatus.TOTAL_LOSS, EnumSet.of(RequestStatus.CLOSED));
+        ALLOWED.put(RequestStatus.REPAIR_COMPLETED, EnumSet.of(
+                RequestStatus.REPAIR_IN_PROGRESS,
+                RequestStatus.READY_FOR_DISPATCH,
+                RequestStatus.DELIVERY_ASSIGNED
+        ));
+        ALLOWED.put(RequestStatus.TOTAL_LOSS, EnumSet.of(RequestStatus.INVOICED, RequestStatus.CLOSED));
         ALLOWED.put(RequestStatus.READY_FOR_DISPATCH, EnumSet.of(RequestStatus.DELIVERY_ASSIGNED));
-        ALLOWED.put(RequestStatus.DELIVERY_ASSIGNED, EnumSet.of(RequestStatus.OUT_FOR_DELIVERY));
-        ALLOWED.put(RequestStatus.OUT_FOR_DELIVERY, EnumSet.of(RequestStatus.DELIVERED));
+        ALLOWED.put(RequestStatus.DELIVERY_ASSIGNED, EnumSet.of(RequestStatus.READY_FOR_DISPATCH, RequestStatus.OUT_FOR_DELIVERY));
+        ALLOWED.put(RequestStatus.OUT_FOR_DELIVERY, EnumSet.of(RequestStatus.READY_FOR_DISPATCH, RequestStatus.DELIVERED));
         ALLOWED.put(RequestStatus.DELIVERED, EnumSet.of(RequestStatus.INVOICED));
         ALLOWED.put(RequestStatus.INVOICED, EnumSet.of(RequestStatus.CLOSED));
         ALLOWED.put(RequestStatus.CLOSED, EnumSet.noneOf(RequestStatus.class));
