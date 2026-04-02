@@ -19,11 +19,13 @@ spring:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
 server:
-  port: 8081
+  port: ${PORT:8081}
 
 app:
   persistence:
     type: ${APP_PERSISTENCE_TYPE:jpa}
+  cors:
+    allowed-origin-patterns: ${APP_CORS_ALLOWED_ORIGIN_PATTERNS:http://localhost:*,http://127.0.0.1:*}
   jwt:
     secret: ${JWT_SECRET:01234567890123456789012345678901}
     expiration-minutes: ${JWT_EXPIRATION_MINUTES:120}
@@ -31,6 +33,7 @@ app:
     root-path: ${STORAGE_ROOT:uploads}
     base-url: ${STORAGE_BASE_URL:http://localhost:8081}
     signing-secret: ${STORAGE_SIGNING_SECRET:storage-signing-secret-12345}
+  runner-portal-base-url: ${APP_RUNNER_PORTAL_BASE_URL:http://localhost:5173/runner-access}
   repair-center-state-code: ${REPAIR_CENTER_STATE_CODE:29}
   notifications:
     provider: ${NOTIFICATION_PROVIDER:LOG}
