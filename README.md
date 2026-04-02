@@ -2,6 +2,9 @@
 
 This repository is set up to run locally without Docker.
 
+Deployment guide:
+- [Docs/deployment.md](/d:/Test%20Abhishek/AI_Frameworl/local/gadget-seva-hub/gadget-seva-hub/Docs/deployment.md)
+
 ## Local setup
 
 ### Backend
