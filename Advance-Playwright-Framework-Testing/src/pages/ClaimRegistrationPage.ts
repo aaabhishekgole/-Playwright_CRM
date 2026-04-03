@@ -80,17 +80,48 @@ export class ClaimRegistrationPage {
   }
 
   async submit() {
+    await expect(this.registerButton()).toBeEnabled({ timeout: 30000 });
     await this.registerButton().click();
   }
 
   async expectRegistered() {
-    await expect(this.claimRegisteredHeading()).toBeVisible();
-    await expect(this.openClaimDetailsLink()).toBeVisible();
-    await expect(this.viewClaimsQueueLink()).toBeVisible();
+    await expect
+      .poll(
+        async () => {
+          if (await this.openClaimDetailsLink().isVisible().catch(() => false)) {
+            return await this.readCreatedRequestNumber();
+          }
+
+          if (await this.claimRegisteredHeading().isVisible().catch(() => false)) {
+            return await this.readCreatedRequestNumber();
+          }
+
+          const errorBanner = this.page.locator('.portal-banner-error').last();
+          if (await errorBanner.isVisible().catch(() => false)) {
+            const errorText = (await errorBanner.textContent())?.trim() ?? 'Unknown claim registration error';
+            throw new Error(`Claim registration failed: ${errorText}`);
+          }
+
+          return await this.readCreatedRequestNumber();
+        },
+        {
+          timeout: 90000,
+          message: 'Waiting for the claim registration success panel to appear.',
+        },
+      )
+      .toMatch(/GSH-\d{8}-\d+/i);
+
+    await expect(this.createdRequestPanel()).toBeVisible({ timeout: 30000 });
+    await expect(this.openClaimDetailsLink()).toBeVisible({ timeout: 30000 });
+    await expect(this.viewClaimsQueueLink()).toBeVisible({ timeout: 30000 });
   }
 
   async readCreatedRequestNumber() {
-    const text = await this.createdRequestPanel().textContent();
+    if (await this.createdRequestPanel().count().catch(() => 0) === 0) {
+      return null;
+    }
+
+    const text = await this.createdRequestPanel().textContent({ timeout: 1000 }).catch(() => null);
     const match = text?.match(/GSH-\d{8}-\d+/i);
     return match?.[0] ?? null;
   }

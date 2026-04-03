@@ -7,7 +7,9 @@ import { formatCurrencyInr, formatDateTimeIn } from '../utils/formatters';
 import { useRequests } from './useRequests';
 
 export function PaymentReconciliationPage() {
-  const { requests, reconcilePayment } = useRequests();
+  const { requests, reconcilePayment, loading, error } = useRequests({
+    statuses: ['INVOICED', 'CLOSED'],
+  });
   const { showError, showSuccess } = useToast();
   const [statusByPaymentId, setStatusByPaymentId] = useState<Record<number, string>>({});
   const [remarksByPaymentId, setRemarksByPaymentId] = useState<Record<number, string>>({});
@@ -28,6 +30,69 @@ export function PaymentReconciliationPage() {
     ),
     [requests],
   );
+
+  const rowsContent = rows.length > 0
+    ? rows.map((row) => (
+        <article key={row.payment.id} className="card action-card">
+          <div className="split-row">
+            <div>
+              <h3>{row.invoiceNumber}</h3>
+              <p>{row.requestNumber} | {row.customerName} | {formatDeviceCategory(row.deviceCategory)} | {row.deviceLabel}</p>
+            </div>
+            <span className={row.payment.reconciliationStatus === 'RECONCILED' ? 'ok-badge' : row.payment.reconciliationStatus === 'MISMATCHED' ? 'alert-badge' : 'status-badge'}>
+              {row.payment.reconciliationStatus ?? 'PENDING'}
+            </span>
+          </div>
+
+          <div className="data-grid">
+            <span>Payment Ref</span><strong>{row.payment.paymentReference}</strong>
+            <span>UTR</span><strong>{row.payment.utrNumber ?? 'Not captured'}</strong>
+            <span>Method</span><strong>{row.payment.paymentMethod}</strong>
+            <span>Amount</span><strong>{formatCurrencyInr(row.payment.amount)}</strong>
+            <span>Payment Status</span><strong>{row.payment.paymentStatus}</strong>
+          </div>
+
+          <div className="action-form-grid">
+            <label className="action-field">
+              <span>Reconciliation Status</span>
+              <select
+                value={statusByPaymentId[row.payment.id] ?? row.payment.reconciliationStatus ?? 'PENDING'}
+                onChange={(event) => setStatusByPaymentId((current) => ({ ...current, [row.payment.id]: event.target.value }))}
+              >
+                <option value="PENDING">Pending</option>
+                <option value="RECONCILED">Reconciled</option>
+                <option value="MISMATCHED">Mismatched</option>
+              </select>
+            </label>
+
+            <label className="action-field">
+              <span>Remarks</span>
+              <textarea
+                value={remarksByPaymentId[row.payment.id] ?? row.payment.reconciliationRemarks ?? ''}
+                onChange={(event) => setRemarksByPaymentId((current) => ({ ...current, [row.payment.id]: event.target.value }))}
+                placeholder="Add reconciliation notes, mismatch reason, or follow-up context"
+              />
+            </label>
+          </div>
+
+          <div className="action-row">
+            <Link className="secondary-button" to={`/requests/${row.requestId}`}>Open request</Link>
+            <button className="primary-button" disabled={busyPaymentId === row.payment.id} onClick={() => handleSave(row)}>
+              {busyPaymentId === row.payment.id ? 'Saving...' : 'Save Reconciliation'}
+            </button>
+          </div>
+
+          <small className="action-message">{messageByPaymentId[row.payment.id] ?? (row.payment.reconciledAt ? `Reconciled on ${formatDateTimeIn(row.payment.reconciledAt)}` : 'Awaiting reconciliation update.')}</small>
+        </article>
+      ))
+    : !loading && !error
+      ? (
+        <div className="workspace-empty">
+          <strong>No payments recorded</strong>
+          <p>Recorded payments with UTR and reconciliation details will appear here.</p>
+        </div>
+      )
+      : null;
 
   async function handleSave(row: (typeof rows)[number]) {
     const nextStatus = statusByPaymentId[row.payment.id] ?? row.payment.reconciliationStatus ?? 'PENDING';
@@ -70,66 +135,10 @@ export function PaymentReconciliationPage() {
         </article>
       </div>
 
-      <div className="stack-grid">
-        {rows.length > 0 ? rows.map((row) => (
-          <article key={row.payment.id} className="card action-card">
-            <div className="split-row">
-              <div>
-                <h3>{row.invoiceNumber}</h3>
-                <p>{row.requestNumber} | {row.customerName} | {formatDeviceCategory(row.deviceCategory)} | {row.deviceLabel}</p>
-              </div>
-              <span className={row.payment.reconciliationStatus === 'RECONCILED' ? 'ok-badge' : row.payment.reconciliationStatus === 'MISMATCHED' ? 'alert-badge' : 'status-badge'}>
-                {row.payment.reconciliationStatus ?? 'PENDING'}
-              </span>
-            </div>
+      {error ? <div className="workspace-empty"><strong>Unable to load payments</strong><p>{error}</p></div> : null}
+      {loading && rows.length === 0 ? <div className="workspace-empty"><strong>Loading payments</strong><p>Please wait while reconciliation records are fetched.</p></div> : null}
 
-            <div className="data-grid">
-              <span>Payment Ref</span><strong>{row.payment.paymentReference}</strong>
-              <span>UTR</span><strong>{row.payment.utrNumber ?? 'Not captured'}</strong>
-              <span>Method</span><strong>{row.payment.paymentMethod}</strong>
-              <span>Amount</span><strong>{formatCurrencyInr(row.payment.amount)}</strong>
-              <span>Payment Status</span><strong>{row.payment.paymentStatus}</strong>
-            </div>
-
-            <div className="action-form-grid">
-              <label className="action-field">
-                <span>Reconciliation Status</span>
-                <select
-                  value={statusByPaymentId[row.payment.id] ?? row.payment.reconciliationStatus ?? 'PENDING'}
-                  onChange={(event) => setStatusByPaymentId((current) => ({ ...current, [row.payment.id]: event.target.value }))}
-                >
-                  <option value="PENDING">Pending</option>
-                  <option value="RECONCILED">Reconciled</option>
-                  <option value="MISMATCHED">Mismatched</option>
-                </select>
-              </label>
-
-              <label className="action-field">
-                <span>Remarks</span>
-                <textarea
-                  value={remarksByPaymentId[row.payment.id] ?? row.payment.reconciliationRemarks ?? ''}
-                  onChange={(event) => setRemarksByPaymentId((current) => ({ ...current, [row.payment.id]: event.target.value }))}
-                  placeholder="Add reconciliation notes, mismatch reason, or follow-up context"
-                />
-              </label>
-            </div>
-
-            <div className="action-row">
-              <Link className="secondary-button" to={`/requests/${row.requestId}`}>Open request</Link>
-              <button className="primary-button" disabled={busyPaymentId === row.payment.id} onClick={() => handleSave(row)}>
-                {busyPaymentId === row.payment.id ? 'Saving...' : 'Save Reconciliation'}
-              </button>
-            </div>
-
-            <small className="action-message">{messageByPaymentId[row.payment.id] ?? (row.payment.reconciledAt ? `Reconciled on ${formatDateTimeIn(row.payment.reconciledAt)}` : 'Awaiting reconciliation update.')}</small>
-          </article>
-        )) : (
-          <div className="workspace-empty">
-            <strong>No payments recorded</strong>
-            <p>Recorded payments with UTR and reconciliation details will appear here.</p>
-          </div>
-        )}
-      </div>
+      <div className="stack-grid">{rowsContent}</div>
     </section>
   );
 }

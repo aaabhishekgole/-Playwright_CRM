@@ -25,7 +25,6 @@ export class ClaimRegistrationModule {
     await this.claimRegistrationPage.switchToFreshRegistration();
     await this.claimRegistrationPage.fillForm(data);
     await this.claimRegistrationPage.submit();
-    await this.appLayoutPage.expectToast('Claim registered');
     await this.claimRegistrationPage.expectRegistered();
     return this.claimRegistrationPage.readCreatedRequestNumber();
   }

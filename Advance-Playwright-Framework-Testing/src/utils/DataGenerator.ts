@@ -19,12 +19,11 @@ export class DataGenerator {
 
   static imei() {
     const base = String(Date.now()).padStart(14, '8').slice(0, 14);
-    const digits = base.split('').map(Number);
+    const digits = base.split('').map(Number).reverse();
     const sum = digits.reduce((total, digit, index) => {
-      const position = index + 1;
-      if (position % 2 === 0) {
+      if (index % 2 === 0) {
         const doubled = digit * 2;
-        return total + Math.floor(doubled / 10) + (doubled % 10);
+        return total + (doubled > 9 ? doubled - 9 : doubled);
       }
       return total + digit;
     }, 0);

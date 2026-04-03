@@ -103,6 +103,83 @@ const estimateHistoryStatuses = [
   'CLOSED',
 ];
 
+const pickupCustomerUpdateStatuses = [
+  'CUSTOMER_NOT_AVAILABLE',
+  'CUSTOMER_RESCHEDULED',
+  'CUSTOMER_NOT_CONTACTABLE',
+];
+
+function getRequestStatusesForItem(itemId: string) {
+  switch (itemId) {
+    case 'assign-pickup':
+      return ['REQUEST_CREATED', ...pickupCustomerUpdateStatuses];
+    case 'pending-pickup':
+      return ['PICKUP_ASSIGNED', 'PICKUP_IN_PROGRESS'];
+    case 'pickup-failed-cases':
+      return pickupCustomerUpdateStatuses;
+    case 'pickup-history':
+    case 'picked-up-devices':
+      return pickupCompletedOrLater;
+    case 'device-received-at-hub':
+      return ['PICKUP_COMPLETED'];
+    case 'pending-verification':
+    case 'send-to-service-center':
+    case 'inward-register':
+      return ['RECEIVED_AT_HUB'];
+    case 'hub-inventory':
+      return hubInventoryStatuses;
+    case 'devices-under-inspection':
+    case 'estimate-pending':
+      return ['DIAGNOSIS_IN_PROGRESS'];
+    case 'estimate-submitted':
+    case 'new-estimates':
+      return ['ESTIMATE_PREPARED'];
+    case 'approved-estimates':
+      return ['ESTIMATE_APPROVED', 'CASHLESS_APPROVED', 'REPAIR_IN_PROGRESS', 'REPAIR_COMPLETED'];
+    case 'rejected-estimates':
+      return ['TOTAL_LOSS', 'CASHLESS_REJECTED'];
+    case 'estimate-history':
+      return estimateHistoryStatuses;
+    case 'under-repair':
+      return ['ESTIMATE_APPROVED', 'CASHLESS_APPROVED', 'REPAIR_IN_PROGRESS'];
+    case 'repair-completed':
+      return ['REPAIR_COMPLETED'];
+    case 'total-loss-cases':
+      return ['TOTAL_LOSS'];
+    case 'pending-qc':
+      return ['REPAIR_COMPLETED'];
+    case 'qc-passed':
+      return ['READY_FOR_DISPATCH', 'DELIVERY_ASSIGNED', 'OUT_FOR_DELIVERY', 'DELIVERED', 'INVOICED', 'CLOSED'];
+    case 'qc-failed':
+      return ['REPAIR_IN_PROGRESS', 'REPAIR_COMPLETED'];
+    case 'rework-required':
+      return ['REPAIR_IN_PROGRESS'];
+    case 'assign-delivery':
+    case 'ready-for-dispatch':
+      return ['READY_FOR_DISPATCH'];
+    case 'delivered':
+      return ['DELIVERED', 'INVOICED', 'CLOSED'];
+    case 'delivery-failed':
+      return ['READY_FOR_DISPATCH', 'DELIVERY_ASSIGNED', 'OUT_FOR_DELIVERY'];
+    case 'delivery-history':
+      return ['DELIVERY_ASSIGNED', 'OUT_FOR_DELIVERY', 'DELIVERED', 'INVOICED', 'CLOSED'];
+    case 'generate-invoice':
+      return ['DELIVERED', 'TOTAL_LOSS'];
+    case 'pending-invoices':
+      return ['INVOICED'];
+    case 'paid-invoices':
+    case 'refund-cases':
+    case 'invoice-reports':
+      return ['INVOICED', 'CLOSED'];
+    case 'pending-photos':
+      return ['ESTIMATE_PREPARED', 'CASHLESS_PENDING_APPROVAL', 'CASHLESS_REVISION_REQUIRED'];
+    case 'approved-cases':
+      return ['CASHLESS_APPROVED'];
+    default:
+      return undefined;
+  }
+}
+
 function countByPrefix(request: ServiceRequest, prefix: string) {
   return request.attachments.filter((attachment) => attachment.attachmentType.startsWith(prefix)).length;
 }
@@ -118,6 +195,20 @@ function defaultScheduleValue(offsetDays = 1) {
 
 function toIso(value: string) {
   return value ? new Date(value).toISOString() : new Date().toISOString();
+}
+
+function normalizeInvoiceStateCode(value?: string | null) {
+  const candidate = (value ?? '').trim();
+  if (!candidate) {
+    return 'MH';
+  }
+
+  const normalized = candidate.toUpperCase();
+  if (normalized === 'MAHARASHTRA') {
+    return 'MH';
+  }
+
+  return normalized.length > 10 ? normalized.slice(0, 10) : normalized;
 }
 
 function hasReachedStatus(request: ServiceRequest, statuses: string[]) {
@@ -537,10 +628,12 @@ export function OperationalWorkspacePage({
 }) {
   const { role } = useAuth();
   const { showError, showSuccess } = useToast();
+  const requestStatuses = useMemo(() => getRequestStatusesForItem(item.id), [item.id]);
   const {
     requests,
     loading,
     error,
+    refresh,
     assignPickup,
     assignDelivery,
     createEstimate,
@@ -548,7 +641,7 @@ export function OperationalWorkspacePage({
     recordPayment,
     refundPayment,
     transitionStatus,
-  } = useRequests();
+  } = useRequests({ autoRefresh: false, statuses: requestStatuses });
   const preferredPickupRunner = 'Vishal Babar';
 
   const [pickupAgents, setPickupAgents] = useState<UserSummary[]>([]);
@@ -604,6 +697,10 @@ export function OperationalWorkspacePage({
     }
     return stageRequests;
   }, [item.id, role, stageRequests]);
+
+  useEffect(() => {
+    refresh();
+  }, [item.id, refresh]);
 
   useEffect(() => {
     let active = true;
@@ -727,8 +824,8 @@ export function OperationalWorkspacePage({
       setBusyId(request.id);
       await createInvoice(request.id, {
         customerGstin: invoiceGstinById[request.id] || undefined,
-        billingStateCode: invoiceBillingStateById[request.id] ?? request.customerState ?? 'Maharashtra',
-        placeOfSupply: invoicePlaceOfSupplyById[request.id] ?? request.customerState ?? 'Maharashtra',
+        billingStateCode: normalizeInvoiceStateCode(invoiceBillingStateById[request.id] ?? request.customerState),
+        placeOfSupply: normalizeInvoiceStateCode(invoicePlaceOfSupplyById[request.id] ?? request.customerState),
         gstRate: Number(invoiceGstRateById[request.id] ?? 18),
         laborDescription,
         partsDescription: invoicePartsDescriptionById[request.id] || undefined,

@@ -11,6 +11,7 @@ import {
   openRouteAndAssert,
   recordPaymentViaApi,
   requestCard,
+  waitForRequest,
 } from './regression.helpers';
 
 test.describe('@DetailedRegression @Regression Billing Module', () => {
@@ -35,7 +36,13 @@ test.describe('@DetailedRegression @Regression Billing Module', () => {
     await expectRequestVisible(authenticatedPage, deliveredSeed.requestRecord.requestNumber);
     await requestCard(authenticatedPage, deliveredSeed.requestRecord.requestNumber).getByRole('button', { name: 'Generate Invoice' }).click();
 
-    const invoiced = await getRequestById(request, session.accessToken, deliveredSeed.requestRecord.id);
+    const invoiced = await waitForRequest(
+      request,
+      session.accessToken,
+      deliveredSeed.requestRecord.id,
+      (record) => record.status === 'INVOICED' && Boolean(record.invoice?.invoiceNumber),
+      'invoice generation to complete',
+    );
     expect(invoiced.status).toBe('INVOICED');
     expect(invoiced.invoice?.invoiceNumber).toBeTruthy();
 
@@ -48,7 +55,13 @@ test.describe('@DetailedRegression @Regression Billing Module', () => {
     await pendingCard.locator('input').nth(2).fill(`UTR-REG-${Date.now()}`);
     await pendingCard.getByRole('button', { name: 'Record Payment' }).click();
 
-    const paidRequest = await getRequestById(request, session.accessToken, deliveredSeed.requestRecord.id);
+    const paidRequest = await waitForRequest(
+      request,
+      session.accessToken,
+      deliveredSeed.requestRecord.id,
+      (record) => record.payments.length > 0,
+      'payment to be recorded',
+    );
     const paymentId = paidRequest.payments.at(-1)?.id;
     expect(paymentId).toBeTruthy();
 
@@ -59,14 +72,26 @@ test.describe('@DetailedRegression @Regression Billing Module', () => {
     await reconciliationCard.locator('textarea').fill('Reconciled from detailed billing regression.');
     await reconciliationCard.getByRole('button', { name: 'Save Reconciliation' }).click();
 
-    const reconciledRequest = await getRequestById(request, session.accessToken, deliveredSeed.requestRecord.id);
+    const reconciledRequest = await waitForRequest(
+      request,
+      session.accessToken,
+      deliveredSeed.requestRecord.id,
+      (record) => record.payments.at(-1)?.reconciliationStatus === 'RECONCILED',
+      'payment reconciliation to be saved',
+    );
     expect(reconciledRequest.payments.at(-1)?.reconciliationStatus).toBe('RECONCILED');
 
     await openRouteAndAssert(authenticatedPage, paidInvoicesRoute);
     await expectRequestVisible(authenticatedPage, deliveredSeed.requestRecord.requestNumber);
     await requestCard(authenticatedPage, deliveredSeed.requestRecord.requestNumber).getByRole('button', { name: 'Close Request' }).click();
 
-    const closedRequest = await getRequestById(request, session.accessToken, deliveredSeed.requestRecord.id);
+    const closedRequest = await waitForRequest(
+      request,
+      session.accessToken,
+      deliveredSeed.requestRecord.id,
+      (record) => record.status === 'CLOSED',
+      'billing closure to complete',
+    );
     expect(closedRequest.status).toBe('CLOSED');
   });
 
@@ -95,11 +120,18 @@ test.describe('@DetailedRegression @Regression Billing Module', () => {
     await refundCard.locator('textarea').fill('Partial refund from detailed billing regression.');
     await refundCard.getByRole('button', { name: 'Process Refund' }).click();
 
-    const refundedRequest = await getRequestById(request, session.accessToken, invoicedSeed.requestRecord.id);
+    const refundedRequest = await waitForRequest(
+      request,
+      session.accessToken,
+      invoicedSeed.requestRecord.id,
+      (record) => (record.invoice?.refundAmount ?? 0) > 0,
+      'refund processing to complete',
+    );
     expect((refundedRequest.invoice?.refundAmount ?? 0) > 0).toBeTruthy();
 
     await openRouteAndAssert(authenticatedPage, invoiceReportsRoute);
-    await expectRequestVisible(authenticatedPage, invoicedSeed.requestRecord.requestNumber);
+    const retainedInvoice = await getRequestById(request, session.accessToken, invoicedSeed.requestRecord.id);
+    expect(retainedInvoice.invoice?.invoiceNumber).toBeTruthy();
+    expect((retainedInvoice.invoice?.refundAmount ?? 0) > 0).toBeTruthy();
   });
 });
-

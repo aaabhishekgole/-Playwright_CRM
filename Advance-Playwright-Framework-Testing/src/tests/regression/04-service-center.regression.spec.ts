@@ -7,10 +7,10 @@ import {
   createRepairCompletedRequest,
   createTotalLossRequest,
   expectRequestVisible,
-  getRequestById,
   getSectionRoutes,
   openRouteAndAssert,
   requestCard,
+  waitForRequest,
 } from './regression.helpers';
 
 test.describe('@DetailedRegression @Regression Service Center Module', () => {
@@ -45,7 +45,13 @@ test.describe('@DetailedRegression @Regression Service Center Module', () => {
     await diagnosisCard.locator('input[type="number"]').nth(2).fill('378');
     await diagnosisCard.getByRole('button', { name: 'Submit Estimate' }).click();
 
-    const diagnosisUpdated = await getRequestById(request, session.accessToken, diagnosisSeed.requestRecord.id);
+    const diagnosisUpdated = await waitForRequest(
+      request,
+      session.accessToken,
+      diagnosisSeed.requestRecord.id,
+      (record) => record.status === 'ESTIMATE_PREPARED',
+      'service-center estimate submission to complete',
+    );
     expect(diagnosisUpdated.status).toBe('ESTIMATE_PREPARED');
 
     await openRouteAndAssert(authenticatedPage, estimateSubmittedRoute);
@@ -61,4 +67,3 @@ test.describe('@DetailedRegression @Regression Service Center Module', () => {
     await expectRequestVisible(authenticatedPage, totalLossSeed.requestRecord.requestNumber);
   });
 });
-

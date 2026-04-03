@@ -7,7 +7,9 @@ import { formatDeviceCategory } from '../utils/deviceCatalog';
 import { useRequests } from './useRequests';
 
 export function EstimateApprovalPage() {
-  const { requests, approveEstimate, transitionStatus, loading, error } = useRequests();
+  const { requests, approveEstimate, transitionStatus, loading, error } = useRequests({
+    statuses: ['ESTIMATE_PREPARED'],
+  });
   const { showError, showSuccess } = useToast();
   const estimateQueue = requests.filter((request) => request.status === 'ESTIMATE_PREPARED');
   const [busyId, setBusyId] = useState<number | null>(null);

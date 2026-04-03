@@ -9,7 +9,9 @@ import { formatDateTimeIn } from '../utils/formatters';
 import { useRequests } from './useRequests';
 
 export function DeliveryTrackingPage() {
-  const { requests, transitionStatus, loading, error } = useRequests();
+  const { requests, transitionStatus, loading, error } = useRequests({
+    statuses: ['DELIVERY_ASSIGNED', 'OUT_FOR_DELIVERY'],
+  });
   const { showError, showSuccess } = useToast();
   const [busyId, setBusyId] = useState<number | null>(null);
   const deliveryRequests = requests.filter((request) => ['DELIVERY_ASSIGNED', 'OUT_FOR_DELIVERY'].includes(request.status));

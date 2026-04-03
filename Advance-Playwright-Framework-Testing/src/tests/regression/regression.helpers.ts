@@ -15,6 +15,7 @@ import {
 import type {
   AdminMenuRoute,
   ClaimRegistrationFormData,
+  FrameworkUserKey,
   LoginResponse,
   PickupRunnerFormData,
   ServiceRequestRecord,
@@ -95,6 +96,10 @@ export const CASHLESS_DAMAGE_EVIDENCE_TYPES = [
   'CASHLESS_DAMAGE_IMAGE_4',
 ] as const;
 
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 function bearer(accessToken: string) {
   return {
     Authorization: `Bearer ${accessToken}`,
@@ -112,6 +117,32 @@ function svgBuffer(label: string) {
   );
 }
 
+async function delay(ms: number) {
+  await new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+const SESSION_TTL_MS = 4 * 60 * 1000;
+const sessionCache = new Map<FrameworkUserKey, { session: LoginResponse; createdAt: number }>();
+
+async function createSessionWithRetry(request: APIRequestContext, userKey: FrameworkUserKey) {
+  const authApi = new AuthApi(request);
+  const credentials = config.users[userKey];
+  let lastError: unknown;
+
+  for (let attempt = 1; attempt <= 3; attempt += 1) {
+    try {
+      return await authApi.login(credentials.username, credentials.password);
+    } catch (error) {
+      lastError = error;
+      if (attempt < 3) {
+        await delay(1000 * attempt);
+      }
+    }
+  }
+
+  throw lastError;
+}
+
 export function futureIso(hoursFromNow = 26) {
   return new Date(Date.now() + hoursFromNow * 60 * 60 * 1000).toISOString();
 }
@@ -126,8 +157,31 @@ export function futureLocalInput(daysFromNow = 2) {
 }
 
 export async function createAdminSession(request: APIRequestContext): Promise<LoginResponse> {
-  const authApi = new AuthApi(request);
-  return authApi.login(config.users.admin.username, config.users.admin.password);
+  const cached = sessionCache.get('admin');
+  if (cached && Date.now() - cached.createdAt < SESSION_TTL_MS) {
+    return cached.session;
+  }
+
+  const session = await createSessionWithRetry(request, 'admin');
+  sessionCache.set('admin', {
+    session,
+    createdAt: Date.now(),
+  });
+  return session;
+}
+
+export async function createPickupRunnerSession(request: APIRequestContext): Promise<LoginResponse> {
+  const cached = sessionCache.get('pickupRunner');
+  if (cached && Date.now() - cached.createdAt < SESSION_TTL_MS) {
+    return cached.session;
+  }
+
+  const session = await createSessionWithRetry(request, 'pickupRunner');
+  sessionCache.set('pickupRunner', {
+    session,
+    createdAt: Date.now(),
+  });
+  return session;
 }
 
 export async function createClaimViaApi(
@@ -183,6 +237,36 @@ export async function findPickupRunnerByUsername(
 export async function getRequestById(request: APIRequestContext, accessToken: string, requestId: number) {
   const serviceRequestApi = new ServiceRequestApi(request);
   return serviceRequestApi.get(accessToken, requestId) as Promise<WorkflowRequest>;
+}
+
+export async function waitForRequest(
+  request: APIRequestContext,
+  accessToken: string,
+  requestId: number,
+  predicate: (record: WorkflowRequest) => boolean,
+  description: string,
+  timeout = 60000,
+): Promise<WorkflowRequest> {
+  let latestRecord: WorkflowRequest | null = null;
+
+  await expect
+    .poll(
+      async () => {
+        latestRecord = await getRequestById(request, accessToken, requestId);
+        return latestRecord ? predicate(latestRecord) : false;
+      },
+      {
+        timeout,
+        message: `Waiting for request ${requestId} to satisfy: ${description}`,
+      },
+    )
+    .toBeTruthy();
+
+  if (!latestRecord) {
+    throw new Error(`Polling finished without loading request ${requestId}.`);
+  }
+
+  return latestRecord;
 }
 
 export async function assignPickupViaApi(
@@ -381,6 +465,39 @@ export async function completePickupByToken(request: APIRequestContext, pickupTo
   return JSON.parse(text) as WorkflowRequest;
 }
 
+export async function updatePickupStatusByToken(
+  request: APIRequestContext,
+  pickupToken: string,
+  targetStatus: string,
+  remarks: string,
+) {
+  const response = await request.post(apiUrl(`/public/pickups/${pickupToken}/status`), {
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    data: {
+      targetStatus,
+      remarks,
+    },
+    timeout: config.apiTimeoutMs,
+  });
+
+  const text = await response.text();
+  if (!response.ok()) {
+    throw new Error(text || `Unable to update pickup ${pickupToken} to ${targetStatus}.`);
+  }
+
+  return JSON.parse(text) as WorkflowRequest;
+}
+
+export async function completePickupExecutionByToken(request: APIRequestContext, pickupToken: string) {
+  await acceptPickupByToken(request, pickupToken);
+  for (const attachmentType of PICKUP_EVIDENCE_TYPES) {
+    await uploadPickupAttachmentByToken(request, pickupToken, attachmentType, `Regression ${attachmentType}`);
+  }
+  return completePickupByToken(request, pickupToken);
+}
+
 export async function completeCashlessEvidenceSet(
   request: APIRequestContext,
   accessToken: string,
@@ -411,7 +528,7 @@ export async function createInvoiceViaApi(
     },
     data: {
       billingStateCode: 'MH',
-      placeOfSupply: 'Maharashtra',
+      placeOfSupply: 'MH',
       gstRate: 18,
       laborDescription: 'Repair labour and diagnostics',
       partsDescription: 'Spare parts and consumables',
@@ -420,7 +537,7 @@ export async function createInvoiceViaApi(
 
   const text = await response.text();
   if (!response.ok()) {
-    throw new Error(text || `Unable to create invoice for request ${serviceRequestId}.`);
+    throw new Error(text || `Unable to create invoice for request ${serviceRequestId}. Status ${response.status()}.`);
   }
 
   return JSON.parse(text) as WorkflowRequest;
@@ -518,7 +635,8 @@ export async function createAssignedPickupRequest(request: APIRequestContext, ac
 
 export async function createDiagnosisRequest(request: APIRequestContext, accessToken: string) {
   const seeded = await createAssignedPickupRequest(request, accessToken);
-  await transitionRequestStatus(request, accessToken, seeded.requestRecord.id, 'PICKUP_COMPLETED', 'Pickup completed for regression setup');
+  const runnerToken = extractRunnerToken(seeded.requestRecord.pickup?.runnerPortalLink ?? '');
+  await completePickupExecutionByToken(request, runnerToken);
   await transitionRequestStatus(request, accessToken, seeded.requestRecord.id, 'RECEIVED_AT_HUB', 'Device inwarded at hub');
   const requestRecord = await transitionRequestStatus(request, accessToken, seeded.requestRecord.id, 'DIAGNOSIS_IN_PROGRESS', 'Sent to service center diagnosis');
   return { ...seeded, requestRecord };
@@ -588,15 +706,77 @@ export function requestCard(page: Page, requestNumber: string) {
   return page.locator('.card, .portal-table-row').filter({ hasText: requestNumber }).first();
 }
 
+const queueLoadingPattern = /Loading workflow queue|Loading delivery queue|Loading estimates|Loading claims|Loading pickup dashboard|Loading request/i;
+const queueErrorPattern = /Unable to load requests|Unable to load delivery queue|Unable to load estimates|Unable to load claims|Problem loading page/i;
+const queueEmptyPattern = /No requests in this stage|No delivery records available|No estimates awaiting approval|No pickup evidence available|No matching claim/i;
+
+const sharedPathItemAliases: Record<string, string[]> = {
+  '/timeline': ['Audit Logs', 'Status History'],
+};
+
 export async function expectRequestVisible(page: Page, requestNumber: string) {
-  await expect(requestCard(page, requestNumber)).toBeVisible();
+  const card = requestCard(page, requestNumber);
+  const loadingState = page.locator('.workspace-empty').filter({ hasText: queueLoadingPattern }).first();
+  const errorState = page
+    .locator('.workspace-empty, .portal-banner-error')
+    .filter({ hasText: queueErrorPattern })
+    .first();
+  const emptyState = page.locator('.workspace-empty').filter({ hasText: queueEmptyPattern }).first();
+  const loginHeading = page.getByRole('heading', { name: /Login to Gadget Seva Hub|Login/i }).first();
+
+  await expect
+    .poll(
+      async () => {
+        if (await card.isVisible().catch(() => false)) {
+          return 'visible';
+        }
+
+        if (await loginHeading.isVisible().catch(() => false)) {
+          return 'login';
+        }
+        const loadingVisible = await loadingState.isVisible().catch(() => false);
+        const errorVisible = await errorState.isVisible().catch(() => false);
+        const emptyVisible = await emptyState.isVisible().catch(() => false);
+
+        if (await card.isVisible().catch(() => false)) {
+          return 'visible';
+        }
+
+        if (loadingVisible) {
+          return 'loading';
+        }
+
+        if (errorVisible) {
+          return 'error';
+        }
+
+        if (emptyVisible) {
+          return 'empty';
+        }
+
+        return 'waiting';
+      },
+      {
+        timeout: 120000,
+        intervals: [1000, 1500, 2000, 3000, 5000],
+        message: `Waiting for request ${requestNumber} to appear in the current queue.`,
+      },
+    )
+    .toBe('visible');
 }
 
 export async function openRouteAndAssert(page: Page, route: AdminMenuRoute) {
   const navigationModule = new NavigationModule(page);
   const appLayoutPage = new AppLayoutPage(page);
   await navigationModule.openAdminMenuRoute(route);
-  await appLayoutPage.expectCurrentContext(route.sectionLabel, route.itemLabel);
+  const currentContext = appLayoutPage.currentPageContext();
+  await expect(currentContext).toContainText(route.sectionLabel);
+  const aliases = sharedPathItemAliases[route.path];
+  if (aliases) {
+    await expect(currentContext).toContainText(new RegExp(aliases.map((alias) => escapeRegExp(alias)).join('|')));
+  } else {
+    await expect(currentContext).toContainText(route.itemLabel);
+  }
   await appLayoutPage.expectPrimaryHeadingVisible();
 }
 

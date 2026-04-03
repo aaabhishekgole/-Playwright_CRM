@@ -1,10 +1,13 @@
 import { expect } from '@playwright/test';
 import { authenticatedTest as test } from '@fixtures/index';
 import {
+  completePickupExecutionByToken,
   createAdminSession,
   createAssignedPickupRequest,
   expectRequestVisible,
+  extractRunnerToken,
   getSectionRoutes,
+  waitForRequest,
   openRouteAndAssert,
   requestCard,
   transitionRequestStatus,
@@ -20,10 +23,10 @@ test.describe('@DetailedRegression @Regression Hub Operations Module', () => {
   test('should move requests through hub boards and service-center dispatch', async ({ authenticatedPage, request }) => {
     const session = await createAdminSession(request);
     const pickupCompletedSeed = await createAssignedPickupRequest(request, session.accessToken);
-    await transitionRequestStatus(request, session.accessToken, pickupCompletedSeed.requestRecord.id, 'PICKUP_COMPLETED', 'Pickup completed for hub regression');
+    await completePickupExecutionByToken(request, extractRunnerToken(pickupCompletedSeed.requestRecord.pickup?.runnerPortalLink ?? ''));
 
     const receivedAtHubSeed = await createAssignedPickupRequest(request, session.accessToken);
-    await transitionRequestStatus(request, session.accessToken, receivedAtHubSeed.requestRecord.id, 'PICKUP_COMPLETED', 'Pickup completed for inward register');
+    await completePickupExecutionByToken(request, extractRunnerToken(receivedAtHubSeed.requestRecord.pickup?.runnerPortalLink ?? ''));
     await transitionRequestStatus(request, session.accessToken, receivedAtHubSeed.requestRecord.id, 'RECEIVED_AT_HUB', 'Received at hub for inward register');
 
     const receivedAtHubRoute = getSectionRoutes('Hub Operations').find((route) => route.itemId === 'device-received-at-hub');
@@ -38,6 +41,13 @@ test.describe('@DetailedRegression @Regression Hub Operations Module', () => {
     await openRouteAndAssert(authenticatedPage, receivedAtHubRoute);
     await expectRequestVisible(authenticatedPage, pickupCompletedSeed.requestRecord.requestNumber);
     await requestCard(authenticatedPage, pickupCompletedSeed.requestRecord.requestNumber).getByRole('button', { name: 'Mark Received At Hub' }).click();
+    await waitForRequest(
+      request,
+      session.accessToken,
+      pickupCompletedSeed.requestRecord.id,
+      (record) => record.status === 'RECEIVED_AT_HUB',
+      'hub receive action to complete',
+    );
 
     await openRouteAndAssert(authenticatedPage, pendingVerificationRoute);
     await expectRequestVisible(authenticatedPage, pickupCompletedSeed.requestRecord.requestNumber);
@@ -52,6 +62,13 @@ test.describe('@DetailedRegression @Regression Hub Operations Module', () => {
     await openRouteAndAssert(authenticatedPage, sendToServiceCenterRoute);
     const inventoryCard = requestCard(authenticatedPage, receivedAtHubSeed.requestRecord.requestNumber);
     await inventoryCard.getByRole('button', { name: 'Send To Service Center' }).click();
+    await waitForRequest(
+      request,
+      session.accessToken,
+      receivedAtHubSeed.requestRecord.id,
+      (record) => record.status === 'DIAGNOSIS_IN_PROGRESS',
+      'service center dispatch to complete',
+    );
 
     await expect(authenticatedPage).toHaveURL(/workspace\/hub-operations\/send-to-service-center/);
   });

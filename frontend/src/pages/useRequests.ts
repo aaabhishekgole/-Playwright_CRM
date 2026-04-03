@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import axios from 'axios';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   approveEstimate as approveEstimateRequest,
   assignDelivery as assignDeliveryRequest,
@@ -34,27 +35,69 @@ function replaceRequest(items: ServiceRequest[], updated: ServiceRequest) {
   return items.map((request) => (request.id === updated.id ? updated : request));
 }
 
-export function useRequests() {
+type UseRequestsOptions = {
+  autoRefresh?: boolean;
+  statuses?: string[];
+};
+
+export function useRequests(options: UseRequestsOptions = {}) {
+  const { autoRefresh = true } = options;
+  const statuses = options.statuses ? Array.from(new Set(options.statuses)).sort() : undefined;
+  const statusKey = statuses?.join('|') ?? '';
   const [requests, setRequests] = useState<ServiceRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const activeRefreshController = useRef<AbortController | null>(null);
+  const requestsRef = useRef<ServiceRequest[]>([]);
 
-  async function refresh() {
+  useEffect(() => {
+    requestsRef.current = requests;
+  }, [requests]);
+
+  const refresh = useCallback(async () => {
+    activeRefreshController.current?.abort();
+    const controller = new AbortController();
+    activeRefreshController.current = controller;
+
     try {
       setLoading(true);
       setError(null);
-      const data = await fetchRequests();
+      const data = await fetchRequests(statuses, controller.signal);
+      if (controller.signal.aborted) {
+        return requestsRef.current;
+      }
       setRequests(data);
+      return data;
     } catch (err) {
+      if (axios.isAxiosError(err) && err.code === 'ERR_CANCELED') {
+        return requestsRef.current;
+      }
       setError(getApiErrorMessage(err));
+      throw err;
     } finally {
-      setLoading(false);
+      if (activeRefreshController.current === controller) {
+        activeRefreshController.current = null;
+        setLoading(false);
+      }
     }
-  }
+  }, [statusKey]);
 
   useEffect(() => {
+    if (!autoRefresh) {
+      setLoading(false);
+      return () => {
+        activeRefreshController.current?.abort();
+        activeRefreshController.current = null;
+      };
+    }
+
     refresh();
-  }, []);
+
+    return () => {
+      activeRefreshController.current?.abort();
+      activeRefreshController.current = null;
+    };
+  }, [autoRefresh, refresh]);
 
   async function approveEstimate(requestId: number, remarks: string) {
     const updated = await approveEstimateRequest(requestId, remarks);

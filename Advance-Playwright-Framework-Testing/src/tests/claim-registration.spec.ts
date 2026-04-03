@@ -19,7 +19,7 @@ test.describe('@P1 @Regression Claim Registration', () => {
       await expect(authenticatedPage.getByRole('heading', { name: 'Open Claims' })).toBeVisible();
       await authenticatedPage.getByLabel('Mobile No.').fill(claimData.phone);
       await authenticatedPage.getByRole('button', { name: 'Search' }).click();
-      await expect(authenticatedPage.locator('.portal-table-row.portal-table-body').filter({ hasText: claimData.phone }).first()).toBeVisible();
+      await expect(authenticatedPage.locator('.portal-table-row.portal-table-body').filter({ hasText: claimData.phone }).first()).toBeVisible({ timeout: 60000 });
     });
   });
 });

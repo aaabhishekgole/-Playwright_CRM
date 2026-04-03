@@ -121,7 +121,7 @@ function splitDeviceLabel(deviceLabel: string) {
 }
 
 export function ClaimRegistrationPage() {
-  const { requests, loading, createRequest } = useRequests();
+  const { requests, loading, createRequest, refresh } = useRequests({ autoRefresh: false });
   const { showError, showInfo, showSuccess } = useToast();
   const [lookup, setLookup] = useState<SearchState>(emptySearch);
   const [matches, setMatches] = useState<ServiceRequest[]>([]);
@@ -141,16 +141,23 @@ export function ClaimRegistrationPage() {
     setForm((current) => ({ ...current, [key]: value }));
   }
 
-  function handleSearch() {
-    const nextMatches = requests.filter((request) => matchesRequest(request, lookup));
-    setMatches(nextMatches);
-    setCreatedRequest(null);
-    setError(null);
-    const nextMessage = nextMatches.length > 0
-      ? `${nextMatches.length} matching claim(s) found.`
-      : 'No existing claim found. Continue with a new registration.';
-    setStatusMessage(nextMessage);
-    showInfo(nextMessage, 'Claim search updated');
+  async function handleSearch() {
+    try {
+      const sourceRequests = requests.length > 0 ? requests : await refresh();
+      const nextMatches = sourceRequests.filter((request) => matchesRequest(request, lookup));
+      setMatches(nextMatches);
+      setCreatedRequest(null);
+      setError(null);
+      const nextMessage = nextMatches.length > 0
+        ? `${nextMatches.length} matching claim(s) found.`
+        : 'No existing claim found. Continue with a new registration.';
+      setStatusMessage(nextMessage);
+      showInfo(nextMessage, 'Claim search updated');
+    } catch (nextError) {
+      const nextMessage = getApiErrorMessage(nextError);
+      setError(nextMessage);
+      showError(nextMessage, 'Claim search failed');
+    }
   }
 
   function handleDeviceNotInDatabase() {
@@ -388,7 +395,7 @@ export function ClaimRegistrationPage() {
         </div>
 
         <div className="portal-action-row">
-          <button className="portal-button portal-button-search" disabled={submitting || loading} type="submit">{submitting ? 'Registering...' : 'Register Claim'}</button>
+          <button className="portal-button portal-button-search" disabled={submitting} type="submit">{submitting ? 'Registering...' : 'Register Claim'}</button>
           <button className="portal-button portal-button-secondary" type="button" onClick={() => setForm(emptyForm)}>Reset Form</button>
           <Link className="secondary-button" to="/requests">Open Claims</Link>
         </div>

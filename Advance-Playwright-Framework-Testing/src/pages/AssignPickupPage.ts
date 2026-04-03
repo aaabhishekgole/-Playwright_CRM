@@ -21,7 +21,7 @@ export class AssignPickupPage {
   }
 
   async expectRequestVisible(requestNumber: string) {
-    await expect(this.requestCard(requestNumber)).toBeVisible();
+    await expect(this.requestCard(requestNumber)).toBeVisible({ timeout: 30000 });
   }
 
   async expectRunnerAvailable(requestNumber: string, runnerName: string) {

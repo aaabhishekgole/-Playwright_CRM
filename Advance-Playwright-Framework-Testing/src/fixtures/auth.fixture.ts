@@ -1,3 +1,4 @@
+import { access } from 'node:fs/promises';
 import {
   test as base,
   expect,
@@ -9,7 +10,7 @@ import {
   type TestInfo,
 } from '@playwright/test';
 import { AuthApi } from '@api/AuthApi';
-import { DashboardPage, LoginPage, RunnerInboxPage, ServiceRequestListPage } from '@pages/index';
+import { AppLayoutPage, DashboardPage, LoginPage, RunnerInboxPage, ServiceRequestListPage } from '@pages/index';
 import { LoginModule, RunnerInboxModule, ServiceRequestModule } from '@modules/index';
 import { config } from '@config/index';
 import type { FrameworkUserKey, LoginResponse } from '@testdata/types';
@@ -22,6 +23,8 @@ type FrameworkFixtures = {
   loginModule: LoginModule;
   serviceRequestModule: ServiceRequestModule;
   runnerInboxModule: RunnerInboxModule;
+  adminSession: LoginResponse;
+  pickupRunnerSession: LoginResponse;
   authenticatedPage: Page;
   authenticatedContext: BrowserContext;
 };
@@ -37,40 +40,34 @@ type VideoOption =
       };
     };
 
-function toStoredUser(session: LoginResponse) {
-  return JSON.stringify({
-    accessToken: session.accessToken,
-    tokenType: session.tokenType,
-    username: session.username,
-    role: session.role,
-    fullName: session.fullName,
-    phone: session.phone,
+const SESSION_TTL_MS = 4 * 60 * 1000;
+const TEARDOWN_TIMEOUT_MS = 15_000;
+const sessionCache = new Map<FrameworkUserKey, { session: Promise<LoginResponse>; createdAt: number }>();
+
+async function getCachedSession(request: APIRequestContext, userKey: FrameworkUserKey) {
+  const cached = sessionCache.get(userKey);
+  if (cached && Date.now() - cached.createdAt < SESSION_TTL_MS) {
+    return cached.session;
+  }
+
+  const authApi = new AuthApi(request);
+  const credentials = config.users[userKey];
+  const session = authApi.login(credentials.username, credentials.password).catch((error) => {
+    sessionCache.delete(userKey);
+    throw error;
   });
+  sessionCache.set(userKey, {
+    session,
+    createdAt: Date.now(),
+  });
+  return session;
 }
 
 async function createAuthenticatedContext(
   browser: Browser,
-  request: APIRequestContext,
-  userKey: FrameworkUserKey,
   contextOptions: BrowserContextOptions,
 ) {
-  const authApi = new AuthApi(request);
-  const credentials = config.users[userKey];
-  const session = await authApi.login(credentials.username, credentials.password);
-  const context = await browser.newContext(contextOptions);
-
-  await context.addInitScript(
-    ({ accessToken, storedUser }) => {
-      window.localStorage.setItem('gsh_token', accessToken);
-      window.localStorage.setItem('gsh_user', storedUser);
-    },
-    {
-      accessToken: session.accessToken,
-      storedUser: toStoredUser(session),
-    },
-  );
-
-  return context;
+  return browser.newContext(contextOptions);
 }
 
 function normalizeVideoMode(video: VideoOption) {
@@ -128,13 +125,32 @@ async function attachFinalScreenshot(page: Page, testInfo: TestInfo, attachmentN
   }
 }
 
+async function withTeardownTimeout(task: Promise<void>, label: string) {
+  let timeoutHandle: NodeJS.Timeout | undefined;
+
+  try {
+    await Promise.race([
+      task,
+      new Promise<never>((_, reject) => {
+        timeoutHandle = setTimeout(() => reject(new Error(`${label} exceeded ${TEARDOWN_TIMEOUT_MS}ms`)), TEARDOWN_TIMEOUT_MS);
+      }),
+    ]);
+  } catch (error) {
+    console.warn(`[auth.fixture] ${label} skipped during teardown: ${String(error)}`);
+  } finally {
+    if (timeoutHandle) {
+      clearTimeout(timeoutHandle);
+    }
+  }
+}
+
 async function closePageSafely(page: Page) {
   if (page.isClosed()) {
     return;
   }
 
   try {
-    await page.close();
+    await withTeardownTimeout(page.close(), 'page.close');
   } catch {
     // Ignore teardown-time close failures so the original test result remains intact.
   }
@@ -146,12 +162,17 @@ async function attachRecordedVideo(recordedVideo: ReturnType<Page['video']>, tes
   }
 
   const savedVideoPath = testInfo.outputPath(`${attachmentName}.webm`);
-  await recordedVideo.saveAs(savedVideoPath);
-  await testInfo.attach(attachmentName, {
-    contentType: 'video/webm',
-    path: savedVideoPath,
-  });
-  await recordedVideo.delete();
+  await withTeardownTimeout(recordedVideo.saveAs(savedVideoPath), 'video.saveAs');
+
+  const videoWasSaved = await access(savedVideoPath).then(() => true).catch(() => false);
+  if (videoWasSaved) {
+    await testInfo.attach(attachmentName, {
+      contentType: 'video/webm',
+      path: savedVideoPath,
+    });
+  }
+
+  await withTeardownTimeout(recordedVideo.delete(), 'video.delete');
 }
 
 export const test = base.extend<FrameworkFixtures>({
@@ -204,20 +225,32 @@ export const test = base.extend<FrameworkFixtures>({
     await use(new RunnerInboxModule(page));
   },
 
-  authenticatedContext: async ({ browser, request, contextOptions, video }, use, testInfo) => {
+  adminSession: async ({ request }, use) => {
+    await use(await getCachedSession(request, 'admin'));
+  },
+
+  pickupRunnerSession: async ({ request }, use) => {
+    await use(await getCachedSession(request, 'pickupRunner'));
+  },
+
+  authenticatedContext: async ({ browser, contextOptions, video }, use, testInfo) => {
     const context = await createAuthenticatedContext(
       browser,
-      request,
-      'admin',
       buildAuthenticatedContextOptions(contextOptions, video as VideoOption, testInfo),
     );
+    const adminSession = await getCachedSession(context.request, 'admin');
+    await context.addInitScript((session) => {
+      window.localStorage.setItem('gsh_token', session.accessToken);
+      window.localStorage.setItem('gsh_user', JSON.stringify(session));
+    }, adminSession);
     await use(context);
-    await context.close();
+    await withTeardownTimeout(context.close(), 'context.close');
   },
 
   authenticatedPage: async ({ authenticatedContext, video }, use, testInfo) => {
     const page = await authenticatedContext.newPage();
-    await page.goto(config.routes.dashboard);
+    await page.goto('about:blank');
+
     const recordedVideo = page.video();
     await use(page);
     await attachFinalScreenshot(page, testInfo, 'authenticated-flow-screenshot');

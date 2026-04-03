@@ -20,6 +20,7 @@ import {
 
 test.describe('@DetailedRegression @Regression Full Workflow', () => {
   test('should persist a request from pickup through billing closure with real API-backed transitions', async ({ request }) => {
+    test.setTimeout(120000);
     const session = await createAdminSession(request);
     const seeded = await createAssignedPickupRequest(request, session.accessToken);
     const runnerToken = extractRunnerToken(seeded.requestRecord.pickup?.runnerPortalLink ?? '');

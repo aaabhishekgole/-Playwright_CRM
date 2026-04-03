@@ -8,7 +8,7 @@ export class LoginPage {
   usernameInput = () => this.page.getByLabel('Username');
   passwordInput = () => this.page.getByLabel('Password');
   submitButton = () => this.page.getByRole('button', { name: /Enter Console|Authorizing/ });
-  errorAlert = () => this.page.locator('.login-alert-error');
+  errorAlert = () => this.page.locator('.login-alert-error, .toast-card.toast-error').first();
 
   async navigate() {
     await this.page.goto(config.routes.login);
@@ -33,7 +33,7 @@ export class LoginPage {
   }
 
   async expectLoaded() {
-    await expect(this.heading()).toBeVisible();
+    await expect(this.page.getByRole('heading', { name: /Sign in to Ops Console|Sign in/i })).toBeVisible();
   }
 
   async expectError() {

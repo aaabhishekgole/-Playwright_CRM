@@ -4,10 +4,10 @@ import {
   createAdminSession,
   createReadyForDispatchRequest,
   expectRequestVisible,
-  getRequestById,
   getSectionRoutes,
   openRouteAndAssert,
   requestCard,
+  waitForRequest,
 } from './regression.helpers';
 
 test.describe('@DetailedRegression @Regression Delivery Module', () => {
@@ -38,7 +38,13 @@ test.describe('@DetailedRegression @Regression Delivery Module', () => {
     await assignCard.locator('textarea').fill('Regression delivery assignment notes.');
     await assignCard.getByRole('button', { name: 'Assign Drop' }).click();
 
-    const assigned = await getRequestById(request, session.accessToken, dispatchSeed.requestRecord.id);
+    const assigned = await waitForRequest(
+      request,
+      session.accessToken,
+      dispatchSeed.requestRecord.id,
+      (record) => record.status === 'DELIVERY_ASSIGNED',
+      'delivery assignment to complete',
+    );
     expect(assigned.status).toBe('DELIVERY_ASSIGNED');
 
     await openRouteAndAssert(authenticatedPage, outForDeliveryRoute);
@@ -46,14 +52,26 @@ test.describe('@DetailedRegression @Regression Delivery Module', () => {
     let trackingCard = requestCard(authenticatedPage, dispatchSeed.requestRecord.requestNumber);
     await trackingCard.getByRole('button', { name: 'Mark Out For Delivery' }).click();
 
-    let outForDelivery = await getRequestById(request, session.accessToken, dispatchSeed.requestRecord.id);
+    let outForDelivery = await waitForRequest(
+      request,
+      session.accessToken,
+      dispatchSeed.requestRecord.id,
+      (record) => record.status === 'OUT_FOR_DELIVERY',
+      'delivery start to complete',
+    );
     expect(outForDelivery.status).toBe('OUT_FOR_DELIVERY');
 
     await openRouteAndAssert(authenticatedPage, outForDeliveryRoute);
     trackingCard = requestCard(authenticatedPage, dispatchSeed.requestRecord.requestNumber);
     await trackingCard.getByRole('button', { name: 'Mark Delivery Failed' }).click();
 
-    const deliveryFailed = await getRequestById(request, session.accessToken, dispatchSeed.requestRecord.id);
+    const deliveryFailed = await waitForRequest(
+      request,
+      session.accessToken,
+      dispatchSeed.requestRecord.id,
+      (record) => record.status === 'READY_FOR_DISPATCH',
+      'delivery failure to return request to dispatch',
+    );
     expect(deliveryFailed.status).toBe('READY_FOR_DISPATCH');
 
     await openRouteAndAssert(authenticatedPage, deliveryFailedRoute);
@@ -64,21 +82,39 @@ test.describe('@DetailedRegression @Regression Delivery Module', () => {
     await failedCard.locator('textarea').fill('Reassigned after delivery failure regression.');
     await failedCard.getByRole('button', { name: 'Assign Drop' }).click();
 
-    const reassigned = await getRequestById(request, session.accessToken, dispatchSeed.requestRecord.id);
+    const reassigned = await waitForRequest(
+      request,
+      session.accessToken,
+      dispatchSeed.requestRecord.id,
+      (record) => record.status === 'DELIVERY_ASSIGNED',
+      'delivery reassignment to complete',
+    );
     expect(reassigned.status).toBe('DELIVERY_ASSIGNED');
 
     await openRouteAndAssert(authenticatedPage, outForDeliveryRoute);
     trackingCard = requestCard(authenticatedPage, dispatchSeed.requestRecord.requestNumber);
     await trackingCard.getByRole('button', { name: 'Mark Out For Delivery' }).click();
 
-    outForDelivery = await getRequestById(request, session.accessToken, dispatchSeed.requestRecord.id);
+    outForDelivery = await waitForRequest(
+      request,
+      session.accessToken,
+      dispatchSeed.requestRecord.id,
+      (record) => record.status === 'OUT_FOR_DELIVERY',
+      'second delivery start to complete',
+    );
     expect(outForDelivery.status).toBe('OUT_FOR_DELIVERY');
 
     await openRouteAndAssert(authenticatedPage, outForDeliveryRoute);
     trackingCard = requestCard(authenticatedPage, dispatchSeed.requestRecord.requestNumber);
     await trackingCard.getByRole('button', { name: 'Mark Delivered' }).click();
 
-    const delivered = await getRequestById(request, session.accessToken, dispatchSeed.requestRecord.id);
+    const delivered = await waitForRequest(
+      request,
+      session.accessToken,
+      dispatchSeed.requestRecord.id,
+      (record) => record.status === 'DELIVERED',
+      'delivery completion to complete',
+    );
     expect(delivered.status).toBe('DELIVERED');
 
     await openRouteAndAssert(authenticatedPage, deliveredRoute);
@@ -88,4 +124,3 @@ test.describe('@DetailedRegression @Regression Delivery Module', () => {
     await expectRequestVisible(authenticatedPage, dispatchSeed.requestRecord.requestNumber);
   });
 });
-

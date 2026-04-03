@@ -129,9 +129,38 @@ export async function fetchRunnerAppNotifications(accessToken: string): Promise<
   return payload;
 }
 
-export async function fetchRequests(): Promise<ServiceRequest[]> {
-  const response = await api.get<ServiceRequest[]>('/service-requests');
-  return response.data;
+function sortRequestsByCreatedAtDesc(requests: ServiceRequest[]) {
+  return [...requests].sort((left, right) => {
+    const leftTime = Date.parse(left.createdAt);
+    const rightTime = Date.parse(right.createdAt);
+    return rightTime - leftTime;
+  });
+}
+
+export async function fetchRequests(statuses?: string[], signal?: AbortSignal): Promise<ServiceRequest[]> {
+  const uniqueStatuses = Array.from(new Set((statuses ?? []).filter(Boolean)));
+
+  if (uniqueStatuses.length === 0) {
+    const response = await api.get<ServiceRequest[]>('/service-requests', { signal });
+    return response.data;
+  }
+
+  const responses = await Promise.all(
+    uniqueStatuses.map((status) =>
+      api.get<ServiceRequest[]>('/service-requests', {
+        params: { status },
+        signal,
+      })),
+  );
+
+  const deduped = new Map<number, ServiceRequest>();
+  for (const response of responses) {
+    for (const request of response.data) {
+      deduped.set(request.id, request);
+    }
+  }
+
+  return sortRequestsByCreatedAtDesc(Array.from(deduped.values()));
 }
 
 export async function createServiceRequest(payload: CreateServiceRequestPayload): Promise<ServiceRequest> {

@@ -1,4 +1,5 @@
 import type { APIRequestContext, APIResponse } from '@playwright/test';
+import { config } from '@config/index';
 
 type JsonValue = Record<string, unknown> | Array<unknown> | string | number | boolean | null;
 
@@ -6,7 +7,7 @@ export class ApiHelper {
   constructor(private readonly request: APIRequestContext, private readonly baseUrl: string) {}
 
   async get<T>(path: string, headers: Record<string, string> = {}) {
-    const response = await this.request.get(this.resolve(path), { headers });
+    const response = await this.request.get(this.resolve(path), { headers, timeout: config.apiTimeoutMs });
     return this.parse<T>(response);
   }
 
@@ -17,6 +18,7 @@ export class ApiHelper {
         'Content-Type': 'application/json',
         ...headers,
       },
+      timeout: config.apiTimeoutMs,
     });
     return this.parse<T>(response);
   }

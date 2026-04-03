@@ -1,17 +1,24 @@
 import { expect } from '@playwright/test';
-import { config } from '@config/index';
 import { authenticatedTest as test } from '@fixtures/index';
 import { PickupAssignmentModule } from '@modules/PickupAssignmentModule';
 import { PickupRunnerOnboardingModule } from '@modules/PickupRunnerOnboardingModule';
 import { buildPickupRunnerFormData } from '@testdata/factories';
 import {
+  acceptPickupByToken,
+  assignPickupViaApi,
+  completePickupByToken,
   createAdminSession,
   createClaimViaApi,
   expectRequestVisible,
   extractRunnerToken,
+  findPickupRunnerByUsername,
+  futureIso,
   getRequestById,
   getSectionRoutes,
   openRouteAndAssert,
+  updatePickupStatusByToken,
+  uploadPickupAttachmentByToken,
+  PICKUP_EVIDENCE_TYPES,
 } from './regression.helpers';
 
 test.describe('@DetailedRegression @Regression Pickup Management Module', () => {
@@ -29,6 +36,10 @@ test.describe('@DetailedRegression @Regression Pickup Management Module', () => 
 
     await pickupRunnerOnboardingModule.openRunnerOnboarding();
     await pickupRunnerOnboardingModule.onboardRunner(runnerData);
+    if (!runnerData.username) {
+      throw new Error('Runner onboarding test data must include a username.');
+    }
+    const runner = await findPickupRunnerByUsername(request, session.accessToken, runnerData.username);
 
     const { createdRequest } = await createClaimViaApi(request, session.accessToken);
 
@@ -56,28 +67,26 @@ test.describe('@DetailedRegression @Regression Pickup Management Module', () => 
     await expectRequestVisible(authenticatedPage, assignedRequest.requestNumber);
 
     const runnerToken = extractRunnerToken(assignedRequest.pickup?.runnerPortalLink ?? '');
-    await request.post(`${config.apiBaseUrl}/public/pickups/${runnerToken}/status`, {
-      data: {
-        targetStatus: 'CUSTOMER_RESCHEDULED',
-        remarks: 'Customer asked for a later slot from regression coverage.',
-      },
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
+    await acceptPickupByToken(request, runnerToken);
+    await updatePickupStatusByToken(request, runnerToken, 'CUSTOMER_RESCHEDULED', 'Customer asked for a later slot from regression coverage.');
 
     await openRouteAndAssert(authenticatedPage, failedPickupRoute);
     await expectRequestVisible(authenticatedPage, assignedRequest.requestNumber);
 
-    await request.post(`${config.apiBaseUrl}/public/pickups/${runnerToken}/status`, {
-      data: {
-        targetStatus: 'PICKUP_COMPLETED',
-        remarks: 'Pickup completed from regression coverage.',
-      },
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
+    const reassignedRequest = await assignPickupViaApi(
+      request,
+      session.accessToken,
+      createdRequest.id,
+      runner.id,
+      futureIso(50),
+      'Regression pickup reassignment after customer reschedule.',
+    );
+    const reassignedRunnerToken = extractRunnerToken(reassignedRequest.pickup?.runnerPortalLink ?? '');
+    await acceptPickupByToken(request, reassignedRunnerToken);
+    for (const attachmentType of PICKUP_EVIDENCE_TYPES) {
+      await uploadPickupAttachmentByToken(request, reassignedRunnerToken, attachmentType, `Pickup management ${attachmentType}`);
+    }
+    await completePickupByToken(request, reassignedRunnerToken);
 
     await openRouteAndAssert(authenticatedPage, pickupHistoryRoute);
     await expectRequestVisible(authenticatedPage, assignedRequest.requestNumber);

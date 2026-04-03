@@ -61,7 +61,7 @@ export const config: FrameworkConfig = {
   headless: readBoolean(process.env.HEADLESS, true),
   defaultTimeoutMs: readNumber(process.env.DEFAULT_TIMEOUT_MS, 30000),
   expectTimeoutMs: readNumber(process.env.EXPECT_TIMEOUT_MS, 10000),
-  apiTimeoutMs: readNumber(process.env.API_TIMEOUT_MS, 15000),
+  apiTimeoutMs: readNumber(process.env.API_TIMEOUT_MS, 60000),
   routes: routes as RouteMap,
   users: {
     admin: {

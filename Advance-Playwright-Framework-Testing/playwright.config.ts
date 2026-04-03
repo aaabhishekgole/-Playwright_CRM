@@ -6,7 +6,7 @@ const testResultsPath = `${reportRoot}/test-results`;
 
 export default defineConfig({
   testDir: './src/tests',
-  timeout: config.defaultTimeoutMs * 2,
+  timeout: Math.max(config.defaultTimeoutMs * 2, 180000),
   expect: {
     timeout: config.expectTimeoutMs,
   },
@@ -19,8 +19,8 @@ export default defineConfig({
     headless: config.headless,
     screenshot: 'off',
     video: {
-      mode: 'on',
-      size: { width: 1280, height: 720 },
+      mode: 'retain-on-failure',
+      size: { width: 640, height: 360 },
     },
     trace: 'retain-on-failure',
     actionTimeout: config.defaultTimeoutMs,

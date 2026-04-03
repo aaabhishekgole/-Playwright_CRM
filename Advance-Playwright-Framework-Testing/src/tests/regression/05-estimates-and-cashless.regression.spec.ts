@@ -5,10 +5,10 @@ import {
   createCashlessPendingRequest,
   createEstimatePreparedRequest,
   expectRequestVisible,
-  getRequestById,
   getSectionRoutes,
   openRouteAndAssert,
   requestCard,
+  waitForRequest,
 } from './regression.helpers';
 
 test.describe('@DetailedRegression @Regression Estimates And Cashless Modules', () => {
@@ -38,8 +38,20 @@ test.describe('@DetailedRegression @Regression Estimates And Cashless Modules', 
     await requestCard(authenticatedPage, revisionSeed.requestRecord.requestNumber).getByRole('button', { name: 'Request Revision' }).click();
     await requestCard(authenticatedPage, approvalSeed.requestRecord.requestNumber).getByRole('button', { name: 'Approve Estimate' }).click();
 
-    const revisedRequest = await getRequestById(request, session.accessToken, revisionSeed.requestRecord.id);
-    const approvedRequest = await getRequestById(request, session.accessToken, approvalSeed.requestRecord.id);
+    const revisedRequest = await waitForRequest(
+      request,
+      session.accessToken,
+      revisionSeed.requestRecord.id,
+      (record) => record.status === 'DIAGNOSIS_IN_PROGRESS',
+      'estimate revision to move back to diagnosis',
+    );
+    const approvedRequest = await waitForRequest(
+      request,
+      session.accessToken,
+      approvalSeed.requestRecord.id,
+      (record) => record.status === 'ESTIMATE_APPROVED',
+      'estimate approval to complete',
+    );
     expect(revisedRequest.status).toBe('DIAGNOSIS_IN_PROGRESS');
     expect(approvedRequest.status).toBe('ESTIMATE_APPROVED');
 
@@ -66,11 +78,16 @@ test.describe('@DetailedRegression @Regression Estimates And Cashless Modules', 
     await expectRequestVisible(authenticatedPage, cashlessReviewSeed.requestRecord.requestNumber);
     await requestCard(authenticatedPage, cashlessReviewSeed.requestRecord.requestNumber).getByRole('button', { name: 'Approve Cashless' }).click();
 
-    const cashlessApproved = await getRequestById(request, session.accessToken, cashlessReviewSeed.requestRecord.id);
+    const cashlessApproved = await waitForRequest(
+      request,
+      session.accessToken,
+      cashlessReviewSeed.requestRecord.id,
+      (record) => record.status === 'CASHLESS_APPROVED',
+      'cashless approval to complete',
+    );
     expect(cashlessApproved.status).toBe('CASHLESS_APPROVED');
 
     await openRouteAndAssert(authenticatedPage, approvedCasesRoute);
     await expectRequestVisible(authenticatedPage, cashlessReviewSeed.requestRecord.requestNumber);
   });
 });
-

@@ -4,10 +4,10 @@ import {
   createAdminSession,
   createRepairCompletedRequest,
   expectRequestVisible,
-  getRequestById,
   getSectionRoutes,
   openRouteAndAssert,
   requestCard,
+  waitForRequest,
 } from './regression.helpers';
 
 test.describe('@DetailedRegression @Regression Quality Check Module', () => {
@@ -33,7 +33,13 @@ test.describe('@DetailedRegression @Regression Quality Check Module', () => {
     await expectRequestVisible(authenticatedPage, qcSeed.requestRecord.requestNumber);
     await requestCard(authenticatedPage, qcSeed.requestRecord.requestNumber).getByRole('button', { name: 'QC Failed' }).click();
 
-    const qcFailed = await getRequestById(request, session.accessToken, qcSeed.requestRecord.id);
+    const qcFailed = await waitForRequest(
+      request,
+      session.accessToken,
+      qcSeed.requestRecord.id,
+      (record) => record.status === 'REPAIR_IN_PROGRESS',
+      'qc failure to move request back into rework',
+    );
     expect(qcFailed.status).toBe('REPAIR_IN_PROGRESS');
 
     await openRouteAndAssert(authenticatedPage, qcFailedRoute);
@@ -43,17 +49,28 @@ test.describe('@DetailedRegression @Regression Quality Check Module', () => {
     await expectRequestVisible(authenticatedPage, qcSeed.requestRecord.requestNumber);
     await requestCard(authenticatedPage, qcSeed.requestRecord.requestNumber).getByRole('button', { name: 'Finish Rework' }).click();
 
-    const reworked = await getRequestById(request, session.accessToken, qcSeed.requestRecord.id);
+    const reworked = await waitForRequest(
+      request,
+      session.accessToken,
+      qcSeed.requestRecord.id,
+      (record) => record.status === 'REPAIR_COMPLETED',
+      'rework completion to return request to completed repair',
+    );
     expect(reworked.status).toBe('REPAIR_COMPLETED');
 
     await openRouteAndAssert(authenticatedPage, pendingQcRoute);
     await requestCard(authenticatedPage, qcSeed.requestRecord.requestNumber).getByRole('button', { name: 'QC Passed' }).click();
 
-    const qcPassed = await getRequestById(request, session.accessToken, qcSeed.requestRecord.id);
+    const qcPassed = await waitForRequest(
+      request,
+      session.accessToken,
+      qcSeed.requestRecord.id,
+      (record) => record.status === 'READY_FOR_DISPATCH',
+      'qc pass to move request into dispatch',
+    );
     expect(qcPassed.status).toBe('READY_FOR_DISPATCH');
 
     await openRouteAndAssert(authenticatedPage, qcPassedRoute);
     await expectRequestVisible(authenticatedPage, qcSeed.requestRecord.requestNumber);
   });
 });
-

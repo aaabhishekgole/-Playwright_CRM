@@ -80,9 +80,8 @@ public class StartupDataSeeder {
         User user = userStore.findByUsername(username).orElseGet(User::new);
         user.setFullName(fullName);
         user.setUsername(username);
-        if (user.getPassword() == null || user.getPassword().isBlank()) {
-            user.setPassword(passwordEncoder.encode("Admin@123"));
-        }
+        // Keep the documented seeded credentials stable across local reruns.
+        user.setPassword(passwordEncoder.encode("Admin@123"));
         user.setEmail(email);
         user.setPhone(phone);
         user.setWhatsappNumber(phone);

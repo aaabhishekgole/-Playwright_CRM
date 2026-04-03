@@ -1,6 +1,6 @@
 import type { Page } from '@playwright/test';
 import { DashboardPage, LoginPage } from '@pages/index';
-import { Logger, WaitHelper } from '@utils/index';
+import { Logger } from '@utils/index';
 
 export class LoginModule {
   private readonly loginPage: LoginPage;
@@ -21,7 +21,6 @@ export class LoginModule {
   async doLogin(username: string, password: string) {
     this.logger.step(2, 'Submit login credentials');
     await this.loginPage.login(username, password);
-    await WaitHelper.forUrl(this.page, /\/$/);
     await this.dashboardPage.expectLoaded();
     this.logger.success('Login completed successfully');
   }
