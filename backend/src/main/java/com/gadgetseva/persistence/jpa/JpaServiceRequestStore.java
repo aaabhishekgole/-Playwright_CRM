@@ -3,7 +3,7 @@ package com.gadgetseva.persistence.jpa;
 import com.gadgetseva.entity.RequestStatus;
 import com.gadgetseva.entity.ServiceRequest;
 import com.gadgetseva.persistence.ServiceRequestStore;
-import com.gadgetseva.repository.ServiceRequestRepository;
+import com.gadgetseva.repository.jpa.ServiceRequestRepository;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;

@@ -1,4 +1,4 @@
-package com.gadgetseva.repository;
+package com.gadgetseva.repository.jpa;
 
 import com.gadgetseva.entity.Estimate;
 import com.gadgetseva.entity.ServiceRequest;

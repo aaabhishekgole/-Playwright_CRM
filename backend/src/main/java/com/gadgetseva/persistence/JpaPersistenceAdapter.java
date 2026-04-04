@@ -10,6 +10,6 @@ import org.springframework.stereotype.Component;
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 @Component
-@ConditionalOnProperty(name = "app.persistence.type", havingValue = "jpa", matchIfMissing = true)
+@ConditionalOnProperty(name = "app.persistence.type", havingValue = "jpa")
 public @interface JpaPersistenceAdapter {
 }

@@ -6,39 +6,39 @@ For the current preferred production setup in this repo, use:
 
 - `frontend` on Railway
 - `backend` on Railway
-- `database` on Railway Postgres
+- `database` on Railway MongoDB
 - `redis` on Railway Redis when needed
 
 ## Required Runtime
 
 - Java 21
-- PostgreSQL for the default `jpa` persistence mode
+- MongoDB for the default persistence mode
 - Redis if you want a managed Redis host instead of local defaults
 
-Mongo is also supported when `SPRING_PROFILES_ACTIVE=mongo` and `APP_PERSISTENCE_TYPE=mongo`.
+JPA with PostgreSQL remains available as an alternative mode, but Mongo is now the default runtime path.
 
 ## Database Choice
 
-You can use either:
+For the default Railway path, use Railway-managed `Mongo` and `Redis`.
 
-- Render-managed Postgres / Redis
-- Railway-managed Postgres / Redis
-- external managed providers if you need them
+If you need the JPA alternative instead, you can still use:
+
+- Railway-managed `Postgres`
+- Render Postgres or another external PostgreSQL provider
+- an external managed Redis provider if needed
 
 Important:
 
-- the backend connects through normal environment variables such as `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`, `REDIS_HOST`, and `REDIS_PORT`
-- Railway Postgres is the simplest current fit if the rest of the stack is also on Railway
+- the backend connects through normal environment variables such as `MONGODB_URI`, `REDIS_HOST`, and `REDIS_PORT`
+- Railway MongoDB is the simplest current fit if the rest of the stack is also on Railway
 
 ## Core Environment Variables
 
 These are the main values you need in production:
 
 ```text
-APP_PERSISTENCE_TYPE=jpa
-DB_URL=jdbc:postgresql://...
-DB_USERNAME=...
-DB_PASSWORD=...
+APP_PERSISTENCE_TYPE=mongo
+MONGODB_URI=mongodb://...
 JWT_SECRET=...
 STORAGE_BASE_URL=https://your-backend-domain.example.com
 STORAGE_SIGNING_SECRET=...
@@ -55,6 +55,9 @@ Storage note:
 - do not point `STORAGE_BASE_URL` to the frontend domain
 
 ## Render
+
+This section documents the JPA/PostgreSQL alternative deployment path.
+If you want the default deployment mode described in this repo, use the Railway + MongoDB section below instead.
 
 Use [.env.render.example](/d:/Test%20Abhishek/AI_Frameworl/local/gadget-seva-hub/gadget-seva-hub/backend/.env.render.example) as the template.
 
@@ -108,11 +111,11 @@ Suggested service setup:
 - Build Command: `mvn -q -Dmaven.test.skip=true package`
 - Start Command: `java -jar target/gadget-seva-hub-0.0.1-SNAPSHOT.jar`
 
-The Railway example uses reference variables so you can point the backend service at attached `Postgres` and `Redis` services.
+The Railway example uses reference variables so you can point the backend service at attached `Mongo` and `Redis` services.
 
 ### Railway Step-by-Step
 
-1. Create a `Postgres` service in Railway.
+1. Create a `Mongo` service in Railway.
 2. Create a `Redis` service if you need Redis in production.
 3. Create the backend service from this repository.
 4. Set `Root Directory` to `backend`.
@@ -123,7 +126,7 @@ The Railway example uses reference variables so you can point the backend servic
 9. Validate:
    - `https://<your-backend-domain>/swagger-ui/index.html`
 
-If you use external Postgres or Redis instead of Railway-managed services, replace the Railway reference variables with the provider connection values.
+If you use external MongoDB or Redis instead of Railway-managed services, replace the Railway reference variables with the provider connection values.
 
 ## Railway Frontend Pairing
 

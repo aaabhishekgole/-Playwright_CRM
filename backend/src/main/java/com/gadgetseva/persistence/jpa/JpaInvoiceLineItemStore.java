@@ -3,7 +3,7 @@ package com.gadgetseva.persistence.jpa;
 import com.gadgetseva.entity.Invoice;
 import com.gadgetseva.entity.InvoiceLineItem;
 import com.gadgetseva.persistence.InvoiceLineItemStore;
-import com.gadgetseva.repository.InvoiceLineItemRepository;
+import com.gadgetseva.repository.jpa.InvoiceLineItemRepository;
 import java.util.List;
 import com.gadgetseva.persistence.JpaPersistenceAdapter;
 

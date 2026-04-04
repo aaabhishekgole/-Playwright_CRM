@@ -4,7 +4,7 @@ import com.gadgetseva.entity.NotificationDeliveryStatus;
 import com.gadgetseva.entity.NotificationLog;
 import com.gadgetseva.persistence.JpaPersistenceAdapter;
 import com.gadgetseva.persistence.NotificationLogStore;
-import com.gadgetseva.repository.NotificationLogRepository;
+import com.gadgetseva.repository.jpa.NotificationLogRepository;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.List;

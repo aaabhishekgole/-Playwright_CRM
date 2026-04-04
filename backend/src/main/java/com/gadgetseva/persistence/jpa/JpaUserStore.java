@@ -3,7 +3,7 @@ package com.gadgetseva.persistence.jpa;
 import com.gadgetseva.entity.RoleName;
 import com.gadgetseva.entity.User;
 import com.gadgetseva.persistence.UserStore;
-import com.gadgetseva.repository.UserRepository;
+import com.gadgetseva.repository.jpa.UserRepository;
 import java.util.List;
 import java.util.Optional;
 import com.gadgetseva.persistence.JpaPersistenceAdapter;

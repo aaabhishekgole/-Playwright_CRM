@@ -2,7 +2,7 @@ package com.gadgetseva.persistence.jpa;
 
 import com.gadgetseva.entity.Device;
 import com.gadgetseva.persistence.DeviceStore;
-import com.gadgetseva.repository.DeviceRepository;
+import com.gadgetseva.repository.jpa.DeviceRepository;
 import java.util.Optional;
 import com.gadgetseva.persistence.JpaPersistenceAdapter;
 

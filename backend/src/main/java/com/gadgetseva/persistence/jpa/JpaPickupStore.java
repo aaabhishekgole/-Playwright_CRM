@@ -3,7 +3,7 @@ package com.gadgetseva.persistence.jpa;
 import com.gadgetseva.entity.Pickup;
 import com.gadgetseva.entity.ServiceRequest;
 import com.gadgetseva.persistence.PickupStore;
-import com.gadgetseva.repository.PickupRepository;
+import com.gadgetseva.repository.jpa.PickupRepository;
 import java.util.Optional;
 import com.gadgetseva.persistence.JpaPersistenceAdapter;
 

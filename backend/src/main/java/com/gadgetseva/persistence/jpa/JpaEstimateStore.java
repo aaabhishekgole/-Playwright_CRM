@@ -3,7 +3,7 @@ package com.gadgetseva.persistence.jpa;
 import com.gadgetseva.entity.Estimate;
 import com.gadgetseva.entity.ServiceRequest;
 import com.gadgetseva.persistence.EstimateStore;
-import com.gadgetseva.repository.EstimateRepository;
+import com.gadgetseva.repository.jpa.EstimateRepository;
 import java.util.Optional;
 import com.gadgetseva.persistence.JpaPersistenceAdapter;
 

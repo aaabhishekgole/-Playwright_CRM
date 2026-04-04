@@ -7,6 +7,7 @@ spring:
       - org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration
       - org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration
       - org.springframework.boot.autoconfigure.data.mongo.MongoRepositoriesAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration
   data:
     mongodb:
       uri: ${MONGODB_URI:mongodb://localhost:27017/gadget_seva_hub}
@@ -14,4 +15,4 @@ spring:
 
 app:
   persistence:
-    type: mongo
+    type: ${APP_PERSISTENCE_TYPE:mongo}

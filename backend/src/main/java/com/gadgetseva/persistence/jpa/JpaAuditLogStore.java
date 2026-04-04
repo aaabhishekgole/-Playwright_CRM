@@ -3,7 +3,7 @@ package com.gadgetseva.persistence.jpa;
 import com.gadgetseva.entity.AuditLog;
 import com.gadgetseva.persistence.AuditLogStore;
 import com.gadgetseva.persistence.JpaPersistenceAdapter;
-import com.gadgetseva.repository.AuditLogRepository;
+import com.gadgetseva.repository.jpa.AuditLogRepository;
 import java.util.List;
 
 @JpaPersistenceAdapter

@@ -1,4 +1,4 @@
-package com.gadgetseva.repository;
+package com.gadgetseva.repository.jpa;
 
 import com.gadgetseva.entity.Customer;
 import org.springframework.data.jpa.repository.JpaRepository;

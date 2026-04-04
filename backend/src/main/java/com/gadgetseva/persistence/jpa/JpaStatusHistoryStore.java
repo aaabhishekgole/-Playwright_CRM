@@ -3,7 +3,7 @@ package com.gadgetseva.persistence.jpa;
 import com.gadgetseva.entity.ServiceRequest;
 import com.gadgetseva.entity.StatusHistory;
 import com.gadgetseva.persistence.StatusHistoryStore;
-import com.gadgetseva.repository.StatusHistoryRepository;
+import com.gadgetseva.repository.jpa.StatusHistoryRepository;
 import java.util.List;
 import com.gadgetseva.persistence.JpaPersistenceAdapter;
 

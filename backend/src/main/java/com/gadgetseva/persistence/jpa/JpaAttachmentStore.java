@@ -3,7 +3,7 @@ package com.gadgetseva.persistence.jpa;
 import com.gadgetseva.entity.Attachment;
 import com.gadgetseva.entity.ServiceRequest;
 import com.gadgetseva.persistence.AttachmentStore;
-import com.gadgetseva.repository.AttachmentRepository;
+import com.gadgetseva.repository.jpa.AttachmentRepository;
 import java.util.List;
 import java.util.Optional;
 import com.gadgetseva.persistence.JpaPersistenceAdapter;

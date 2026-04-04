@@ -3,7 +3,7 @@ package com.gadgetseva.persistence.jpa;
 import com.gadgetseva.entity.Role;
 import com.gadgetseva.entity.RoleName;
 import com.gadgetseva.persistence.RoleStore;
-import com.gadgetseva.repository.RoleRepository;
+import com.gadgetseva.repository.jpa.RoleRepository;
 import java.util.Optional;
 import com.gadgetseva.persistence.JpaPersistenceAdapter;
 

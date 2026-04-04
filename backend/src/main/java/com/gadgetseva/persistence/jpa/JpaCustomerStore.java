@@ -2,7 +2,7 @@ package com.gadgetseva.persistence.jpa;
 
 import com.gadgetseva.entity.Customer;
 import com.gadgetseva.persistence.CustomerStore;
-import com.gadgetseva.repository.CustomerRepository;
+import com.gadgetseva.repository.jpa.CustomerRepository;
 import com.gadgetseva.persistence.JpaPersistenceAdapter;
 
 @JpaPersistenceAdapter

@@ -3,7 +3,7 @@ package com.gadgetseva.persistence.jpa;
 import com.gadgetseva.entity.Delivery;
 import com.gadgetseva.entity.ServiceRequest;
 import com.gadgetseva.persistence.DeliveryStore;
-import com.gadgetseva.repository.DeliveryRepository;
+import com.gadgetseva.repository.jpa.DeliveryRepository;
 import java.util.Optional;
 import com.gadgetseva.persistence.JpaPersistenceAdapter;
 

@@ -8,7 +8,7 @@ Use this Railway-first deployment model for the current codebase:
 
 - `frontend` -> Railway service using [frontend/Dockerfile](/d:/Test%20Abhishek/AI_Frameworl/local/gadget-seva-hub/gadget-seva-hub/frontend/Dockerfile)
 - `backend` -> Railway service using [backend/Dockerfile](/d:/Test%20Abhishek/AI_Frameworl/local/gadget-seva-hub/gadget-seva-hub/backend/Dockerfile)
-- `database` -> Railway PostgreSQL
+- `database` -> Railway MongoDB
 - `redis` -> Railway Redis if needed
 - `mobile` -> Expo / EAS
 
@@ -35,7 +35,7 @@ This is the supported path because:
   - Spring Boot
   - Java 21
           |
-          +--> [ Railway PostgreSQL ]
+          +--> [ Railway MongoDB ]
           |
           +--> [ Railway Redis ] (optional / if used)
           |
@@ -78,7 +78,7 @@ This is the supported path because:
 Follow this order for the smoothest Railway setup:
 
 1. Create a Railway project.
-2. Add a `Postgres` service.
+2. Add a `Mongo` service.
 3. Add a `Redis` service only if you need Redis in production.
 4. Create the `backend` service from this repo with root directory `backend`.
 5. Attach a persistent volume to the backend service for uploads.
@@ -131,7 +131,7 @@ Suggested runtime behavior:
 
 - Railway injects `PORT`
 - Spring Boot reads `PORT` automatically
-- PostgreSQL is provided by Railway `Postgres`
+- MongoDB is provided by Railway `Mongo`
 - Redis is optional
 
 ### Required Backend Environment Variables
@@ -141,10 +141,8 @@ Use [backend/.env.railway.example](/d:/Test%20Abhishek/AI_Frameworl/local/gadget
 Main production values:
 
 ```text
-APP_PERSISTENCE_TYPE=jpa
-DB_URL=jdbc:${{Postgres.DATABASE_URL}}
-DB_USERNAME=${{Postgres.PGUSER}}
-DB_PASSWORD=${{Postgres.PGPASSWORD}}
+APP_PERSISTENCE_TYPE=mongo
+MONGODB_URI=${{Mongo.DATABASE_URL}}
 REDIS_HOST=${{Redis.REDISHOST}}
 REDIS_PORT=${{Redis.REDISPORT}}
 JWT_SECRET=replace-with-a-32-plus-character-secret
@@ -188,9 +186,6 @@ VITE_API_BASE_URL=https://your-backend-domain.up.railway.app/api
 ```text
 PORT
 APP_PERSISTENCE_TYPE
-DB_URL
-DB_USERNAME
-DB_PASSWORD
 MONGODB_URI
 REDIS_HOST
 REDIS_PORT
@@ -213,6 +208,14 @@ NOTIFICATION_WHATSAPP_ENABLED
 NOTIFICATION_WHATSAPP_URL
 NOTIFICATION_WHATSAPP_NUMBER
 NOTIFICATION_WHATSAPP_TEMPLATE_NAME
+```
+
+Optional only for the JPA/PostgreSQL alternative:
+
+```text
+DB_URL
+DB_USERNAME
+DB_PASSWORD
 ```
 
 ## Final Integration Checklist

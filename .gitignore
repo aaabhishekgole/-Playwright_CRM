@@ -19,6 +19,7 @@ mobile/dist/
 # Java / Maven
 target/
 backend/target/
+backend/.m2/
 *.class
 *.jar
 

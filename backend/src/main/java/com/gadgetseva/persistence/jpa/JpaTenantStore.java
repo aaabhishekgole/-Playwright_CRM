@@ -2,7 +2,7 @@ package com.gadgetseva.persistence.jpa;
 
 import com.gadgetseva.entity.Tenant;
 import com.gadgetseva.persistence.TenantStore;
-import com.gadgetseva.repository.TenantRepository;
+import com.gadgetseva.repository.jpa.TenantRepository;
 import java.util.Optional;
 import com.gadgetseva.persistence.JpaPersistenceAdapter;
 
