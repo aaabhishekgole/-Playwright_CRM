@@ -7,6 +7,7 @@ Thumbs.db
 node_modules/
 frontend/node_modules/
 mobile/node_modules/
+Advance-Playwright-Framework-Testing/
 dist/
 build/
 frontend/dist/

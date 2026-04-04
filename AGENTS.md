@@ -31,7 +31,6 @@ The repo contains:
 - `backend`: Spring Boot API
 - `frontend`: React admin portal
 - `mobile`: Expo hybrid runner app
-- `Advance-Playwright-Framework-Testing`: advanced Playwright + TypeScript automation framework
 - `Docs`: business, API, DB, menu, QA, and presentation material
 
 ## Non-Negotiable Product Rules
@@ -77,18 +76,11 @@ The `mobile` app is a hybrid shell and should continue using the same runner web
 
 ## Testing
 
-Primary automation lives in:
+Primary automation is currently managed outside this application repo.
 
-- `Advance-Playwright-Framework-Testing`
+This repo may still contain lightweight local test files under feature modules, but the dedicated advanced Playwright framework is no longer tracked here.
 
-Important commands:
-
-```bash
-cd Advance-Playwright-Framework-Testing
-node_modules/.bin/tsc --noEmit
-node scripts/rule-engine.js
-node_modules/.bin/playwright test --project=chromium --workers=1
-```
+If you continue maintaining the external automation workspace, keep its commands and reports there rather than in this repo.
 
 ## Documentation Rule
 
