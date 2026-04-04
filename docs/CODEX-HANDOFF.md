@@ -10,7 +10,7 @@ Gadget Seva Hub is a claim and device-service operations platform with:
 - Spring Boot API backend
 - hybrid Expo runner app
 - public runner pickup portal
-- advanced Playwright test framework
+- supporting QA scenarios documented in `Docs/`
 
 ## Current Product Shape
 
@@ -60,7 +60,6 @@ The mobile app is intentionally hybrid:
 - `backend`
 - `frontend`
 - `mobile`
-- `Advance-Playwright-Framework-Testing`
 - `Docs`
 
 ## Important Docs
@@ -94,50 +93,18 @@ Seeded credentials commonly used:
 
 ## Playwright Framework Status
 
-Automation framework location:
+The dedicated advanced Playwright automation framework is no longer tracked in this repo.
 
-- `Advance-Playwright-Framework-Testing`
+If you keep that framework locally or in a separate repository, manage it independently from this application repository.
 
-Framework structure:
-
-- `src/pages`
-- `src/modules`
-- `src/tests`
-- `src/api`
-- `src/fixtures`
-- `src/testdata`
-
-Important specs currently present:
-
-- `src/tests/login.spec.ts`
-- `src/tests/service-requests.spec.ts`
-- `src/tests/runner-inbox.spec.ts`
-- `src/tests/admin-menu.spec.ts`
-- `src/tests/claim-registration.spec.ts`
-- `src/tests/pickup-runner-onboarding.spec.ts`
-- `src/tests/pickup-assignment.spec.ts`
-
-Validation commands:
-
-```bash
-cd Advance-Playwright-Framework-Testing
-node_modules/.bin/tsc --noEmit
-node scripts/rule-engine.js
-node_modules/.bin/playwright test --project=chromium --workers=1
-```
-
-## Report Locations
-
-- `Advance-Playwright-Framework-Testing/playwright-report/index.html`
-- `Advance-Playwright-Framework-Testing/tta-report/index.html`
-- `Advance-Playwright-Framework-Testing/test-results`
+The application repo still contains some small frontend-level test files, but the heavy test framework, reports, and test workspace are intentionally separated.
 
 ## When Starting A New Codex Session
 
 Recommended prompt:
 
 ```text
-Read AGENTS.md and Docs/CODEX-HANDOFF.md first, then continue work in this repo without resetting the implemented India-first claim, pickup runner, hybrid mobile, and Playwright framework flows.
+Read AGENTS.md and Docs/CODEX-HANDOFF.md first, then continue work in this repo without resetting the implemented India-first claim, pickup runner, and hybrid mobile flows.
 ```
 
 ## Limitation
