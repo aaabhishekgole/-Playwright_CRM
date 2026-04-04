@@ -1,6 +1,13 @@
 # Backend Deploy: Render / Railway
 
-This backend is a Spring Boot service and should be deployed separately from the Vercel frontend.
+This backend is a Spring Boot service and can be deployed on Railway or Render.
+
+For the current preferred production setup in this repo, use:
+
+- `frontend` on Railway
+- `backend` on Railway
+- `database` on Railway Postgres
+- `redis` on Railway Redis when needed
 
 ## Required Runtime
 
@@ -9,6 +16,19 @@ This backend is a Spring Boot service and should be deployed separately from the
 - Redis if you want a managed Redis host instead of local defaults
 
 Mongo is also supported when `SPRING_PROFILES_ACTIVE=mongo` and `APP_PERSISTENCE_TYPE=mongo`.
+
+## Database Choice
+
+You can use either:
+
+- Render-managed Postgres / Redis
+- Railway-managed Postgres / Redis
+- external managed providers if you need them
+
+Important:
+
+- the backend connects through normal environment variables such as `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`, `REDIS_HOST`, and `REDIS_PORT`
+- Railway Postgres is the simplest current fit if the rest of the stack is also on Railway
 
 ## Core Environment Variables
 
@@ -22,11 +42,17 @@ DB_PASSWORD=...
 JWT_SECRET=...
 STORAGE_BASE_URL=https://your-backend-domain.example.com
 STORAGE_SIGNING_SECRET=...
-APP_CORS_ALLOWED_ORIGIN_PATTERNS=https://your-vercel-project.vercel.app,https://your-custom-domain.example.com
-APP_RUNNER_PORTAL_BASE_URL=https://your-vercel-project.vercel.app/runner-access
+APP_CORS_ALLOWED_ORIGIN_PATTERNS=https://your-frontend-domain.example.com,https://your-custom-domain.example.com
+APP_RUNNER_PORTAL_BASE_URL=https://your-frontend-domain.example.com/runner-access
 ```
 
 The backend now reads `PORT` automatically, so Render and Railway can inject their platform port without extra code changes.
+
+Storage note:
+
+- keep `STORAGE_BASE_URL` pointed to the backend public URL
+- keep `STORAGE_ROOT` on persistent storage
+- do not point `STORAGE_BASE_URL` to the frontend domain
 
 ## Render
 
@@ -68,6 +94,7 @@ If you deploy with Docker instead, point the service to [Dockerfile](/d:/Test%20
     - `https://<your-render-service>.onrender.com/swagger-ui/index.html`
 12. Use the final Render URL in the Vercel frontend as:
     - `BACKEND_API_ORIGIN=https://<your-render-service>.onrender.com`
+13. If the database was provisioned in Vercel Marketplace, copy those database credentials into the Render backend env vars.
 
 ## Railway
 
@@ -76,16 +103,33 @@ Use [.env.railway.example](/d:/Test%20Abhishek/AI_Frameworl/local/gadget-seva-hu
 Suggested service setup:
 
 - Root Directory: `backend`
+- Builder: `Dockerfile`
+- Dockerfile Path: `backend/Dockerfile`
 - Build Command: `mvn -q -DskipTests package`
 - Start Command: `java -jar target/gadget-seva-hub-0.0.1-SNAPSHOT.jar`
 
 The Railway example uses reference variables so you can point the backend service at attached `Postgres` and `Redis` services.
 
-## Vercel Frontend Pairing
+### Railway Step-by-Step
 
-Once the frontend is on Vercel, use its public domain in:
+1. Create a `Postgres` service in Railway.
+2. Create a `Redis` service if you need Redis in production.
+3. Create the backend service from this repository.
+4. Set `Root Directory` to `backend`.
+5. Use the Dockerfile at `backend/Dockerfile`.
+6. Attach a persistent volume for uploads.
+7. Add the env vars from [.env.railway.example](/d:/Test%20Abhishek/AI_Frameworl/local/gadget-seva-hub/gadget-seva-hub/backend/.env.railway.example).
+8. Generate a public domain for the backend service.
+9. Validate:
+   - `https://<your-backend-domain>/swagger-ui/index.html`
+
+If you use external Postgres or Redis instead of Railway-managed services, replace the Railway reference variables with the provider connection values.
+
+## Railway Frontend Pairing
+
+Once the frontend is on Railway, use its public domain in:
 
 - `APP_CORS_ALLOWED_ORIGIN_PATTERNS`
 - `APP_RUNNER_PORTAL_BASE_URL`
 
-That keeps admin requests, runner access links, and signed file URLs aligned with the deployed frontend.
+That keeps admin requests, runner access links, and frontend routing aligned with the deployed Railway frontend domain.

@@ -1,165 +1,189 @@
 # Deployment Guide
 
-This file stores the deployment process and the deployment-related code changes added for Gadget Seva Hub.
+This file documents the recommended production deployment path for Gadget Seva Hub on Railway.
 
-## Deployment Model
+## Recommended Deployment Model
 
-Use this split deployment approach for the current codebase:
+Use this Railway-first deployment model for the current codebase:
 
-- `frontend` -> Vercel
-- `backend` -> Render or Railway
+- `frontend` -> Railway service using [frontend/Dockerfile](/d:/Test%20Abhishek/AI_Frameworl/local/gadget-seva-hub/gadget-seva-hub/frontend/Dockerfile)
+- `backend` -> Railway service using [backend/Dockerfile](/d:/Test%20Abhishek/AI_Frameworl/local/gadget-seva-hub/gadget-seva-hub/backend/Dockerfile)
+- `database` -> Railway PostgreSQL
+- `redis` -> Railway Redis if needed
 - `mobile` -> Expo / EAS
 
 This is the supported path because:
 
-- the frontend is a Vite React app
-- the backend is Spring Boot on Java 21
-- the mobile app is Expo native and should not be deployed on Vercel
+- the frontend is a Vite React SPA and can be containerized cleanly for Railway
+- the backend is a Spring Boot Java 21 service and fits Railway well
+- the backend stores uploaded files on persistent disk today
+- the mobile app is Expo native and should not be deployed on Railway web hosting
 
-## Deployment Changes Already Added
+## Recommended Production Topology
 
-The repository already contains these deployment-oriented changes:
+```text
+[ Browser / Runner Portal ]
+          |
+          v
+[ Railway Frontend Service ]
+  - Vite production build
+  - Nginx static hosting
+  - SPA route fallback
+          |
+          v
+[ Railway Backend Service ]
+  - Spring Boot
+  - Java 21
+          |
+          +--> [ Railway PostgreSQL ]
+          |
+          +--> [ Railway Redis ] (optional / if used)
+          |
+          +--> [ Persistent Volume for uploads ]
+```
 
-### Frontend / Vercel
+## Deployment Changes Already Added In Repo
 
-- [frontend/vercel.json](/d:/Test%20Abhishek/AI_Frameworl/local/gadget-seva-hub/gadget-seva-hub/frontend/vercel.json)
-  Vercel project build settings plus SPA rewrite to `index.html`
-- [frontend/api/[...path].js](/d:/Test%20Abhishek/AI_Frameworl/local/gadget-seva-hub/gadget-seva-hub/frontend/api/%5B...path%5D.js)
-  Vercel serverless proxy for `/api/*`
+### Frontend / Railway
+
+- [frontend/Dockerfile](/d:/Test%20Abhishek/AI_Frameworl/local/gadget-seva-hub/gadget-seva-hub/frontend/Dockerfile)
+  Docker-based frontend deployment for Railway
+- [frontend/nginx.conf](/d:/Test%20Abhishek/AI_Frameworl/local/gadget-seva-hub/gadget-seva-hub/frontend/nginx.conf)
+  SPA fallback so `/login`, `/runner-app`, `/runner-access/:token`, and workspace routes do not return `404`
 - [frontend/.env.example](/d:/Test%20Abhishek/AI_Frameworl/local/gadget-seva-hub/gadget-seva-hub/frontend/.env.example)
-  local and Vercel env examples
-- [frontend/VERCEL.md](/d:/Test%20Abhishek/AI_Frameworl/local/gadget-seva-hub/gadget-seva-hub/frontend/VERCEL.md)
+  local, Railway, and Vercel env examples
+- [frontend/.env.railway.example](/d:/Test%20Abhishek/AI_Frameworl/local/gadget-seva-hub/gadget-seva-hub/frontend/.env.railway.example)
+  Railway frontend env template
+- [frontend/RAILWAY.md](/d:/Test%20Abhishek/AI_Frameworl/local/gadget-seva-hub/gadget-seva-hub/frontend/RAILWAY.md)
   focused frontend deployment notes
 
-### Backend / Render / Railway
+### Backend / Railway
 
+- [backend/Dockerfile](/d:/Test%20Abhishek/AI_Frameworl/local/gadget-seva-hub/gadget-seva-hub/backend/Dockerfile)
+  Docker-based backend deployment for Railway
 - [backend/src/main/resources/application.yml](/d:/Test%20Abhishek/AI_Frameworl/local/gadget-seva-hub/gadget-seva-hub/backend/src/main/resources/application.yml)
-  updated to read:
+  reads:
   - `PORT`
   - `APP_CORS_ALLOWED_ORIGIN_PATTERNS`
   - `APP_RUNNER_PORTAL_BASE_URL`
-- [backend/.env.render.example](/d:/Test%20Abhishek/AI_Frameworl/local/gadget-seva-hub/gadget-seva-hub/backend/.env.render.example)
-  Render-ready env template
+  - `STORAGE_ROOT`
+  - `STORAGE_BASE_URL`
 - [backend/.env.railway.example](/d:/Test%20Abhishek/AI_Frameworl/local/gadget-seva-hub/gadget-seva-hub/backend/.env.railway.example)
-  Railway-ready env template
+  Railway backend env template
 - [backend/DEPLOY_RENDER_RAILWAY.md](/d:/Test%20Abhishek/AI_Frameworl/local/gadget-seva-hub/gadget-seva-hub/backend/DEPLOY_RENDER_RAILWAY.md)
-  backend deployment notes
+  backend deployment notes with Railway steps
 
-## Frontend Deployment On Vercel
+## Fastest Deployment Order
 
-Create a Vercel project from this repository with:
+Follow this order for the smoothest Railway setup:
+
+1. Create a Railway project.
+2. Add a `Postgres` service.
+3. Add a `Redis` service only if you need Redis in production.
+4. Create the `backend` service from this repo with root directory `backend`.
+5. Attach a persistent volume to the backend service for uploads.
+6. Create the `frontend` service from this repo with root directory `frontend`.
+7. Generate public domains for both services.
+8. Set backend env vars using the frontend public domain and database credentials.
+9. Set frontend env vars using the backend public domain.
+10. Redeploy both services after env vars are finalized.
+11. Validate login, runner flow, uploads, and file access.
+
+## Frontend Deployment On Railway
+
+Create a Railway service from this repository with:
 
 - Root Directory: `frontend`
-- Framework Preset: `Vite`
-- Install Command: `npm install`
-- Build Command: `npm run build`
-- Output Directory: `dist`
-
-### Required Vercel Environment Variables
-
-Set these in the Vercel project:
-
-```text
-VITE_API_BASE_URL=/api
-BACKEND_API_ORIGIN=https://your-backend-domain.example.com
-```
-
-How they work:
-
-- `VITE_API_BASE_URL=/api`
-  keeps the browser talking to the same Vercel domain
-- `BACKEND_API_ORIGIN=...`
-  is read by the Vercel proxy in `frontend/api/[...path].js`
-- requests to `/api/*` are forwarded by Vercel to the real Spring Boot backend
-
-### Why This Proxy Exists
-
-The proxy gives these benefits:
-
-- the browser does not need the backend URL hardcoded into the client bundle
-- the Vercel site and API appear under one public domain
-- the frontend stays stable even when the backend host changes later
-
-## Backend Deployment On Render
-
-Use [backend/.env.render.example](/d:/Test%20Abhishek/AI_Frameworl/local/gadget-seva-hub/gadget-seva-hub/backend/.env.render.example) as the starting template.
-
-Suggested Render service settings:
-
-- Root Directory: `backend`
-- Runtime: `Java 21`
-- Build Command: `mvn -q -DskipTests package`
-- Start Command: `java -jar target/gadget-seva-hub-0.0.1-SNAPSHOT.jar`
-
-Main production values to replace:
-
-```text
-DB_URL=jdbc:postgresql://...
-DB_USERNAME=...
-DB_PASSWORD=...
-JWT_SECRET=...
-STORAGE_BASE_URL=https://your-backend-service.onrender.com
-STORAGE_SIGNING_SECRET=...
-APP_CORS_ALLOWED_ORIGIN_PATTERNS=https://your-vercel-project.vercel.app,https://your-custom-domain.example.com
-APP_RUNNER_PORTAL_BASE_URL=https://your-vercel-project.vercel.app/runner-access
-```
-
-### Render Step-by-Step
-
-Use this order when deploying the backend on Render:
-
-1. Create a PostgreSQL database in Render.
-2. If you need Redis in production, create a Render Key Value service.
-3. Create a new `Web Service`.
-4. Connect this GitHub repository.
-5. Set `Root Directory` to `backend`.
-6. Choose `Java 21`.
-7. Set:
-   - Build Command: `mvn -q -DskipTests package`
-   - Start Command: `java -jar target/gadget-seva-hub-0.0.1-SNAPSHOT.jar`
-8. Add environment variables using [backend/.env.render.example](/d:/Test%20Abhishek/AI_Frameworl/local/gadget-seva-hub/gadget-seva-hub/backend/.env.render.example).
-9. For the first deploy, make sure these are set correctly:
-   - `APP_PERSISTENCE_TYPE=jpa`
-   - `DB_URL=jdbc:postgresql://<render-host>:5432/gadget_seva_hub`
-   - `DB_USERNAME=<render-db-user>`
-   - `DB_PASSWORD=<render-db-password>`
-   - `JWT_SECRET=<your-32+-character-secret>`
-   - `STORAGE_ROOT=/var/data/uploads`
-   - `STORAGE_BASE_URL=https://<your-render-service>.onrender.com`
-   - `STORAGE_SIGNING_SECRET=<your-storage-signing-secret>`
-   - `APP_CORS_ALLOWED_ORIGIN_PATTERNS=https://<your-vercel-project>.vercel.app`
-   - `APP_RUNNER_PORTAL_BASE_URL=https://<your-vercel-project>.vercel.app/runner-access`
-10. Attach a persistent disk and keep uploads under `/var/data/uploads`.
-11. Deploy the service.
-12. After the service is live, open:
-    - `https://<your-render-service>.onrender.com/swagger-ui/index.html`
-13. Copy the Render service URL. That becomes your backend public URL for Vercel.
+- Builder: `Dockerfile`
+- Dockerfile Path: `frontend/Dockerfile`
 
 Important:
 
-- the backend now reads `PORT` automatically from platform envs
-- uploads are stored locally by the backend, so a persistent disk is strongly recommended on Render
-- once the Render URL is known, use it for `BACKEND_API_ORIGIN` in Vercel and `STORAGE_BASE_URL` in the backend
+- the frontend Docker image uses Nginx
+- [frontend/nginx.conf](/d:/Test%20Abhishek/AI_Frameworl/local/gadget-seva-hub/gadget-seva-hub/frontend/nginx.conf) now enables SPA route fallback
+- this is required for routes such as `/login`, `/runner-app`, `/runner-access/:token`, and `/workspace/...`
+
+### Required Frontend Environment Variable
+
+Set this on the Railway frontend service:
+
+```text
+VITE_API_BASE_URL=https://your-backend-domain.up.railway.app/api
+```
+
+If you want to use Railway service references and your backend service is named `backend`, you can use:
+
+```text
+VITE_API_BASE_URL=https://${{backend.RAILWAY_PUBLIC_DOMAIN}}/api
+```
+
+That value is read by [api.ts](/d:/Test%20Abhishek/AI_Frameworl/local/gadget-seva-hub/gadget-seva-hub/frontend/src/services/api.ts).
 
 ## Backend Deployment On Railway
 
-Use [backend/.env.railway.example](/d:/Test%20Abhishek/AI_Frameworl/local/gadget-seva-hub/gadget-seva-hub/backend/.env.railway.example) as the starting template.
-
-Suggested Railway service settings:
+Create a Railway service from this repository with:
 
 - Root Directory: `backend`
-- Build Command: `mvn -q -DskipTests package`
-- Start Command: `java -jar target/gadget-seva-hub-0.0.1-SNAPSHOT.jar`
+- Builder: `Dockerfile`
+- Dockerfile Path: `backend/Dockerfile`
 
-Railway template notes:
+Suggested runtime behavior:
 
-- references attached `Postgres` service values
-- references attached `Redis` service values
-- uses `RAILWAY_PUBLIC_DOMAIN` for `STORAGE_BASE_URL`
+- Railway injects `PORT`
+- Spring Boot reads `PORT` automatically
+- PostgreSQL is provided by Railway `Postgres`
+- Redis is optional
 
-## Backend Environment Values
+### Required Backend Environment Variables
 
-These are the main backend env vars now supported by configuration:
+Use [backend/.env.railway.example](/d:/Test%20Abhishek/AI_Frameworl/local/gadget-seva-hub/gadget-seva-hub/backend/.env.railway.example) as the starting point.
+
+Main production values:
+
+```text
+APP_PERSISTENCE_TYPE=jpa
+DB_URL=jdbc:${{Postgres.DATABASE_URL}}
+DB_USERNAME=${{Postgres.PGUSER}}
+DB_PASSWORD=${{Postgres.PGPASSWORD}}
+REDIS_HOST=${{Redis.REDISHOST}}
+REDIS_PORT=${{Redis.REDISPORT}}
+JWT_SECRET=replace-with-a-32-plus-character-secret
+JWT_EXPIRATION_MINUTES=120
+STORAGE_ROOT=/data/uploads
+STORAGE_BASE_URL=https://${{RAILWAY_PUBLIC_DOMAIN}}
+STORAGE_SIGNING_SECRET=replace-with-a-storage-signing-secret
+APP_CORS_ALLOWED_ORIGIN_PATTERNS=https://${{frontend.RAILWAY_PUBLIC_DOMAIN}},https://your-custom-frontend-domain.example.com
+APP_RUNNER_PORTAL_BASE_URL=https://${{frontend.RAILWAY_PUBLIC_DOMAIN}}/runner-access
+```
+
+Notes:
+
+- replace `frontend` in variable references if your frontend service has a different service name
+- if Redis is not used in production, you can remove or override the Redis values
+- keep `STORAGE_BASE_URL` pointed to the backend public domain
+- keep `STORAGE_ROOT` on the attached persistent volume
+
+## Persistent Storage Requirement
+
+The backend currently stores uploaded files locally through its storage layer, so the backend Railway service needs persistent storage.
+
+Recommended backend storage settings:
+
+- attach a Railway volume to the backend service
+- set `STORAGE_ROOT=/data/uploads`
+- keep file-serving URLs based on the backend domain through `STORAGE_BASE_URL`
+
+Without a persistent volume, uploaded files can be lost between deployments or restarts.
+
+## Environment Variable Matrix
+
+### Frontend Service
+
+```text
+VITE_API_BASE_URL=https://your-backend-domain.up.railway.app/api
+```
+
+### Backend Service
 
 ```text
 PORT
@@ -191,28 +215,19 @@ NOTIFICATION_WHATSAPP_NUMBER
 NOTIFICATION_WHATSAPP_TEMPLATE_NAME
 ```
 
-## Final Integration Process
+## Final Integration Checklist
 
-Follow this order:
+After both Railway services are live, validate:
 
-1. Deploy the backend first on Render or Railway.
-2. Confirm the backend public URL.
-3. Set backend envs:
-   - `STORAGE_BASE_URL=https://your-backend-domain.example.com`
-   - `APP_CORS_ALLOWED_ORIGIN_PATTERNS=https://your-vercel-project.vercel.app,https://your-custom-domain.example.com`
-   - `APP_RUNNER_PORTAL_BASE_URL=https://your-vercel-project.vercel.app/runner-access`
-4. Deploy the frontend on Vercel from the `frontend` root directory.
-5. Set Vercel envs:
-   - `VITE_API_BASE_URL=/api`
-   - `BACKEND_API_ORIGIN=https://your-backend-domain.example.com`
-6. Redeploy Vercel so the env vars are applied.
-7. Validate:
-   - `/login`
-   - `/runner-app`
-   - `/runner-portal/:token`
-   - admin login API
-   - runner portal API
-   - file attachment access
+- frontend loads at the Railway frontend domain
+- `/login`
+- `/runner-app`
+- `/runner-access/:token`
+- admin login API
+- runner portal API
+- pickup photo upload
+- file attachment access
+- backend Swagger at `https://<your-backend-domain>/swagger-ui/index.html`
 
 ## Current Validation Done In Repo
 
@@ -223,16 +238,9 @@ These checks were already run after adding deployment support:
 - backend compile
   `mvn -q -DskipTests compile`
 
-## If Backend URL Is Not Ready Yet
-
-You can still prepare the frontend project in Vercel first, but the final production setup is only complete after the backend URL is known and applied to:
-
-- `BACKEND_API_ORIGIN`
-- `STORAGE_BASE_URL`
-- `APP_CORS_ALLOWED_ORIGIN_PATTERNS`
-- `APP_RUNNER_PORTAL_BASE_URL`
-
 ## Related Deployment Files
 
-- [frontend/VERCEL.md](/d:/Test%20Abhishek/AI_Frameworl/local/gadget-seva-hub/gadget-seva-hub/frontend/VERCEL.md)
+- [frontend/RAILWAY.md](/d:/Test%20Abhishek/AI_Frameworl/local/gadget-seva-hub/gadget-seva-hub/frontend/RAILWAY.md)
 - [backend/DEPLOY_RENDER_RAILWAY.md](/d:/Test%20Abhishek/AI_Frameworl/local/gadget-seva-hub/gadget-seva-hub/backend/DEPLOY_RENDER_RAILWAY.md)
+- [backend/.env.railway.example](/d:/Test%20Abhishek/AI_Frameworl/local/gadget-seva-hub/gadget-seva-hub/backend/.env.railway.example)
+- [frontend/.env.railway.example](/d:/Test%20Abhishek/AI_Frameworl/local/gadget-seva-hub/gadget-seva-hub/frontend/.env.railway.example)
