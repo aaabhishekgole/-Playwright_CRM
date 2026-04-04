@@ -62,7 +62,7 @@ Suggested service setup:
 
 - Runtime: `Java 21`
 - Root Directory: `backend`
-- Build Command: `mvn -q -DskipTests package`
+- Build Command: `mvn -q -Dmaven.test.skip=true package`
 - Start Command: `java -jar target/gadget-seva-hub-0.0.1-SNAPSHOT.jar`
 
 If you deploy with Docker instead, point the service to [Dockerfile](/d:/Test%20Abhishek/AI_Frameworl/local/gadget-seva-hub/gadget-seva-hub/backend/Dockerfile).
@@ -75,7 +75,7 @@ If you deploy with Docker instead, point the service to [Dockerfile](/d:/Test%20
 4. Connect this repository.
 5. Set `Root Directory` to `backend`.
 6. Set:
-   - Build Command: `mvn -q -DskipTests package`
+   - Build Command: `mvn -q -Dmaven.test.skip=true package`
    - Start Command: `java -jar target/gadget-seva-hub-0.0.1-SNAPSHOT.jar`
 7. Add the environment variables from [.env.render.example](/d:/Test%20Abhishek/AI_Frameworl/local/gadget-seva-hub/gadget-seva-hub/backend/.env.render.example).
 8. Replace the important placeholders:
@@ -105,7 +105,7 @@ Suggested service setup:
 - Root Directory: `backend`
 - Builder: `Dockerfile`
 - Dockerfile Path: `backend/Dockerfile`
-- Build Command: `mvn -q -DskipTests package`
+- Build Command: `mvn -q -Dmaven.test.skip=true package`
 - Start Command: `java -jar target/gadget-seva-hub-0.0.1-SNAPSHOT.jar`
 
 The Railway example uses reference variables so you can point the backend service at attached `Postgres` and `Redis` services.
