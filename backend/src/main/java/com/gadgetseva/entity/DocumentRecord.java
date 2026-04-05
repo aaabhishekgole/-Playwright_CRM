@@ -12,10 +12,13 @@ import jakarta.persistence.Table;
 import java.time.Instant;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.data.mongodb.core.mapping.DBRef;
+import org.springframework.data.mongodb.core.mapping.Document;
 
 @Getter
 @Setter
 @Entity
+@Document(collection = "document_records")
 @Table(name = "document_records")
 public class DocumentRecord {
 
@@ -48,6 +51,7 @@ public class DocumentRecord {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "uploaded_by")
+    @DBRef(lazy = true)
     private User uploadedBy;
 
     @Column(nullable = false)

@@ -2,14 +2,13 @@ package com.gadgetseva.service;
 
 import com.gadgetseva.entity.DocumentRecord;
 import com.gadgetseva.entity.User;
-import com.gadgetseva.repository.jpa.DocumentRecordRepository;
-import com.gadgetseva.repository.jpa.UserRepository;
+import com.gadgetseva.persistence.DocumentStore;
+import com.gadgetseva.persistence.UserStore;
 import java.time.Instant;
 import java.util.List;
 import java.util.NoSuchElementException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 @Service
@@ -18,19 +17,18 @@ public class DocumentService {
     private static final String DOCUMENT_FOLDER = "documents";
     private static final long SIGNED_URL_TTL_SECONDS = 900L;
 
-    private final DocumentRecordRepository repository;
+    private final DocumentStore documentStore;
     private final FileStorageService fileStorageService;
-    private final UserRepository userRepository;
+    private final UserStore userStore;
 
-    public DocumentService(DocumentRecordRepository repository,
+    public DocumentService(DocumentStore documentStore,
                            FileStorageService fileStorageService,
-                           UserRepository userRepository) {
-        this.repository = repository;
+                           UserStore userStore) {
+        this.documentStore = documentStore;
         this.fileStorageService = fileStorageService;
-        this.userRepository = userRepository;
+        this.userStore = userStore;
     }
 
-    @Transactional
     public DocumentRecord upload(String name, String description, String category, MultipartFile file) {
         StoredFileDescriptor stored = fileStorageService.storeInFolder(DOCUMENT_FOLDER, file);
 
@@ -45,30 +43,26 @@ public class DocumentService {
         doc.setChecksum(stored.checksum());
         doc.setUploadedAt(Instant.now());
         doc.setUploadedBy(resolveCurrentUser());
-        return repository.save(doc);
+        return documentStore.save(doc);
     }
 
-    @Transactional(readOnly = true)
     public List<DocumentRecord> listAll() {
-        return repository.findAllByOrderByUploadedAtDesc();
+        return documentStore.findAllOrderByUploadedAtDesc();
     }
 
-    @Transactional(readOnly = true)
     public List<DocumentRecord> listByCategory(String category) {
-        return repository.findByCategoryIgnoreCaseOrderByUploadedAtDesc(category);
+        return documentStore.findByCategoryIgnoreCaseOrderByUploadedAtDesc(category);
     }
 
-    @Transactional(readOnly = true)
     public DocumentRecord getById(long id) {
-        return repository.findById(id)
+        return documentStore.findById(id)
                 .orElseThrow(() -> new NoSuchElementException("Document not found: " + id));
     }
 
-    @Transactional
     public void delete(long id) {
         DocumentRecord doc = getById(id);
         fileStorageService.delete(doc.getObjectKey());
-        repository.delete(doc);
+        documentStore.delete(doc);
     }
 
     public String buildSignedUrl(String objectKey) {
@@ -78,6 +72,6 @@ public class DocumentService {
 
     private User resolveCurrentUser() {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        return userRepository.findByUsername(username).orElse(null);
+        return userStore.findByUsername(username).orElse(null);
     }
 }
