@@ -6,6 +6,7 @@ import type {
   CreateInvoicePayload,
   CreateEstimatePayload,
   CreateServiceRequestPayload,
+  DocumentItem,
   LoginResponse,
   RecordPaymentPayload,
   RunnerNotification,
@@ -291,4 +292,27 @@ export async function deleteRunnerPickupAttachment(token: string, attachmentId: 
 export async function completeRunnerPickup(token: string): Promise<ServiceRequest> {
   const response = await api.post<ServiceRequest>(`/public/pickups/${token}/complete`);
   return response.data;
+}
+
+export async function fetchDocuments(category?: string): Promise<DocumentItem[]> {
+  const response = await api.get<DocumentItem[]>('/documents', {
+    params: category ? { category } : undefined,
+  });
+  return response.data;
+}
+
+export async function uploadDocument(name: string, description: string, category: string, file: File): Promise<DocumentItem> {
+  const formData = new FormData();
+  if (name) formData.append('name', name);
+  if (description) formData.append('description', description);
+  if (category) formData.append('category', category);
+  formData.append('file', file);
+  const response = await api.post<DocumentItem>('/documents', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return response.data;
+}
+
+export async function deleteDocument(id: number): Promise<void> {
+  await api.delete(`/documents/${id}`);
 }

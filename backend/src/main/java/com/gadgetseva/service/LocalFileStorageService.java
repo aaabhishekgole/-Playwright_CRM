@@ -35,15 +35,20 @@ public class LocalFileStorageService implements FileStorageService {
 
     @Override
     public StoredFileDescriptor store(Long requestId, MultipartFile file) {
+        return storeInFolder(String.valueOf(requestId), file);
+    }
+
+    @Override
+    public StoredFileDescriptor storeInFolder(String folder, MultipartFile file) {
         try {
-            Path requestFolder = rootPath.resolve(String.valueOf(requestId));
-            Files.createDirectories(requestFolder);
+            Path targetFolder = rootPath.resolve(folder);
+            Files.createDirectories(targetFolder);
             String safeName = UUID.randomUUID() + "-" + file.getOriginalFilename();
-            Path target = requestFolder.resolve(safeName).normalize();
+            Path target = targetFolder.resolve(safeName).normalize();
             Files.copy(file.getInputStream(), target, StandardCopyOption.REPLACE_EXISTING);
-            return new StoredFileDescriptor(String.valueOf(requestId) + "/" + safeName, checksum(target));
+            return new StoredFileDescriptor(folder + "/" + safeName, checksum(target));
         } catch (IOException exception) {
-            throw new IllegalStateException("Failed to store attachment", exception);
+            throw new IllegalStateException("Failed to store file in folder: " + folder, exception);
         }
     }
 

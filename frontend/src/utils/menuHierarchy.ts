@@ -229,6 +229,16 @@ export const menuHierarchy: MenuSection[] = [
     ],
   },
   {
+    id: 'documents',
+    label: 'Documents',
+    description: 'Upload and manage reference documents, SOPs, and shared files.',
+    accent: 'accent-teal',
+    roles: ['ADMIN', 'CUSTOMER_SUPPORT', 'BACKEND_TEAM', 'FINANCE', 'MSE_TEAM'],
+    items: [
+      { id: 'document-library', label: 'Document Library', description: 'Browse, upload, and manage shared documents.', path: '/documents', roles: ['ADMIN', 'CUSTOMER_SUPPORT', 'BACKEND_TEAM', 'FINANCE', 'MSE_TEAM'] },
+    ],
+  },
+  {
     id: 'audit',
     label: 'Audit',
     description: 'Enterprise tracking, logs, and change review.',

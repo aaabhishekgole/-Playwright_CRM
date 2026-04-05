@@ -6,6 +6,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 public interface FileStorageService {
     StoredFileDescriptor store(Long requestId, MultipartFile file);
+    StoredFileDescriptor storeInFolder(String folder, MultipartFile file);
     String generateSignedUrl(String objectKey, Instant expiresAt);
     Resource loadSecureFile(String objectKey, long expiresAtEpochSeconds, String signature);
     void delete(String objectKey);

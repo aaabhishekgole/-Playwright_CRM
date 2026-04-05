@@ -286,6 +286,21 @@ export type LoginResponse = {
   phone?: string | null;
 };
 
+export type DocumentItem = {
+  id: number;
+  name: string;
+  description?: string | null;
+  category?: string | null;
+  fileName: string;
+  contentType: string;
+  objectKey: string;
+  fileSize: number;
+  checksum: string;
+  signedUrl: string;
+  uploadedBy: string;
+  uploadedAt: string;
+};
+
 export type RunnerNotification = {
   id: number;
   channel: string;

@@ -6,6 +6,7 @@ import { AuthProvider, useAuth } from './hooks/useAuth';
 import { ToastProvider } from './hooks/useToast';
 import { findMenuContext, hasMenuAccess } from './utils/menuHierarchy';
 import { CashlessApprovalPage } from './pages/CashlessApprovalPage';
+import { DocumentsPage } from './pages/DocumentsPage';
 import { ClaimRegistrationPage } from './pages/ClaimRegistrationPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { DeliveryTrackingPage } from './pages/DeliveryTrackingPage';
@@ -61,6 +62,7 @@ function ProtectedApp() {
         <Route path="/workspace/service-requests/closed-requests" element={<ProtectedMenuRoute sectionId="service-requests" itemId="closed-requests"><ServiceRequestListPage mode="closed" title="Closed Claims" description="Completed claims that have gone through the workflow and reached final closure." /></ProtectedMenuRoute>} />
         <Route path="/workspace/service-requests/cancelled-requests" element={<ProtectedMenuRoute sectionId="service-requests" itemId="cancelled-requests"><ServiceRequestListPage mode="cancelled" title="Cancelled Claims" description="Cancelled or voided claims with filterable ticket, customer, and device references." /></ProtectedMenuRoute>} />
         <Route path="/workspace/service-requests/search-request" element={<ProtectedMenuRoute sectionId="service-requests" itemId="search-request"><ServiceRequestListPage mode="all" title="Search Claims" description="Search claim records by loan, ticket, COI, device identifier, and settlement state." /></ProtectedMenuRoute>} />
+        <Route path="/documents" element={<ProtectedMenuRoute sectionId="documents" itemId="document-library"><DocumentsPage /></ProtectedMenuRoute>} />
         <Route path="/workspace/:sectionId/:itemId" element={<WorkspacePage />} />
       </Route>
     </Routes>
