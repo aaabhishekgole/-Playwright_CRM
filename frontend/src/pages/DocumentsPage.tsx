@@ -19,6 +19,32 @@ function formatDateTime(iso: string): string {
 
 const CATEGORIES = ['SOP', 'Policy', 'Training', 'Template', 'Report', 'Other'];
 
+const ALLOWED_EXTENSIONS = ['jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx'];
+const ALLOWED_MIME_TYPES: Record<string, string> = {
+  jpg:  'image/jpeg',
+  jpeg: 'image/jpeg',
+  png:  'image/png',
+  pdf:  'application/pdf',
+  doc:  'application/msword',
+  docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+};
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
+
+function validateFile(file: File): string | null {
+  const ext = file.name.split('.').pop()?.toLowerCase() ?? '';
+  if (!ALLOWED_EXTENSIONS.includes(ext)) {
+    return `File type ".${ext}" is not allowed. Accepted types: .jpg, .jpeg, .png, .pdf, .doc, .docx`;
+  }
+  const expectedMime = ALLOWED_MIME_TYPES[ext];
+  if (file.type && file.type !== expectedMime) {
+    return `MIME type "${file.type}" does not match the file extension ".${ext}". Please upload a valid file.`;
+  }
+  if (file.size > MAX_FILE_SIZE) {
+    return `File size ${(file.size / (1024 * 1024)).toFixed(2)} MB exceeds the 5 MB limit.`;
+  }
+  return null;
+}
+
 export function DocumentsPage() {
   const { role } = useAuth();
   const { showSuccess, showError } = useToast();
@@ -60,6 +86,11 @@ export function DocumentsPage() {
     event.preventDefault();
     if (!uploadFile) {
       showError('Please select a file to upload.');
+      return;
+    }
+    const validationError = validateFile(uploadFile);
+    if (validationError) {
+      showError(validationError);
       return;
     }
     setUploading(true);
@@ -144,8 +175,24 @@ export function DocumentsPage() {
                 ref={fileInputRef}
                 type="file"
                 required
-                onChange={(e) => setUploadFile(e.target.files?.[0] ?? null)}
+                accept=".jpg,.jpeg,.png,.pdf,.doc,.docx"
+                onChange={(e) => {
+                  const file = e.target.files?.[0] ?? null;
+                  if (file) {
+                    const error = validateFile(file);
+                    if (error) {
+                      showError(error);
+                      e.target.value = '';
+                      setUploadFile(null);
+                      return;
+                    }
+                  }
+                  setUploadFile(file);
+                }}
               />
+              <span style={{ fontSize: '0.75rem', opacity: 0.6, marginTop: '0.25rem' }}>
+                Accepted: .jpg, .jpeg, .png, .pdf, .doc, .docx &nbsp;·&nbsp; Max size: 5 MB
+              </span>
             </label>
             <div className="action-row" style={{ gridColumn: '1 / -1' }}>
               <button type="submit" className="primary-button" disabled={uploading}>
