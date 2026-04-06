@@ -116,6 +116,7 @@ function MultiSelectFilter({ label, options, values, open, onToggle, onChange }:
 
   function toggleValue(option: string) {
     onChange(values.includes(option) ? values.filter((value) => value !== option) : [...values, option]);
+    onToggle();
   }
 
   return (
