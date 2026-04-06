@@ -4380,3 +4380,372 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   RESPONSIVE SYSTEM — Mobile-first additions
+   Breakpoints: 1024px (tablet), 768px (mobile), 480px (small mobile)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ─── Hamburger toggle button (hidden on desktop) ─────────────────────────── */
+.sidebar-mobile-toggle {
+  display: none;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: white;
+  color: var(--navy-deep);
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
+}
+
+/* ─── Sidebar overlay (mobile backdrop) ──────────────────────────────────── */
+.sidebar-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  background: rgba(15, 23, 42, 0.52);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+}
+
+/* ─── Tablet (≤1024px) — off-canvas sidebar, hamburger appears ───────────── */
+@media (max-width: 1024px) {
+  .dense-ops-shell,
+  .enterprise-shell,
+  .app-shell {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .app-sidebar {
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    height: 100vh !important;
+    width: min(300px, 86vw);
+    z-index: 100;
+    overflow-y: auto;
+    transform: translateX(-100%);
+    transition: transform 260ms cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 4px 0 32px rgba(15, 23, 42, 0.22);
+  }
+
+  .app-sidebar.sidebar-open {
+    transform: translateX(0);
+  }
+
+  .sidebar-mobile-toggle {
+    display: inline-flex;
+  }
+
+  .enterprise-topbar {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 0.75rem !important;
+  }
+
+  .app-topbar-primary {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .enterprise-actions {
+    flex-shrink: 0;
+  }
+}
+
+/* ─── Mobile (≤768px) — condense topbar, stack grids, card tables ─────────── */
+@media (max-width: 768px) {
+  /* Topbar — hide chips to save space, keep user identity + logout */
+  .topbar-chip {
+    display: none;
+  }
+
+  .app-user-card small {
+    display: none;
+  }
+
+  .app-context-description {
+    display: none;
+  }
+
+  /* Topbar padding */
+  .enterprise-topbar,
+  .app-topbar {
+    padding: 0.7rem 1rem !important;
+    gap: 0.6rem !important;
+  }
+
+  /* Main content padding */
+  .merchant-main,
+  .enterprise-main {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+  }
+
+  /* Page header wraps on mobile */
+  .page-header,
+  .split-row {
+    flex-wrap: wrap;
+  }
+
+  .dense-ops-titlebar {
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  /* Action rows wrap and use full-width buttons */
+  .action-row {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+
+  /* Summary/metric grids — 2-col on tablet, not 4-col */
+  .dashboard-metric-strip,
+  .summary-grid,
+  .merchant-tile-grid,
+  .workspace-stat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  /* Dashboard two-column stacks */
+  .dashboard-two-column,
+  .dashboard-command-card,
+  .dense-ops-dashboard .dashboard-two-column,
+  .dense-ops-dashboard .dashboard-command-card {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Dashboard process & action grids — 1-col on mobile */
+  .dashboard-process-grid,
+  .dashboard-action-grid,
+  .dense-ops-dashboard .dashboard-process-grid,
+  .dense-ops-dashboard .dashboard-action-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Portal table — card layout on mobile */
+  .portal-table-row {
+    grid-template-columns: 1fr !important;
+    gap: 0.5rem !important;
+  }
+
+  .portal-table-head {
+    display: none;
+  }
+
+  .portal-table-body {
+    padding: 0.85rem 0.9rem;
+    border-radius: 12px;
+    border: 1px solid rgba(148, 163, 184, 0.22);
+    background: #f8fafc;
+  }
+
+  /* Claims table scrolls on mobile */
+  .claims-table-shell {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Portal match card stacks */
+  .portal-match-card {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  /* Service request filter — 2 cols on tablet */
+  .service-request-queue-page .portal-filter-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  /* Request detail stacks */
+  .request-detail-grid,
+  .request-detail-lower-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Workspace grid stacks */
+  .workspace-grid,
+  .workspace-grid.two-col {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Blueprint grids stack */
+  .blueprint-grid,
+  .blueprint-list-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* OPS summary and work card grids */
+  .ops-workspace-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  /* Dashboard request table — hide head, stack rows */
+  .dashboard-request-head {
+    display: none !important;
+  }
+
+  .dashboard-request-row {
+    grid-template-columns: 1fr !important;
+    gap: 0.35rem !important;
+  }
+
+  /* Stage hero stacks */
+  .workspace-stage-hero {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Runner portal header stacks */
+  .runner-portal-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .runner-portal-status {
+    justify-items: start;
+  }
+
+  /* Evidence grids single column */
+  .evidence-slot-grid,
+  .evidence-extra-grid,
+  .evidence-progress-strip {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Evidence actions stack */
+  .evidence-slot-actions {
+    flex-direction: column;
+  }
+
+  .evidence-action {
+    width: 100%;
+  }
+
+  /* Runner app grids stack */
+  .runner-app-grid,
+  .runner-app-meta-grid,
+  .runner-app-detail-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Hero metrics stack — 2 col */
+  .hero-metrics {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  /* Toast moves to bottom on mobile */
+  .toast-viewport {
+    top: auto !important;
+    bottom: 1rem;
+    left: 1rem;
+    right: 1rem;
+    width: auto !important;
+  }
+}
+
+/* ─── Small mobile (≤480px) — tighten further ────────────────────────────── */
+@media (max-width: 480px) {
+  /* Single column for all summary grids */
+  .dashboard-metric-strip,
+  .summary-grid,
+  .merchant-tile-grid,
+  .workspace-stat-grid,
+  .hero-metrics {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Reduce padding */
+  .merchant-main,
+  .enterprise-main {
+    padding-left: 0.75rem !important;
+    padding-right: 0.75rem !important;
+    padding-top: 0.75rem !important;
+  }
+
+  .enterprise-topbar,
+  .app-topbar {
+    padding: 0.6rem 0.75rem !important;
+  }
+
+  /* Hide user card entirely to save topbar space */
+  .app-user-card {
+    display: none;
+  }
+
+  /* Cards get tighter padding */
+  .card,
+  .detail-card,
+  .ops-work-card {
+    padding: 0.9rem !important;
+  }
+
+  /* Buttons full width in action rows */
+  .action-row > button,
+  .action-row > a {
+    width: 100%;
+    text-align: center;
+    justify-content: center;
+  }
+
+  /* Service request filter — single column */
+  .service-request-queue-page .portal-filter-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* OPS workspace summary — single column */
+  .ops-workspace-summary-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Login layout single column */
+  .login-layout {
+    grid-template-columns: 1fr !important;
+  }
+
+  .login-brand-panel {
+    order: 2;
+  }
+
+  .login-card {
+    order: 1;
+    justify-self: stretch;
+  }
+
+  .login-metric-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Pickup stage grid single column */
+  .pickup-stage-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Request stage flow single column */
+  .request-stage-flow {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Page header stacks */
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .split-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  /* Reduce font sizes slightly */
+  .merchant-tile-body strong,
+  .summary-stat strong {
+    font-size: 1.35rem !important;
+  }
+}

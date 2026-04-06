@@ -57,6 +57,7 @@ export function AppLayout() {
     [location.pathname, visibleMenu],
   );
   const [expandedSectionId, setExpandedSectionId] = useState<string | null>(activeSectionId);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const sectionCount = visibleMenu.length;
   const routeCount = useMemo(
@@ -72,13 +73,27 @@ export function AppLayout() {
     setExpandedSectionId(activeSectionId);
   }, [activeSectionId]);
 
+  // Close sidebar on route change (mobile navigation)
+  useEffect(() => {
+    setSidebarOpen(false);
+  }, [location.pathname]);
+
   function toggleSection(sectionId: string) {
     setExpandedSectionId((current) => (current === sectionId ? null : sectionId));
   }
 
   return (
     <div className="app-shell enterprise-shell dense-ops-shell">
-      <aside className="app-sidebar">
+      {/* Mobile overlay — closes sidebar when tapped */}
+      {sidebarOpen && (
+        <div
+          className="sidebar-overlay"
+          onClick={() => setSidebarOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      <aside className={`app-sidebar${sidebarOpen ? ' sidebar-open' : ''}`}>
         <div className="app-sidebar-inner">
           <div className="app-brand enterprise-brand">
             <div className="app-brand-mark">GSH</div>
@@ -153,6 +168,16 @@ export function AppLayout() {
 
       <div className="app-main-shell">
         <header className="app-topbar enterprise-topbar">
+          {/* Hamburger — visible only on mobile (CSS controls display) */}
+          <button
+            className="sidebar-mobile-toggle"
+            onClick={() => setSidebarOpen((o) => !o)}
+            aria-label={sidebarOpen ? 'Close navigation' : 'Open navigation'}
+            aria-expanded={sidebarOpen}
+          >
+            {sidebarOpen ? '✕' : '☰'}
+          </button>
+
           <div className="app-topbar-primary">
             <div className="app-context-line" aria-label="Current page">
               <span>{title.section}</span>
