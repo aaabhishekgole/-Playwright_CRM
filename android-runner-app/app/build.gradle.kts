@@ -26,8 +26,8 @@ android {
             // buildConfigField("String", "BASE_URL", "\"http://192.168.1.100:8081/\"")
         }
         release {
-            // Railway production — same host as frontend
-            buildConfigField("String", "BASE_URL", "\"https://front-end-uat.up.railway.app/\"")
+            // Railway UAT backend
+            buildConfigField("String", "BASE_URL", "\"https://backend-uat-2fe5.up.railway.app/\"")
             isMinifyEnabled = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
