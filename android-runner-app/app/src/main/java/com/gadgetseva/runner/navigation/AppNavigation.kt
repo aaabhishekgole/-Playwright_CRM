@@ -58,7 +58,7 @@ fun AppNavigation(
                 },
                 onLogout = {
                     navController.navigate(Screen.Login.route) {
-                        popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                        popUpTo(Screen.Inbox.route) { inclusive = true }
                         launchSingleTop = true
                     }
                 }
