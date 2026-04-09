@@ -20,12 +20,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.GadgetSevaRunner"
-        android:usesCleartextTraffic="true">
-
-        <!--
-            usesCleartextTraffic="true" allows HTTP for local/emulator dev.
-            Set to false (or remove) when using HTTPS in production.
-        -->
+        android:networkSecurityConfig="@xml/network_security_config">
 
         <activity
             android:name=".MainActivity"

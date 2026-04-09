@@ -16,19 +16,18 @@ android {
         versionName = "1.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-
-        // Emulator (Android Studio AVD) — backend on host machine
-        buildConfigField("String", "BASE_URL", "\"http://10.0.2.2:8081/\"")
-
-        // Uncomment for physical device on same WiFi (replace IP):
-        // buildConfigField("String", "BASE_URL", "\"http://192.168.1.100:8081/\"")
-
-        // Uncomment for production:
-        // buildConfigField("String", "BASE_URL", "\"https://api.gadgetsevahub.com/\"")
     }
 
     buildTypes {
+        debug {
+            // Android Studio AVD — backend on host machine (10.0.2.2 = localhost)
+            buildConfigField("String", "BASE_URL", "\"http://10.0.2.2:8081/\"")
+            // Physical device on same WiFi — uncomment and replace IP:
+            // buildConfigField("String", "BASE_URL", "\"http://192.168.1.100:8081/\"")
+        }
         release {
+            // Railway production — same host as frontend
+            buildConfigField("String", "BASE_URL", "\"https://front-end-uat.up.railway.app/\"")
             isMinifyEnabled = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
