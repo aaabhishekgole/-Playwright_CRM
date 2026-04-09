@@ -26,6 +26,8 @@ backend/.m2/
 # Local runtime data
 data/
 .data/
+# Exception: Android app source package named 'data'
+!android-runner-app/**/data/
 uploads/
 *.db
 *.mv.db
