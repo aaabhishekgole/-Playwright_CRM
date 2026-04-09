@@ -173,12 +173,21 @@ android {
         versionCode = 1
         versionName = "1.0.0"
 
-        // Set your backend base URL here
-        buildConfigField("String", "BASE_URL", "\"http://10.0.2.2:8081/\"")
-        // For physical device on same WiFi:
-        // buildConfigField("String", "BASE_URL", "\"http://192.168.1.100:8081/\"")
-        // For production:
-        // buildConfigField("String", "BASE_URL", "\"https://api.gadgetsevahub.com/\"")
+    }
+
+    buildTypes {
+        debug {
+            // Emulator (AVD) — host machine is 10.0.2.2
+            buildConfigField("String", "BASE_URL", "\"http://10.0.2.2:8081/\"")
+            // Physical device on same WiFi — replace IP:
+            // buildConfigField("String", "BASE_URL", "\"http://192.168.1.100:8081/\"")
+        }
+        release {
+            // Railway UAT backend
+            buildConfigField("String", "BASE_URL", "\"https://backend-uat-2fe5.up.railway.app/\"")
+            isMinifyEnabled = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+        }
     }
 
     buildFeatures {
@@ -1934,10 +1943,10 @@ App Launch
 
 ## Environment Config
 
-| Variable | Emulator | Physical Device | Production |
+| Variable | Emulator (debug) | Physical Device (debug) | UAT / Production (release) |
 |---|---|---|---|
-| `BASE_URL` | `http://10.0.2.2:8081/` | `http://192.168.x.x:8081/` | `https://api.gadgetsevahub.com/` |
-| `usesCleartextTraffic` | `true` | `true` | `false` (HTTPS only) |
+| `BASE_URL` | `http://10.0.2.2:8081/` | `http://192.168.x.x:8081/` | `https://backend-uat-2fe5.up.railway.app/` |
+| Cleartext traffic | Allowed for `10.0.2.2` via network_security_config | Allowed for LAN hosts via network_security_config | Blocked — HTTPS only |
 | `LoggingInterceptor` | BODY level | BODY level | NONE |
 
 ---
