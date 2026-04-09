@@ -77,3 +77,49 @@ data class StatusTransitionRequest(
     val status: String,
     val note: String? = null
 )
+
+// ── Service Request (Ops / Pickup Agent view) ─────────────────────────────
+data class ServiceRequestSummary(
+    val id: Long,
+    val requestNumber: String?,
+    val customerName: String?,
+    val customerPhone: String?,
+    val deviceLabel: String?,
+    val deviceCategory: String?,
+    val status: String?,
+    val pickupAgent: String?,
+    val issueSummary: String?,
+    val slaBreached: Boolean = false,
+    val createdAt: String?,
+    val updatedAt: String?,
+    val pickup: PickupSummaryDto?,
+    val invoice: InvoiceSummaryDto?,
+    val attachments: List<AttachmentItemDto>?
+)
+
+data class PickupSummaryDto(
+    val runnerName: String?,
+    val runnerPhone: String?,
+    val scheduledAt: String?,
+    val pickupOtp: String?,
+    val acceptedAt: String?,
+    val completedAt: String?,
+    val requiredPhotoCount: Int?,
+    val uploadedRequiredPhotoCount: Int?,
+    val uploadedOptionalPhotoCount: Int?
+)
+
+data class InvoiceSummaryDto(
+    val invoiceNumber: String?,
+    val paymentStatus: String?,
+    val totalAmount: Double?,
+    val amountDue: Double?
+)
+
+data class AttachmentItemDto(
+    val id: Long,
+    val attachmentType: String?,
+    val fileName: String?,
+    val signedUrl: String?,
+    val uploadedAt: String?
+)

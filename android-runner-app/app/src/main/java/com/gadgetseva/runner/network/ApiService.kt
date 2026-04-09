@@ -4,6 +4,7 @@ import com.gadgetseva.runner.data.model.LoginRequest
 import com.gadgetseva.runner.data.model.LoginResponse
 import com.gadgetseva.runner.data.model.NotificationResponse
 import com.gadgetseva.runner.data.model.PickupDetailResponse
+import com.gadgetseva.runner.data.model.ServiceRequestSummary
 import com.gadgetseva.runner.data.model.StatusTransitionRequest
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
@@ -14,6 +15,7 @@ import retrofit2.http.Multipart
 import retrofit2.http.POST
 import retrofit2.http.Part
 import retrofit2.http.Path
+import retrofit2.http.Query
 
 interface ApiService {
 
@@ -54,4 +56,15 @@ interface ApiService {
 
     @POST("api/public/pickups/{token}/complete")
     suspend fun completePickup(@Path("token") token: String): PickupDetailResponse
+
+    // ── Service Requests (Ops view) ───────────────────────────────────────
+    @GET("api/service-requests")
+    suspend fun getServiceRequests(
+        @Query("status") status: String? = null
+    ): List<ServiceRequestSummary>
+
+    @GET("api/service-requests/{id}")
+    suspend fun getServiceRequestDetail(
+        @Path("id") id: Long
+    ): ServiceRequestSummary
 }

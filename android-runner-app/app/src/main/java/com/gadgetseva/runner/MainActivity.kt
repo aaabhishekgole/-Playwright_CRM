@@ -23,9 +23,9 @@ class MainActivity : ComponentActivity() {
         RetrofitClient.init(sessionManager)
         val repository = RunnerRepository(sessionManager)
 
-        // If already logged in, go straight to inbox
+        // If already logged in, go straight to dashboard
         val startDestination = if (sessionManager.isLoggedIn())
-            Screen.Inbox.route
+            Screen.Dashboard.route
         else
             Screen.Login.route
 

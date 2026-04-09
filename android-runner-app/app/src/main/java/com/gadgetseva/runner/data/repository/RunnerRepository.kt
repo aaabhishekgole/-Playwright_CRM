@@ -3,6 +3,7 @@ package com.gadgetseva.runner.data.repository
 import com.gadgetseva.runner.data.model.LoginRequest
 import com.gadgetseva.runner.data.model.NotificationResponse
 import com.gadgetseva.runner.data.model.PickupDetailResponse
+import com.gadgetseva.runner.data.model.ServiceRequestSummary
 import com.gadgetseva.runner.data.model.StatusTransitionRequest
 import com.gadgetseva.runner.network.RetrofitClient
 import com.gadgetseva.runner.session.SessionManager
@@ -93,6 +94,23 @@ class RunnerRepository(private val sessionManager: SessionManager) {
     suspend fun completePickup(token: String): Result<PickupDetailResponse> {
         return try {
             Result.success(api.completePickup(token))
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    // ── Service Requests (Ops view) ───────────────────────────────────────
+    suspend fun getServiceRequests(): Result<List<ServiceRequestSummary>> {
+        return try {
+            Result.success(api.getServiceRequests())
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getServiceRequestDetail(id: Long): Result<ServiceRequestSummary> {
+        return try {
+            Result.success(api.getServiceRequestDetail(id))
         } catch (e: Exception) {
             Result.failure(e)
         }

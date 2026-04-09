@@ -20,8 +20,10 @@ android {
 
     buildTypes {
         debug {
-            // Android Studio AVD — backend on host machine (10.0.2.2 = localhost)
-            buildConfigField("String", "BASE_URL", "\"http://10.0.2.2:8081/\"")
+            // Temporarily pointing to UAT backend for emulator testing
+            buildConfigField("String", "BASE_URL", "\"https://backend-uat-2fe5.up.railway.app/\"")
+            // Local emulator — uncomment when running backend locally:
+            // buildConfigField("String", "BASE_URL", "\"http://10.0.2.2:8081/\"")
             // Physical device on same WiFi — uncomment and replace IP:
             // buildConfigField("String", "BASE_URL", "\"http://192.168.1.100:8081/\"")
         }
