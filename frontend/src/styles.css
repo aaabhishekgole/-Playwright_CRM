@@ -1030,7 +1030,7 @@ body {
 .app-shell {
   min-height: 100vh;
   display: grid;
-  grid-template-columns: 320px minmax(0, 1fr);
+  grid-template-columns: 1fr;
   background: var(--bg);
 }
 
@@ -1293,7 +1293,7 @@ body {
 .app-main-shell {
   min-width: 0;
   display: grid;
-  grid-template-rows: auto 1fr;
+  grid-template-rows: auto auto auto 1fr;
 }
 
 .app-topbar {
@@ -3283,7 +3283,7 @@ body {
 }
 
 .enterprise-shell {
-  grid-template-columns: 308px minmax(0, 1fr);
+  grid-template-columns: 1fr;
   background: transparent;
 }
 
@@ -3798,7 +3798,7 @@ body {
 }
 /* Dense Ops Preview */
 .dense-ops-shell {
-  grid-template-columns: 284px minmax(0, 1fr);
+  grid-template-columns: 1fr;
 }
 
 .dense-ops-shell .app-sidebar {
@@ -4747,5 +4747,146 @@ body {
   .merchant-tile-body strong,
   .summary-stat strong {
     font-size: 1.35rem !important;
+  }
+}
+
+/* ─── Horizontal Tab Navigation ─────────────────────────────────────────── */
+
+.topbar-brand-mark {
+  flex: 0 0 auto;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  font-size: 0.82rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #1d4ed8, #0e7490);
+  color: #fff;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+/* Section tab bar */
+.app-topnav {
+  background: linear-gradient(180deg, #0f172a 0%, #111c32 100%);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.16);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.app-topnav::-webkit-scrollbar { display: none; }
+
+.app-topnav-sections {
+  display: flex;
+  flex-direction: row;
+  gap: 0;
+  padding: 0 1rem;
+  min-width: max-content;
+}
+
+.topnav-section-tab {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  padding: 0.72rem 1.1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #94a3b8;
+  text-decoration: none;
+  white-space: nowrap;
+  border-bottom: 2px solid transparent;
+  transition: color 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+}
+.topnav-section-tab:hover {
+  color: #e2e8f0;
+  background: rgba(255, 255, 255, 0.05);
+}
+.topnav-section-tab.active {
+  color: #fff;
+  border-bottom-color: #3b82f6;
+}
+
+/* Per-accent active border colors */
+.topnav-section-tab.topnav-tab-blue.active    { border-bottom-color: #60a5fa; color: #bfdbfe; }
+.topnav-section-tab.topnav-tab-cyan.active    { border-bottom-color: #67e8f9; color: #a5f3fc; }
+.topnav-section-tab.topnav-tab-gold.active    { border-bottom-color: #fcd34d; color: #fef08a; }
+.topnav-section-tab.topnav-tab-coral.active   { border-bottom-color: #fb923c; color: #fed7aa; }
+.topnav-section-tab.topnav-tab-purple.active  { border-bottom-color: #c4b5fd; color: #ddd6fe; }
+.topnav-section-tab.topnav-tab-orange.active  { border-bottom-color: #fdba74; color: #fed7aa; }
+.topnav-section-tab.topnav-tab-teal.active    { border-bottom-color: #5eead4; color: #99f6e4; }
+.topnav-section-tab.topnav-tab-rose.active    { border-bottom-color: #fda4af; color: #fecdd3; }
+.topnav-section-tab.topnav-tab-red.active     { border-bottom-color: #fca5a5; color: #fecaca; }
+
+/* Item sub-nav bar */
+.app-subnav {
+  background: #0c1526;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.app-subnav::-webkit-scrollbar { display: none; }
+
+.app-subnav-items {
+  display: flex;
+  flex-direction: row;
+  gap: 0.3rem;
+  padding: 0.45rem 1rem;
+  min-width: max-content;
+}
+
+.subnav-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.5rem 0.85rem;
+  border-radius: 8px;
+  text-decoration: none;
+  transition: background 0.16s ease, box-shadow 0.16s ease;
+  border: 1px solid transparent;
+}
+.subnav-item strong {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #94a3b8;
+  white-space: nowrap;
+  transition: color 0.16s ease;
+}
+.subnav-item span {
+  font-size: 0.72rem;
+  color: #4b6080;
+  white-space: nowrap;
+  transition: color 0.16s ease;
+}
+.subnav-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(148, 163, 184, 0.14);
+}
+.subnav-item:hover strong { color: #cbd5e1; }
+.subnav-item:hover span  { color: #64748b; }
+
+.subnav-item.active {
+  background: rgba(59, 130, 246, 0.14);
+  border-color: rgba(96, 165, 250, 0.28);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+.subnav-item.active strong { color: #bfdbfe; }
+.subnav-item.active span   { color: #7ea9d4; }
+
+/* Mobile: keep both navs scrollable, no wrapping */
+@media (max-width: 768px) {
+  .app-topnav-sections,
+  .app-subnav-items {
+    padding: 0 0.5rem;
+    gap: 0;
+  }
+  .topnav-section-tab {
+    padding: 0.6rem 0.75rem;
+    font-size: 0.8rem;
+  }
+  .subnav-item {
+    padding: 0.45rem 0.65rem;
+  }
+  .subnav-item span {
+    display: none;
   }
 }
