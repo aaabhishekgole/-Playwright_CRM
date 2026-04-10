@@ -18,8 +18,8 @@ class AuthInterceptor(private val sessionManager: SessionManager) : Interceptor 
             chain.request()
         }
         val response = chain.proceed(request)
-        // Token expired or invalid — clear session and signal logout
-        if (response.code == 401 || response.code == 403) {
+        // Only fire if there was a token — prevents loop after session already cleared
+        if ((response.code == 401 || response.code == 403) && token != null) {
             sessionManager.clearSession()
             _sessionExpired.tryEmit(Unit)
         }
