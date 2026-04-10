@@ -1,5 +1,6 @@
 package com.gadgetseva.runner.ui.dashboard
 
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -12,6 +13,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -46,7 +49,7 @@ fun DashboardScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { viewModel.load() }) {
+                    IconButton(onClick = { viewModel.load(forceRefresh = true) }) {
                         Icon(Icons.Default.Refresh, contentDescription = "Refresh")
                     }
                 },
@@ -58,17 +61,17 @@ fun DashboardScreen(
             )
         }
     ) { padding ->
-        when {
-            state.loading -> Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
-            }
-            state.error != null -> Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text(state.error ?: "Error", color = MaterialTheme.colorScheme.error)
-                    Button(onClick = { viewModel.load() }) { Text("Retry") }
-                }
-            }
-            else -> LazyColumn(
+        Box(Modifier.fillMaxSize().padding(padding)) {
+            when {
+                state.loading -> DashboardSkeleton()
+                state.error != null && state.recentActivity.isEmpty() ->
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                            Text(state.error ?: "Error", color = MaterialTheme.colorScheme.error)
+                            Button(onClick = { viewModel.load(forceRefresh = true) }) { Text("Retry") }
+                        }
+                    }
+                else -> LazyColumn(
                 modifier = Modifier.fillMaxSize().padding(padding),
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -129,7 +132,41 @@ fun DashboardScreen(
                     }
                 }
             }
+            // Refresh spinner overlay — shows on top of existing data
+            if (state.isRefreshing) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+                    LinearProgressIndicator(Modifier.fillMaxWidth())
+                }
+            }
         }
+    }
+}
+
+@Composable
+private fun DashboardSkeleton() {
+    val shimmerColors = listOf(Color(0xFFE0E0E0), Color(0xFFF5F5F5), Color(0xFFE0E0E0))
+    val transition = rememberInfiniteTransition(label = "shimmer")
+    val offset by transition.animateFloat(
+        initialValue = 0f, targetValue = 1000f,
+        animationSpec = infiniteRepeatable(tween(1000, easing = LinearEasing)),
+        label = "shimmer_offset"
+    )
+    val brush = Brush.linearGradient(shimmerColors,
+        start = Offset(offset, offset), end = Offset(offset + 300f, offset + 300f))
+
+    LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        item {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                repeat(2) { Box(Modifier.weight(1f).height(88.dp).background(brush, RoundedCornerShape(12.dp))) }
+            }
+        }
+        item {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                repeat(2) { Box(Modifier.weight(1f).height(88.dp).background(brush, RoundedCornerShape(12.dp))) }
+            }
+        }
+        item { Box(Modifier.fillMaxWidth().height(160.dp).background(brush, RoundedCornerShape(12.dp))) }
+        items(4) { Box(Modifier.fillMaxWidth().height(72.dp).background(brush, RoundedCornerShape(8.dp))) }
     }
 }
 

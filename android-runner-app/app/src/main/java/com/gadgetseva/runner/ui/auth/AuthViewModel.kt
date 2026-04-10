@@ -26,7 +26,11 @@ class AuthViewModel(private val repository: RunnerRepository) : ViewModel() {
         viewModelScope.launch {
             _uiState.value = AuthUiState(loading = true)
             repository.login(username.trim(), password).fold(
-                onSuccess = { _uiState.value = AuthUiState(success = true) },
+                onSuccess = {
+                    // Pre-warm: fetch service requests in background so Dashboard loads instantly
+                    launch { repository.getServiceRequests() }
+                    _uiState.value = AuthUiState(success = true)
+                },
                 onFailure = { _uiState.value = AuthUiState(error = "Login failed. Check your credentials.") }
             )
         }

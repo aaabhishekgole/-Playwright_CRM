@@ -20,7 +20,8 @@ data class DashboardStats(
 )
 
 data class DashboardUiState(
-    val loading: Boolean = false,
+    val loading: Boolean = false,       // initial load — no data yet
+    val isRefreshing: Boolean = false,  // refresh — data already visible
     val stats: DashboardStats = DashboardStats(),
     val recentActivity: List<ServiceRequestSummary> = emptyList(),
     val error: String? = null
@@ -33,10 +34,16 @@ class DashboardViewModel(private val repository: RunnerRepository) : ViewModel()
 
     init { load() }
 
-    fun load() {
+    fun load(forceRefresh: Boolean = false) {
+        val hasData = _uiState.value.recentActivity.isNotEmpty()
         viewModelScope.launch {
-            _uiState.value = DashboardUiState(loading = true)
-            repository.getServiceRequests().fold(
+            // If we already have data, show refresh indicator instead of blanking the screen
+            _uiState.value = if (hasData)
+                _uiState.value.copy(isRefreshing = true, error = null)
+            else
+                _uiState.value.copy(loading = true, error = null)
+
+            repository.getServiceRequests(forceRefresh).fold(
                 onSuccess = { requests ->
                     val closed = listOf("CLOSED", "CANCELLED")
                     val pickupStatuses = listOf("PICKUP_ASSIGNED", "PICKUP_IN_PROGRESS")
@@ -55,14 +62,16 @@ class DashboardViewModel(private val repository: RunnerRepository) : ViewModel()
                         dispatchReady = requests.count { it.status in dispatchStatuses },
                         slaAlerts = requests.count { it.slaBreached }
                     )
-
                     _uiState.value = DashboardUiState(
                         stats = stats,
                         recentActivity = requests.sortedByDescending { it.updatedAt }.take(10)
                     )
                 },
                 onFailure = {
-                    _uiState.value = DashboardUiState(error = it.message ?: "Failed to load dashboard.")
+                    _uiState.value = _uiState.value.copy(
+                        loading = false, isRefreshing = false,
+                        error = it.message ?: "Failed to load dashboard."
+                    )
                 }
             )
         }

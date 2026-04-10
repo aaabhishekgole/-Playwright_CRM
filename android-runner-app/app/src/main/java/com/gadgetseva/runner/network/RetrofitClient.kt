@@ -2,6 +2,7 @@ package com.gadgetseva.runner.network
 
 import com.gadgetseva.runner.BuildConfig
 import com.gadgetseva.runner.session.SessionManager
+import okhttp3.ConnectionPool
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -27,8 +28,10 @@ object RetrofitClient {
             .addInterceptor(AuthInterceptor(sessionManager!!))
             .addInterceptor(logging)
             .connectTimeout(30, TimeUnit.SECONDS)
-            .readTimeout(60, TimeUnit.SECONDS)
+            .readTimeout(90, TimeUnit.SECONDS)   // Railway cold start can take ~47s
             .writeTimeout(60, TimeUnit.SECONDS)
+            .retryOnConnectionFailure(true)
+            .connectionPool(ConnectionPool(5, 5, TimeUnit.MINUTES)) // keep-alive
             .build()
     }
 
