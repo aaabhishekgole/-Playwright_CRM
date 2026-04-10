@@ -28,7 +28,10 @@ class RunnerRepository(private val sessionManager: SessionManager) {
         }
     }
 
-    fun logout() = sessionManager.clearSession()
+    fun logout() {
+        invalidateCache()
+        sessionManager.clearSession()
+    }
 
     // ── Inbox ─────────────────────────────────────────────────────────────
     suspend fun getNotifications(): Result<List<NotificationResponse>> {
@@ -100,12 +103,29 @@ class RunnerRepository(private val sessionManager: SessionManager) {
     }
 
     // ── Service Requests (Ops view) ───────────────────────────────────────
-    suspend fun getServiceRequests(): Result<List<ServiceRequestSummary>> {
+    // 30-second in-memory cache — Dashboard, Requests, and Pickup tabs share one network call
+    private var cachedRequests: List<ServiceRequestSummary>? = null
+    private var cacheTimestamp: Long = 0L
+    private val cacheTtlMs = 30_000L
+
+    suspend fun getServiceRequests(forceRefresh: Boolean = false): Result<List<ServiceRequestSummary>> {
+        val now = System.currentTimeMillis()
+        if (!forceRefresh && cachedRequests != null && (now - cacheTimestamp) < cacheTtlMs) {
+            return Result.success(cachedRequests!!)
+        }
         return try {
-            Result.success(api.getServiceRequests())
+            val result = api.getServiceRequests()
+            cachedRequests = result
+            cacheTimestamp = System.currentTimeMillis()
+            Result.success(result)
         } catch (e: Exception) {
             Result.failure(e)
         }
+    }
+
+    fun invalidateCache() {
+        cachedRequests = null
+        cacheTimestamp = 0L
     }
 
     suspend fun getServiceRequestDetail(id: Long): Result<ServiceRequestSummary> {
