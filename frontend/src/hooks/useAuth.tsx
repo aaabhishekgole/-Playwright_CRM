@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, type ReactNode } from 'react';
-import { login as loginRequest } from '../services/api';
+import { invalidateRequestCache, login as loginRequest, prewarmRequestCache } from '../services/api';
 import type { LoginResponse, UserRole } from '../types/models';
 
 type AuthContextValue = {
@@ -25,8 +25,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.setItem('gsh_token', response.accessToken);
       localStorage.setItem('gsh_user', JSON.stringify(response));
       setUser(response);
+      // Pre-warm: fetch data in background so first page loads instantly
+      prewarmRequestCache();
     },
     logout: () => {
+      invalidateRequestCache();
       localStorage.removeItem('gsh_token');
       localStorage.removeItem('gsh_user');
       setUser(null);

@@ -60,8 +60,11 @@ export function useRequests(options: UseRequestsOptions = {}) {
     activeRefreshController.current = controller;
 
     try {
-      setLoading(true);
       setError(null);
+      // Only show the full loading spinner when there's no data yet
+      if (requestsRef.current.length === 0) {
+        setLoading(true);
+      }
       const data = await fetchRequests(statuses, controller.signal);
       if (controller.signal.aborted) {
         return requestsRef.current;

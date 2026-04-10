@@ -138,30 +138,71 @@ function sortRequestsByCreatedAtDesc(requests: ServiceRequest[]) {
   });
 }
 
-export async function fetchRequests(statuses?: string[], signal?: AbortSignal): Promise<ServiceRequest[]> {
-  const uniqueStatuses = Array.from(new Set((statuses ?? []).filter(Boolean)));
+// ── Module-level request cache (30s TTL) ──────────────────────────────────
+// All pages share one network call within the TTL window.
+interface RequestCache {
+  data: ServiceRequest[];
+  timestamp: number;
+  inflightPromise: Promise<ServiceRequest[]> | null;
+}
+const requestCache = new Map<string, RequestCache>();
+const CACHE_TTL_MS = 30_000;
 
+export function invalidateRequestCache() {
+  requestCache.clear();
+}
+
+async function fetchRequestsNetwork(uniqueStatuses: string[], signal?: AbortSignal): Promise<ServiceRequest[]> {
   if (uniqueStatuses.length === 0) {
     const response = await api.get<ServiceRequest[]>('/service-requests', { signal });
     return response.data;
   }
-
   const responses = await Promise.all(
     uniqueStatuses.map((status) =>
-      api.get<ServiceRequest[]>('/service-requests', {
-        params: { status },
-        signal,
-      })),
+      api.get<ServiceRequest[]>('/service-requests', { params: { status }, signal })),
   );
-
   const deduped = new Map<number, ServiceRequest>();
   for (const response of responses) {
     for (const request of response.data) {
       deduped.set(request.id, request);
     }
   }
-
   return sortRequestsByCreatedAtDesc(Array.from(deduped.values()));
+}
+
+export async function fetchRequests(statuses?: string[], signal?: AbortSignal): Promise<ServiceRequest[]> {
+  const uniqueStatuses = Array.from(new Set((statuses ?? []).filter(Boolean)));
+  const cacheKey = uniqueStatuses.join('|');
+  const now = Date.now();
+  const cached = requestCache.get(cacheKey);
+
+  // Return fresh cache immediately
+  if (cached && (now - cached.timestamp) < CACHE_TTL_MS) {
+    return cached.data;
+  }
+
+  // Deduplicate concurrent requests — share one in-flight promise
+  if (cached?.inflightPromise) {
+    return cached.inflightPromise;
+  }
+
+  const promise = fetchRequestsNetwork(uniqueStatuses, signal).then((data) => {
+    requestCache.set(cacheKey, { data, timestamp: Date.now(), inflightPromise: null });
+    return data;
+  }).catch((err) => {
+    // Clear inflight on error so next call retries
+    const entry = requestCache.get(cacheKey);
+    if (entry) requestCache.set(cacheKey, { ...entry, inflightPromise: null });
+    throw err;
+  });
+
+  requestCache.set(cacheKey, { data: cached?.data ?? [], timestamp: cached?.timestamp ?? 0, inflightPromise: promise });
+  return promise;
+}
+
+/** Pre-warm: fire a background fetch after login so first page load is instant */
+export function prewarmRequestCache() {
+  fetchRequests().catch(() => { /* silent — best effort */ });
 }
 
 export async function createServiceRequest(payload: CreateServiceRequestPayload): Promise<ServiceRequest> {
