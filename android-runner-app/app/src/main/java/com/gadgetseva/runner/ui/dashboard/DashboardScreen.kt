@@ -44,8 +44,11 @@ fun DashboardScreen(
                 title = {
                     Column {
                         Text("Dashboard", fontWeight = FontWeight.Bold)
-                        Text("Operational overview", style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(
+                            "Operational overview",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
                 },
                 actions = {
@@ -64,79 +67,110 @@ fun DashboardScreen(
         Box(Modifier.fillMaxSize().padding(padding)) {
             when {
                 state.loading -> DashboardSkeleton()
-                state.error != null && state.recentActivity.isEmpty() ->
+
+                state.error != null && state.recentActivity.isEmpty() -> {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
                             Text(state.error ?: "Error", color = MaterialTheme.colorScheme.error)
-                            Button(onClick = { viewModel.load(forceRefresh = true) }) { Text("Retry") }
-                        }
-                    }
-                else -> LazyColumn(
-                modifier = Modifier.fillMaxSize().padding(padding),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                // KPI cards row 1
-                item {
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        KpiCard(Modifier.weight(1f), state.stats.openRequests.toString(),
-                            "Open Requests", Blue, LightBlue)
-                        KpiCard(Modifier.weight(1f), state.stats.pendingPickup.toString(),
-                            "Pending Pickup", Orange, LightOrange)
-                    }
-                }
-                // KPI cards row 2
-                item {
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        KpiCard(Modifier.weight(1f), state.stats.repairQueue.toString(),
-                            "Repair Queue", Green, LightGreen)
-                        KpiCard(Modifier.weight(1f), state.stats.billingPending.toString(),
-                            "Billing Pending", Red, LightRed)
-                    }
-                }
-
-                // Attention Queues
-                item {
-                    Text("Immediate Action Queues", fontWeight = FontWeight.Bold,
-                        style = MaterialTheme.typography.titleSmall)
-                }
-                item {
-                    Card(elevation = CardDefaults.cardElevation(2.dp)) {
-                        Column(Modifier.fillMaxWidth()) {
-                            AttentionRow("Hub Verification", "Devices waiting for inward & IMEI validation",
-                                state.stats.hubVerification)
-                            HorizontalDivider()
-                            AttentionRow("Estimate Approvals", "Estimate or cashless review cases awaiting action",
-                                state.stats.estimateApprovals)
-                            HorizontalDivider()
-                            AttentionRow("Dispatch Readiness", "Cases approaching delivery handoff",
-                                state.stats.dispatchReady)
-                            HorizontalDivider()
-                            AttentionRow("SLA Risk", "Breached or aging claims that need escalation",
-                                state.stats.slaAlerts, isAlert = true)
+                            Button(onClick = { viewModel.load(forceRefresh = true) }) {
+                                Text("Retry")
+                            }
                         }
                     }
                 }
 
-                // Recent Activity
-                item {
-                    Text("Recent Activity", fontWeight = FontWeight.Bold,
-                        style = MaterialTheme.typography.titleSmall)
-                }
-                if (state.recentActivity.isEmpty()) {
-                    item { Text("No recent activity.", color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        style = MaterialTheme.typography.bodySmall) }
-                } else {
-                    items(state.recentActivity) { req ->
-                        RecentActivityRow(req, onClick = { onRequestClick(req.id) })
+                else -> {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        // KPI row 1
+                        item {
+                            Row(
+                                Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                KpiCard(Modifier.weight(1f), state.stats.openRequests.toString(),
+                                    "Open Requests", Blue, LightBlue)
+                                KpiCard(Modifier.weight(1f), state.stats.pendingPickup.toString(),
+                                    "Pending Pickup", Orange, LightOrange)
+                            }
+                        }
+                        // KPI row 2
+                        item {
+                            Row(
+                                Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                KpiCard(Modifier.weight(1f), state.stats.repairQueue.toString(),
+                                    "Repair Queue", Green, LightGreen)
+                                KpiCard(Modifier.weight(1f), state.stats.billingPending.toString(),
+                                    "Billing Pending", Red, LightRed)
+                            }
+                        }
+
+                        // Attention queues
+                        item {
+                            Text(
+                                "Immediate Action Queues",
+                                fontWeight = FontWeight.Bold,
+                                style = MaterialTheme.typography.titleSmall
+                            )
+                        }
+                        item {
+                            Card(elevation = CardDefaults.cardElevation(2.dp)) {
+                                Column(Modifier.fillMaxWidth()) {
+                                    AttentionRow("Hub Verification",
+                                        "Devices waiting for inward & IMEI validation",
+                                        state.stats.hubVerification)
+                                    HorizontalDivider()
+                                    AttentionRow("Estimate Approvals",
+                                        "Estimate or cashless review cases awaiting action",
+                                        state.stats.estimateApprovals)
+                                    HorizontalDivider()
+                                    AttentionRow("Dispatch Readiness",
+                                        "Cases approaching delivery handoff",
+                                        state.stats.dispatchReady)
+                                    HorizontalDivider()
+                                    AttentionRow("SLA Risk",
+                                        "Breached or aging claims that need escalation",
+                                        state.stats.slaAlerts, isAlert = true)
+                                }
+                            }
+                        }
+
+                        // Recent activity
+                        item {
+                            Text(
+                                "Recent Activity",
+                                fontWeight = FontWeight.Bold,
+                                style = MaterialTheme.typography.titleSmall
+                            )
+                        }
+                        if (state.recentActivity.isEmpty()) {
+                            item {
+                                Text(
+                                    "No recent activity.",
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            }
+                        } else {
+                            items(state.recentActivity) { req ->
+                                RecentActivityRow(req, onClick = { onRequestClick(req.id) })
+                            }
+                        }
                     }
                 }
             }
-            // Refresh spinner overlay — shows on top of existing data
+
+            // Refresh progress bar — overlays content during background refresh
             if (state.isRefreshing) {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
-                    LinearProgressIndicator(Modifier.fillMaxWidth())
-                }
+                LinearProgressIndicator(Modifier.fillMaxWidth().align(Alignment.TopCenter))
             }
         }
     }
@@ -151,18 +185,28 @@ private fun DashboardSkeleton() {
         animationSpec = infiniteRepeatable(tween(1000, easing = LinearEasing)),
         label = "shimmer_offset"
     )
-    val brush = Brush.linearGradient(shimmerColors,
-        start = Offset(offset, offset), end = Offset(offset + 300f, offset + 300f))
+    val brush = Brush.linearGradient(
+        shimmerColors,
+        start = Offset(offset, offset),
+        end = Offset(offset + 300f, offset + 300f)
+    )
 
-    LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+    LazyColumn(
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
         item {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                repeat(2) { Box(Modifier.weight(1f).height(88.dp).background(brush, RoundedCornerShape(12.dp))) }
+                repeat(2) {
+                    Box(Modifier.weight(1f).height(88.dp).background(brush, RoundedCornerShape(12.dp)))
+                }
             }
         }
         item {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                repeat(2) { Box(Modifier.weight(1f).height(88.dp).background(brush, RoundedCornerShape(12.dp))) }
+                repeat(2) {
+                    Box(Modifier.weight(1f).height(88.dp).background(brush, RoundedCornerShape(12.dp)))
+                }
             }
         }
         item { Box(Modifier.fillMaxWidth().height(160.dp).background(brush, RoundedCornerShape(12.dp))) }
@@ -172,8 +216,11 @@ private fun DashboardSkeleton() {
 
 @Composable
 private fun KpiCard(modifier: Modifier, value: String, label: String, textColor: Color, bgColor: Color) {
-    Card(modifier = modifier, elevation = CardDefaults.cardElevation(2.dp),
-        colors = CardDefaults.cardColors(containerColor = bgColor)) {
+    Card(
+        modifier = modifier,
+        elevation = CardDefaults.cardElevation(2.dp),
+        colors = CardDefaults.cardColors(containerColor = bgColor)
+    ) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(value, fontSize = 28.sp, fontWeight = FontWeight.Bold, color = textColor)
             Text(label, style = MaterialTheme.typography.bodySmall, color = textColor)
@@ -197,9 +244,13 @@ private fun AttentionRow(title: String, subtitle: String, count: Int, isAlert: B
             shape = RoundedCornerShape(12.dp),
             color = if (isAlert && count > 0) Red else Blue
         ) {
-            Text(count.toString(), Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-                color = Color.White, fontWeight = FontWeight.Bold,
-                style = MaterialTheme.typography.labelMedium)
+            Text(
+                count.toString(),
+                Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                color = Color.White,
+                fontWeight = FontWeight.Bold,
+                style = MaterialTheme.typography.labelMedium
+            )
         }
     }
 }
@@ -225,7 +276,8 @@ private fun RecentActivityRow(req: ServiceRequestSummary, onClick: () -> Unit) {
             Column(horizontalAlignment = Alignment.End) {
                 StatusChip(req.status ?: "—")
                 Spacer(Modifier.height(4.dp))
-                Text(req.updatedAt?.take(10) ?: "—", style = MaterialTheme.typography.labelSmall,
+                Text(req.updatedAt?.take(10) ?: "—",
+                    style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
