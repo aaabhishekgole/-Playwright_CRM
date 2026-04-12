@@ -55,6 +55,10 @@ public class ServiceRequest extends BaseAuditableEntity {
     @Column(nullable = false, length = 40, columnDefinition = "VARCHAR(40)")
     private RequestStatus status;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 30, columnDefinition = "VARCHAR(30) DEFAULT 'NORMAL_REPAIR'")
+    private RequestType requestType = RequestType.NORMAL_REPAIR;
+
     @Column(nullable = false, length = 40)
     private String sourceChannel;
 

@@ -22,6 +22,8 @@ const opsRoles: UserRole[] = ['ADMIN', 'CUSTOMER_SUPPORT', 'BACKEND_TEAM'];
 const centerRoles: UserRole[] = ['ADMIN', 'TECHNICIAN', 'CUSTOMER_SUPPORT', 'BACKEND_TEAM'];
 const financeRoles: UserRole[] = ['ADMIN', 'FINANCE', 'MSE_TEAM'];
 const cashlessRoles: UserRole[] = ['ADMIN', 'BACKEND_TEAM', 'FINANCE', 'MSE_TEAM'];
+const claimsRoles: UserRole[] = ['ADMIN', 'BACKEND_TEAM', 'CUSTOMER_SUPPORT', 'MSE_TEAM'];
+const insuranceRoles: UserRole[] = ['ADMIN', 'BACKEND_TEAM', 'MSE_TEAM'];
 const deliveryRoles: UserRole[] = ['ADMIN', 'DELIVERY_AGENT', 'CUSTOMER_SUPPORT', 'BACKEND_TEAM'];
 const pickupRoles: UserRole[] = ['ADMIN', 'PICKUP_AGENT', 'CUSTOMER_SUPPORT', 'BACKEND_TEAM'];
 const runnerAdminRoles: UserRole[] = ['ADMIN', 'BACKEND_TEAM'];
@@ -126,6 +128,45 @@ export const menuHierarchy: MenuSection[] = [
       { id: 'approval-queue', label: 'Approval Queue', description: 'Cases waiting for cashless evidence review and approval.', path: '/cashless-approval', roles: cashlessRoles },
       { id: 'pending-photos', label: 'Pending Photos', description: 'Cases missing the required 6 + 4 evidence set.', path: workspace('cashless', 'pending-photos'), roles: cashlessRoles },
       { id: 'approved-cases', label: 'Approved Cases', description: 'Cashless cases approved and ready for execution.', path: workspace('cashless', 'approved-cases'), roles: cashlessRoles },
+    ],
+  },
+  {
+    id: 'claims',
+    label: 'Claims',
+    description: 'Cashless claim lifecycle — initiation, verification, approval, and history.',
+    accent: 'accent-teal',
+    roles: claimsRoles,
+    items: [
+      { id: 'all-claims', label: 'All Claims', description: 'Master list of all cashless claim requests.', path: '/claims', roles: claimsRoles },
+      { id: 'approval-pending', label: 'Approval Pending', description: 'Claims awaiting document verification and approval.', path: '/claims?status=APPROVAL_PENDING', roles: claimsRoles },
+      { id: 'approved-claims', label: 'Approved Claims', description: 'Claims approved and in the repair process.', path: '/claims?status=APPROVED', roles: claimsRoles },
+      { id: 'rejected-claims', label: 'Rejected Claims', description: 'Claims rejected due to invalid documents.', path: '/claims?status=REJECTED', roles: claimsRoles },
+      { id: 'reupload-pending', label: 'Re-upload Pending', description: 'Claims where customer needs to re-upload documents.', path: '/claims?status=REUPLOAD_PENDING', roles: claimsRoles },
+      { id: 'claim-history', label: 'Claim History', description: 'All closed and completed claims.', path: '/claims?status=CLOSED', roles: claimsRoles },
+    ],
+  },
+  {
+    id: 'invoice-verification',
+    label: 'Invoice Verification',
+    description: 'Review and approve post-repair invoices for cashless claims.',
+    accent: 'accent-gold',
+    roles: claimsRoles,
+    items: [
+      { id: 'invoice-queue', label: 'Invoice Queue', description: 'Submitted invoices awaiting backend approval.', path: '/invoice-verification', roles: claimsRoles },
+      { id: 'invoice-approved', label: 'Invoice Approved', description: 'Invoices approved for insurance submission.', path: '/claims?status=INVOICE_APPROVED', roles: claimsRoles },
+      { id: 'invoice-rejected', label: 'Invoice Rejected', description: 'Invoices rejected — awaiting re-upload.', path: '/claims?status=INVOICE_REJECTED', roles: claimsRoles },
+    ],
+  },
+  {
+    id: 'insurance-submission',
+    label: 'Insurance Submission',
+    description: 'Submit final claim documents to the insurance company.',
+    accent: 'accent-rose',
+    roles: insuranceRoles,
+    items: [
+      { id: 'ready-for-insurance', label: 'Ready for Insurance', description: 'Claims with approved invoices ready to be submitted.', path: '/insurance-submission', roles: insuranceRoles },
+      { id: 'submitted-to-insurance', label: 'Submitted to Insurance', description: 'Claims already submitted to insurance company.', path: '/claims?status=SUBMITTED_TO_INSURANCE', roles: insuranceRoles },
+      { id: 'insurance-history', label: 'Insurance History', description: 'Full history of insurance submissions.', path: '/claims?status=CLOSED', roles: insuranceRoles },
     ],
   },  {
     id: 'quality-check',

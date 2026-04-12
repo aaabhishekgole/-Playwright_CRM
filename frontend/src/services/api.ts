@@ -2,16 +2,21 @@ import axios from 'axios';
 import type {
   AssignDeliveryPayload,
   AssignPickupPayload,
+  Claim,
+  ClaimActionPayload,
+  CreateClaimPayload,
   CreatePickupRunnerPayload,
   CreateInvoicePayload,
   CreateEstimatePayload,
   CreateServiceRequestPayload,
   DocumentItem,
+  InsuranceSubmitPayload,
   LoginResponse,
   RecordPaymentPayload,
   RunnerNotification,
   RefundPaymentPayload,
   ServiceRequest,
+  SubmitInvoicePayload,
   UserSummary,
 } from '../types/models';
 
@@ -356,4 +361,78 @@ export async function uploadDocument(name: string, description: string, category
 
 export async function deleteDocument(id: number): Promise<void> {
   await api.delete(`/documents/${id}`);
+}
+
+// ─── Cashless Claim API ───────────────────────────────────────────────────────
+
+export async function createClaim(payload: CreateClaimPayload): Promise<Claim> {
+  const response = await api.post<Claim>('/claims', payload);
+  return response.data;
+}
+
+export async function fetchClaims(status?: string): Promise<Claim[]> {
+  const response = await api.get<Claim[]>('/claims', {
+    params: status ? { status } : undefined,
+  });
+  return response.data;
+}
+
+export async function fetchClaimById(claimId: number): Promise<Claim> {
+  const response = await api.get<Claim>(`/claims/${claimId}`);
+  return response.data;
+}
+
+export async function fetchClaimByServiceRequest(serviceRequestId: number): Promise<Claim> {
+  const response = await api.get<Claim>(`/claims/by-request/${serviceRequestId}`);
+  return response.data;
+}
+
+export async function uploadClaimDocument(claimId: number, documentType: string, file: File): Promise<Claim> {
+  const formData = new FormData();
+  formData.append('documentType', documentType);
+  formData.append('file', file);
+  const response = await api.post<Claim>(`/claims/${claimId}/documents`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return response.data;
+}
+
+export async function submitClaimForApproval(claimId: number): Promise<Claim> {
+  const response = await api.post<Claim>(`/claims/${claimId}/submit-for-approval`);
+  return response.data;
+}
+
+export async function approveClaim(claimId: number, payload: ClaimActionPayload): Promise<Claim> {
+  const response = await api.post<Claim>(`/claims/${claimId}/approve`, payload);
+  return response.data;
+}
+
+export async function rejectClaim(claimId: number, payload: ClaimActionPayload): Promise<Claim> {
+  const response = await api.post<Claim>(`/claims/${claimId}/reject`, payload);
+  return response.data;
+}
+
+export async function submitClaimInvoice(claimId: number, payload: SubmitInvoicePayload): Promise<Claim> {
+  const response = await api.post<Claim>(`/claims/${claimId}/submit-invoice`, payload);
+  return response.data;
+}
+
+export async function approveClaimInvoice(claimId: number, payload: ClaimActionPayload): Promise<Claim> {
+  const response = await api.post<Claim>(`/claims/${claimId}/approve-invoice`, payload);
+  return response.data;
+}
+
+export async function rejectClaimInvoice(claimId: number, payload: ClaimActionPayload): Promise<Claim> {
+  const response = await api.post<Claim>(`/claims/${claimId}/reject-invoice`, payload);
+  return response.data;
+}
+
+export async function submitClaimToInsurance(claimId: number, payload: InsuranceSubmitPayload): Promise<Claim> {
+  const response = await api.post<Claim>(`/claims/${claimId}/submit-to-insurance`, payload);
+  return response.data;
+}
+
+export async function closeClaim(claimId: number, payload: ClaimActionPayload): Promise<Claim> {
+  const response = await api.post<Claim>(`/claims/${claimId}/close`, payload);
+  return response.data;
 }

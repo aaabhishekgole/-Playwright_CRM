@@ -6,11 +6,15 @@ import { AuthProvider, useAuth } from './hooks/useAuth';
 import { ToastProvider } from './hooks/useToast';
 import { findMenuContext, hasMenuAccess } from './utils/menuHierarchy';
 import { CashlessApprovalPage } from './pages/CashlessApprovalPage';
+import { ClaimDetailPage } from './pages/ClaimDetailPage';
+import { ClaimsListPage } from './pages/ClaimsListPage';
 import { DocumentsPage } from './pages/DocumentsPage';
 import { ClaimRegistrationPage } from './pages/ClaimRegistrationPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { DeliveryTrackingPage } from './pages/DeliveryTrackingPage';
 import { EstimateApprovalPage } from './pages/EstimateApprovalPage';
+import { InsuranceSubmissionPage } from './pages/InsuranceSubmissionPage';
+import { InvoiceVerificationPage } from './pages/InvoiceVerificationPage';
 import { LoginPage } from './pages/LoginPage';
 import { PaymentReconciliationPage } from './pages/PaymentReconciliationPage';
 import { PickupImagesPage } from './pages/PickupImagesPage';
@@ -63,6 +67,11 @@ function ProtectedApp() {
         <Route path="/workspace/service-requests/cancelled-requests" element={<ProtectedMenuRoute sectionId="service-requests" itemId="cancelled-requests"><ServiceRequestListPage mode="cancelled" title="Cancelled Claims" description="Cancelled or voided claims with filterable ticket, customer, and device references." /></ProtectedMenuRoute>} />
         <Route path="/workspace/service-requests/search-request" element={<ProtectedMenuRoute sectionId="service-requests" itemId="search-request"><ServiceRequestListPage mode="all" title="Search Claims" description="Search claim records by loan, ticket, COI, device identifier, and settlement state." /></ProtectedMenuRoute>} />
         <Route path="/documents" element={<ProtectedMenuRoute sectionId="documents" itemId="document-library"><DocumentsPage /></ProtectedMenuRoute>} />
+        {/* Cashless Claim Module */}
+        <Route path="/claims" element={<ProtectedMenuRoute sectionId="claims" itemId="all-claims"><ClaimsListPage /></ProtectedMenuRoute>} />
+        <Route path="/claims/:claimId" element={<ProtectedMenuRoute sectionId="claims" itemId="all-claims"><ClaimDetailPage /></ProtectedMenuRoute>} />
+        <Route path="/invoice-verification" element={<ProtectedMenuRoute sectionId="invoice-verification" itemId="invoice-queue"><InvoiceVerificationPage /></ProtectedMenuRoute>} />
+        <Route path="/insurance-submission" element={<ProtectedMenuRoute sectionId="insurance-submission" itemId="ready-for-insurance"><InsuranceSubmissionPage /></ProtectedMenuRoute>} />
         <Route path="/workspace/:sectionId/:itemId" element={<WorkspacePage />} />
       </Route>
     </Routes>

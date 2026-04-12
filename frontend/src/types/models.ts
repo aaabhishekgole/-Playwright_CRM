@@ -301,6 +301,108 @@ export type DocumentItem = {
   uploadedAt: string;
 };
 
+// ─── Cashless Claim Module Types ─────────────────────────────────────────────
+
+export type ClaimDocumentItem = {
+  id: number;
+  documentType: string;
+  fileName: string;
+  contentType: string;
+  objectKey: string;
+  fileSizeBytes: number | null;
+  versionNumber: number;
+  isCurrent: boolean;
+  uploadedBy: string;
+  uploadedAt: string;
+};
+
+export type ClaimApprovalLogItem = {
+  id: number;
+  action: string;
+  actionBy: string;
+  actionAt: string;
+  remarks: string | null;
+  approvedAmount: number | null;
+  rejectionReason: string | null;
+};
+
+export type InvoiceVerificationItem = {
+  id: number;
+  invoiceStatus: string;
+  invoiceAmount: number | null;
+  approvedAmount: number | null;
+  excessAmount: number | null;
+  excessProofUploaded: boolean;
+  approvalThresholdBreached: boolean;
+  adminApprovalRequired: boolean;
+  rejectionReason: string | null;
+  reuploadAttemptCount: number;
+  submittedAt: string;
+  approvedAt: string | null;
+  rejectedAt: string | null;
+};
+
+export type InsuranceSubmissionItem = {
+  id: number;
+  subStatus: string;
+  submittedBy: string | null;
+  submittedAt: string | null;
+  notes: string | null;
+};
+
+export type Claim = {
+  id: number;
+  serviceRequestId: number;
+  requestNumber: string;
+  customerName: string;
+  deviceLabel: string;
+  claimNumber: string;
+  claimStatus: string;
+  imeiNumber: string | null;
+  serialNumber: string | null;
+  imeiVerified: boolean;
+  imeiVerificationNote: string | null;
+  approvedAmount: number | null;
+  rejectionReason: string | null;
+  reuploadAttemptCount: number;
+  maxReuploadAttempts: number;
+  lockedForAdmin: boolean;
+  submittedAt: string;
+  approvedAt: string | null;
+  rejectedAt: string | null;
+  closedAt: string | null;
+  documents: ClaimDocumentItem[];
+  approvalLogs: ClaimApprovalLogItem[];
+  invoiceVerification: InvoiceVerificationItem | null;
+  insuranceSubmission: InsuranceSubmissionItem | null;
+};
+
+export type CreateClaimPayload = {
+  serviceRequestId: number;
+  imeiNumber?: string;
+  serialNumber?: string;
+};
+
+export type ClaimActionPayload = {
+  remarks?: string;
+  approvedAmount?: number;
+  rejectionReason?: string;
+  imeiVerified?: boolean;
+  imeiVerificationNote?: string;
+};
+
+export type SubmitInvoicePayload = {
+  invoiceAmount: number;
+  excessPaymentMade: boolean;
+  notes?: string;
+};
+
+export type InsuranceSubmitPayload = {
+  notes?: string;
+};
+
+// ─── End Cashless Claim Module Types ─────────────────────────────────────────
+
 export type RunnerNotification = {
   id: number;
   channel: string;
