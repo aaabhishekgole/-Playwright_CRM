@@ -1,0 +1,1158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gadget Seva Hub — User Manual</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f1f5f9; color: #1e293b; line-height: 1.6; }
+    a { color: #2563eb; }
+    .hero { background: linear-gradient(135deg,#0f172a 0%,#1e3a5f 100%); color: #f8fafc; padding: 56px 48px 48px; }
+    .hero h1 { font-size: 2.4rem; font-weight: 800; margin-bottom: 10px; }
+    .hero p  { font-size: 1.1rem; color: #94a3b8; max-width: 700px; }
+    .hero .badge-row { display:flex; gap:12px; flex-wrap:wrap; margin-top:20px; }
+    .badge { background:#1e293b; border-radius:999px; padding:6px 16px; font-size:.85rem; font-weight:600; color:#93c5fd; }
+    .layout { display: flex; min-height: 100vh; }
+    .sidebar { width: 260px; background: #0f172a; color: #f8fafc; padding: 24px 0; position: sticky; top: 0; height: 100vh; overflow-y: auto; flex-shrink: 0; }
+    .sidebar h3 { font-size: .7rem; letter-spacing: 1.5px; text-transform: uppercase; color: #475569; padding: 16px 20px 6px; margin-top: 12px; }
+    .sidebar a { display: block; padding: 8px 20px; color: #cbd5e1; text-decoration: none; font-size: .9rem; border-left: 3px solid transparent; transition: all .15s; }
+    .sidebar a:hover, .sidebar a.active { color: #f8fafc; background: #1e293b; border-left-color: #3b82f6; }
+    .content { flex: 1; padding: 0; overflow: hidden; }
+    .module-section { background: #fff; margin: 24px 32px; border-radius: 16px; box-shadow: 0 1px 4px rgba(0,0,0,.08); overflow: hidden; }
+    .module-header { padding: 24px 32px; }
+    .module-header h2 { font-size: 1.5rem; font-weight: 700; color: #fff; }
+    .module-body { padding: 28px 32px; }
+    .accent-blue   { background: #2563eb; }
+    .accent-cyan   { background: #0891b2; }
+    .accent-teal   { background: #0d9488; }
+    .accent-gold   { background: #d97706; }
+    .accent-orange { background: #ea580c; }
+    .accent-purple { background: #7c3aed; }
+    .accent-rose   { background: #e11d48; }
+    .accent-red    { background: #dc2626; }
+    .accent-green  { background: #16a34a; }
+    .accent-slate  { background: #475569; }
+    h3 { font-size: 1.1rem; font-weight: 700; color: #0f172a; margin: 24px 0 12px; }
+    h4 { font-size: .95rem; font-weight: 600; color: #334155; margin: 18px 0 8px; }
+    p  { color: #475569; margin-bottom: 12px; font-size: .95rem; }
+    ul, ol { padding-left: 20px; color: #475569; font-size: .95rem; margin-bottom: 14px; }
+    li { margin-bottom: 6px; }
+    .step { display:flex; gap:14px; margin-bottom:16px; align-items:flex-start; }
+    .step-num { width:28px; height:28px; background:#2563eb; color:#fff; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:.8rem; font-weight:800; flex-shrink:0; margin-top:2px; }
+    .step-body strong { display:block; font-size:.95rem; color:#0f172a; }
+    .step-body p { margin:4px 0 0; font-size:.88rem; }
+    .ss-fig { margin: 16px 0 24px; }
+    figcaption { font-size: .8rem; color: #64748b; text-align: center; margin-top: 6px; }
+    .no-ss { background: #f8fafc; border: 2px dashed #cbd5e1; border-radius: 8px; padding: 32px; text-align: center; color: #94a3b8; margin: 16px 0; }
+    .vid-wrap { margin: 16px 0 28px; }
+    .vid-caption { font-size: .85rem; color: #64748b; text-align: center; margin-top: 8px; }
+    .role-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:16px; margin: 16px 0 24px; }
+    .role-card { border-radius:12px; overflow:hidden; border:1px solid #e2e8f0; }
+    .role-card-header { padding:12px 16px; font-weight:700; font-size:.9rem; }
+    .role-card-body { padding:12px; }
+    .role-card img { width:100%; border-radius:4px; }
+    .cred-table { width:100%; border-collapse:collapse; margin:16px 0; font-size:.9rem; }
+    .cred-table th { background:#0f172a; color:#f8fafc; padding:10px 14px; text-align:left; }
+    .cred-table td { padding:10px 14px; border-bottom:1px solid #e2e8f0; }
+    .cred-table tr:last-child td { border-bottom:none; }
+    .cred-table tr:nth-child(even) td { background:#f8fafc; }
+    .info-box { background:#eff6ff; border-left:4px solid #2563eb; border-radius:6px; padding:14px 18px; margin:16px 0; font-size:.9rem; }
+    .warn-box { background:#fffbeb; border-left:4px solid #d97706; border-radius:6px; padding:14px 18px; margin:16px 0; font-size:.9rem; }
+    .ss-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:16px 0; }
+    @media(max-width:900px){ .layout{flex-direction:column} .sidebar{width:100%;height:auto;position:relative} .ss-grid{grid-template-columns:1fr} }
+    .tab-row { display:flex; gap:8px; flex-wrap:wrap; margin:12px 0; }
+    .tab-chip { background:#f1f5f9; border:1px solid #e2e8f0; border-radius:8px; padding:5px 14px; font-size:.82rem; font-weight:600; color:#334155; }
+    .flow-diagram { background:#f8fafc; border-radius:10px; padding:20px 24px; margin:16px 0; }
+    .flow-steps { display:flex; flex-wrap:wrap; gap:0; align-items:center; }
+    .flow-step { background:#fff; border:1px solid #e2e8f0; border-radius:8px; padding:8px 14px; font-size:.82rem; font-weight:600; color:#334155; }
+    .flow-arrow { color:#94a3b8; font-size:1.2rem; padding:0 6px; }
+  </style>
+</head>
+<body>
+  <div class="hero">
+    <h1>Gadget Seva Hub — User Manual</h1>
+    <p>Complete guide for all modules, workflows, and user roles. Use the sidebar to jump to any section.</p>
+    <div class="badge-row">
+      <span class="badge">v1.0 — April 2026</span>
+      <span class="badge">All Roles Covered</span>
+      <span class="badge">With Screenshots & Videos</span>
+    </div>
+  </div>
+  <div class="layout">
+    
+    <nav class="sidebar">
+      <h3>Getting Started</h3>
+      <a href="#getting-started">Overview & Login</a>
+      <a href="#roles">User Roles</a>
+      <h3>Core Modules</h3>
+      <a href="#dashboard">Dashboard</a>
+      <a href="#service-requests">Service Requests</a>
+      <a href="#pickup">Pickup Management</a>
+      <a href="#hub">Hub Operations</a>
+      <a href="#service-center">Service Center</a>
+      <a href="#estimates">Estimates</a>
+      <a href="#cashless">Cashless Approval</a>
+      <a href="#quality-check">Quality Check</a>
+      <a href="#delivery">Delivery</a>
+      <a href="#billing">Billing</a>
+      <h3>Claims Module</h3>
+      <a href="#claims">Claims Management</a>
+      <a href="#invoice-verification">Invoice Verification</a>
+      <a href="#insurance-submission">Insurance Submission</a>
+      <h3>Admin Modules</h3>
+      <a href="#notifications">Notifications</a>
+      <a href="#users">Users & Roles</a>
+      <a href="#reports">Reports</a>
+      <a href="#settings">Settings</a>
+      <a href="#documents">Documents</a>
+      <a href="#audit">Audit & Logs</a>
+      <h3>Videos</h3>
+      <a href="#videos">All Workflow Videos</a>
+    </nav>
+  
+    <div class="content">
+      <section id="getting-started" class="module-section">
+    <div class="module-header accent-blue">
+      <h2>🚀 Getting Started — Login</h2>
+    </div>
+    <div class="module-body">
+      
+      <p>Gadget Seva Hub (GSH) is a full-lifecycle device repair management platform. Before you can use any module, you must log in with your credentials.</p>
+      <h3>How to Log In</h3>
+      <div class="step"><div class="step-num">1</div><div class="step-body"><strong>Open your browser</strong><p>Navigate to the GSH web application URL provided by your administrator (e.g. <code>http://localhost:5173</code>).</p></div></div>
+      <div class="step"><div class="step-num">2</div><div class="step-body"><strong>Enter your credentials</strong><p>Type your assigned Username and Password in the fields shown below.</p></div></div>
+      <div class="step"><div class="step-num">3</div><div class="step-body"><strong>Click "Sign In"</strong><p>You will be redirected to the Dashboard. The top-right corner shows your username and role.</p></div></div>
+      <figure class="ss-fig">
+    <img src="screenshots/login.png" alt="GSH Login page — enter Username and Password then click Sign In" loading="lazy" style="width:100%;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+    <figcaption>GSH Login page — enter Username and Password then click Sign In</figcaption>
+  </figure>
+      <div class="vid-wrap">
+    <video controls width="100%" style="border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+      <source src="videos/wf-login.webm" type="video/webm">
+      Your browser does not support video playback.
+    </video>
+    <p class="vid-caption">🎬 How to Log In</p>
+  </div>
+      <div class="info-box">💡 <strong>Tip:</strong> If you see a "Session expired" message, your login token has timed out. Simply log in again.</div>
+    
+    </div>
+  </section>
+<section id="roles" class="module-section">
+    <div class="module-header accent-slate">
+      <h2>👥 User Roles & Credentials</h2>
+    </div>
+    <div class="module-body">
+      
+      <p>GSH uses role-based access control. Each role sees only the modules relevant to their work. The table below lists all roles and their default credentials.</p>
+      <table class="cred-table">
+        <thead><tr><th>Username</th><th>Password</th><th>Role</th><th>What They Can Do</th></tr></thead>
+        <tbody>
+          <tr><td><strong>admin</strong></td><td>Admin@123</td><td>Admin</td><td>Full access to all modules — configuration, users, reports, and all operational queues.</td></tr>
+          <tr><td><strong>backend</strong></td><td>Admin@123</td><td>Backend Team</td><td>Claim approvals, invoice verification, hub operations, pickup management, and service requests.</td></tr>
+          <tr><td><strong>support</strong></td><td>Admin@123</td><td>Customer Support</td><td>Service requests, pickup tracking, notifications, reports, and audit logs.</td></tr>
+          <tr><td><strong>finance</strong></td><td>Admin@123</td><td>Finance</td><td>Billing, payment reconciliation, refunds, invoice reports, and revenue reports.</td></tr>
+          <tr><td><strong>mse</strong></td><td>Admin@123</td><td>MSE Team</td><td>Cashless approval queues, claims, invoice verification, insurance submission.</td></tr>
+        </tbody>
+      </table>
+      <h3>Dashboard View by Role</h3>
+      <p>Each role sees a customised menu on the left-hand navigation. Below are the dashboards for each role after login.</p>
+      <div class="role-grid">
+        
+          <div class="role-card">
+            <div class="role-card-header" style="background:#0f172a;color:#f8fafc;">Admin (Full Access)</div>
+            <div class="role-card-body">
+              <figure class="ss-fig">
+    <img src="screenshots/role-admin-dashboard.png" alt="Admin (Full Access) dashboard" loading="lazy" style="width:100%;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+    <figcaption>Admin (Full Access) dashboard</figcaption>
+  </figure>
+            </div>
+          </div>
+          <div class="role-card">
+            <div class="role-card-header" style="background:#0f172a;color:#f8fafc;">Backend Team</div>
+            <div class="role-card-body">
+              <figure class="ss-fig">
+    <img src="screenshots/role-backend-dashboard.png" alt="Backend Team dashboard" loading="lazy" style="width:100%;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+    <figcaption>Backend Team dashboard</figcaption>
+  </figure>
+            </div>
+          </div>
+          <div class="role-card">
+            <div class="role-card-header" style="background:#0f172a;color:#f8fafc;">Customer Support</div>
+            <div class="role-card-body">
+              <figure class="ss-fig">
+    <img src="screenshots/role-support-dashboard.png" alt="Customer Support dashboard" loading="lazy" style="width:100%;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+    <figcaption>Customer Support dashboard</figcaption>
+  </figure>
+            </div>
+          </div>
+          <div class="role-card">
+            <div class="role-card-header" style="background:#0f172a;color:#f8fafc;">Finance</div>
+            <div class="role-card-body">
+              <figure class="ss-fig">
+    <img src="screenshots/role-finance-dashboard.png" alt="Finance dashboard" loading="lazy" style="width:100%;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+    <figcaption>Finance dashboard</figcaption>
+  </figure>
+            </div>
+          </div>
+          <div class="role-card">
+            <div class="role-card-header" style="background:#0f172a;color:#f8fafc;">MSE Team</div>
+            <div class="role-card-body">
+              <figure class="ss-fig">
+    <img src="screenshots/role-mse-dashboard.png" alt="MSE Team dashboard" loading="lazy" style="width:100%;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+    <figcaption>MSE Team dashboard</figcaption>
+  </figure>
+            </div>
+          </div>
+      </div>
+    
+    </div>
+  </section>
+<section id="dashboard" class="module-section">
+    <div class="module-header accent-blue">
+      <h2>📊 Dashboard</h2>
+    </div>
+    <div class="module-body">
+      
+      <p>The Dashboard gives a real-time snapshot of operations — KPIs, SLA breaches, recent activity, and active escalations.</p>
+      <h3>Dashboard Tabs</h3>
+      <div class="tab-row">
+        <span class="tab-chip">Overview</span>
+        <span class="tab-chip">SLA / TAT Summary</span>
+        <span class="tab-chip">Recent Activities</span>
+        <span class="tab-chip">Alerts & Escalations</span>
+      </div>
+      <h4>Overview</h4>
+      <p>Shows total open requests, pickup stats, repair counts, and billing summaries as live KPI cards.</p>
+      <figure class="ss-fig">
+    <img src="screenshots/dashboard-overview.png" alt="Dashboard – Overview KPIs" loading="lazy" style="width:100%;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+    <figcaption>Dashboard – Overview KPIs</figcaption>
+  </figure>
+      <h4>SLA / TAT Summary</h4>
+      <p>Displays turnaround time and breach monitoring for each stage of the repair workflow.</p>
+      <figure class="ss-fig">
+    <img src="screenshots/dashboard-sla.png" alt="Dashboard – SLA/TAT Summary" loading="lazy" style="width:100%;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+    <figcaption>Dashboard – SLA/TAT Summary</figcaption>
+  </figure>
+      <h4>Recent Activities</h4>
+      <p>A live feed of the latest actions across the platform — new requests, pickups, status changes.</p>
+      <figure class="ss-fig">
+    <img src="screenshots/dashboard-activities.png" alt="Dashboard – Recent Activities" loading="lazy" style="width:100%;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+    <figcaption>Dashboard – Recent Activities</figcaption>
+  </figure>
+      <h4>Alerts & Escalations</h4>
+      <p>Lists critical issues that need immediate attention — SLA breaches, failed pickups, overdue repairs.</p>
+      <figure class="ss-fig">
+    <img src="screenshots/dashboard-alerts.png" alt="Dashboard – Alerts & Escalations" loading="lazy" style="width:100%;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+    <figcaption>Dashboard – Alerts & Escalations</figcaption>
+  </figure>
+      <div class="vid-wrap">
+    <video controls width="100%" style="border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+      <source src="videos/wf-dashboard.webm" type="video/webm">
+      Your browser does not support video playback.
+    </video>
+    <p class="vid-caption">🎬 Dashboard Overview</p>
+  </div>
+    
+    </div>
+  </section>
+<section id="service-requests" class="module-section">
+    <div class="module-header accent-cyan">
+      <h2>📋 Service Requests</h2>
+    </div>
+    <div class="module-body">
+      
+      <p>All device repair jobs start as a Service Request. Every request tracks the device, customer, status, and full history from intake to closure.</p>
+      <div class="flow-diagram">
+        <strong>Service Request Flow:</strong>
+        <div class="flow-steps" style="margin-top:10px;">
+          <span class="flow-step">Create Request</span><span class="flow-arrow">→</span>
+          <span class="flow-step">Pickup Assigned</span><span class="flow-arrow">→</span>
+          <span class="flow-step">Hub Received</span><span class="flow-arrow">→</span>
+          <span class="flow-step">Service Center</span><span class="flow-arrow">→</span>
+          <span class="flow-step">QC</span><span class="flow-arrow">→</span>
+          <span class="flow-step">Delivery</span><span class="flow-arrow">→</span>
+          <span class="flow-step">Closed</span>
+        </div>
+      </div>
+      <h3>How to Create a Service Request</h3>
+      <div class="step"><div class="step-num">1</div><div class="step-body"><strong>Go to Service Requests → Create Request</strong><p>Click the "Service Requests" tab in the top navigation, then select "Create Request" from the sub-navigation.</p></div></div>
+      <div class="step"><div class="step-num">2</div><div class="step-body"><strong>Fill in Customer Details</strong><p>Enter the customer name, mobile number, and address. All fields marked * are mandatory.</p></div></div>
+      <div class="step"><div class="step-num">3</div><div class="step-body"><strong>Fill in Device Details</strong><p>Select device category, brand, and model. Enter the IMEI number if available.</p></div></div>
+      <div class="step"><div class="step-num">4</div><div class="step-body"><strong>Select Request Type</strong><p>Choose between Normal Repair or Cashless Claim.</p></div></div>
+      <div class="step"><div class="step-num">5</div><div class="step-body"><strong>Submit</strong><p>Click "Create Service Request". A unique request number (e.g. GSH-20260412-0001) is generated.</p></div></div>
+      <figure class="ss-fig">
+    <img src="screenshots/sr-create.png" alt="Create Service Request form" loading="lazy" style="width:100%;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+    <figcaption>Create Service Request form</figcaption>
+  </figure>
+      <h3>All Requests Queue</h3>
+      <p>Shows every request in the system regardless of status. Use the search and filter options to find specific requests.</p>
+      <figure class="ss-fig">
+    <img src="screenshots/sr-all.png" alt="All Service Requests list" loading="lazy" style="width:100%;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+    <figcaption>All Service Requests list</figcaption>
+  </figure>
+      <h3>Other Tabs</h3>
+      <div class="ss-grid">
+        <figure class="ss-fig">
+    <img src="screenshots/sr-open.png" alt="Open Requests — active, not yet completed" loading="lazy" style="width:100%;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+    <figcaption>Open Requests — active, not yet completed</figcaption>
+  </figure>
+        <figure class="ss-fig">
+    <img src="screenshots/sr-inprogress.png" alt="In Progress — currently being worked on" loading="lazy" style="width:100%;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+    <figcaption>In Progress — currently being worked on</figcaption>
+  </figure>
+      </div>
+      <figure class="ss-fig">
+    <img src="screenshots/sr-closed.png" alt="Closed Requests — completed and resolved" loading="lazy" style="width:100%;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+    <figcaption>Closed Requests — completed and resolved</figcaption>
+  </figure>
+      <div class="vid-wrap">
+    <video controls width="100%" style="border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+      <source src="videos/wf-service-request.webm" type="video/webm">
+      Your browser does not support video playback.
+    </video>
+    <p class="vid-caption">🎬 Create a Service Request</p>
+  </div>
+    
+    </div>
+  </section>
+<section id="pickup" class="module-section">
+    <div class="module-header accent-teal">
+      <h2>🚗 Pickup Management</h2>
+    </div>
+    <div class="module-body">
+      
+      <p>Manages the doorstep pickup of devices from customers. A runner (field agent) is assigned to each pickup.</p>
+      <div class="flow-diagram">
+        <strong>Pickup Flow:</strong>
+        <div class="flow-steps" style="margin-top:10px;">
+          <span class="flow-step">Assign Pickup</span><span class="flow-arrow">→</span>
+          <span class="flow-step">Runner Accepts</span><span class="flow-arrow">→</span>
+          <span class="flow-step">Device Picked Up</span><span class="flow-arrow">→</span>
+          <span class="flow-step">Delivered to Hub</span>
+        </div>
+      </div>
+      <h3>Pickup Dashboard</h3>
+      <p>Summary cards showing how many pickups are in each stage.</p>
+      <figure class="ss-fig">
+    <img src="screenshots/pickup-dashboard.png" alt="Pickup Management Dashboard" loading="lazy" style="width:100%;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+    <figcaption>Pickup Management Dashboard</figcaption>
+  </figure>
+      <h3>Runner Onboarding</h3>
+      <p>Admin / Backend staff can register a new pickup runner with their name, mobile number, and assigned zone. Once onboarded, the runner receives an app link via SMS to accept pickups from their mobile.</p>
+      <figure class="ss-fig">
+    <img src="screenshots/pickup-runner-onboarding.png" alt="Runner Onboarding form" loading="lazy" style="width:100%;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+    <figcaption>Runner Onboarding form</figcaption>
+  </figure>
+      <h3>Assign Pickup</h3>
+      <p>Shows all requests ready for doorstep pickup. Click a request card and select an available runner to assign the job.</p>
+      <div class="step"><div class="step-num">1</div><div class="step-body"><strong>Open Pickup Management → Assign Pickup</strong></div></div>
+      <div class="step"><div class="step-num">2</div><div class="step-body"><strong>Find the request card</strong><p>Use the search or scroll to locate the request number.</p></div></div>
+      <div class="step"><div class="step-num">3</div><div class="step-body"><strong>Click "Assign Runner"</strong><p>A modal appears. Select the runner from the dropdown and confirm.</p></div></div>
+      <figure class="ss-fig">
+    <img src="screenshots/pickup-assign.png" alt="Assign Pickup — select runner for the request" loading="lazy" style="width:100%;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+    <figcaption>Assign Pickup — select runner for the request</figcaption>
+  </figure>
+      <h3>Pickup Queues</h3>
+      <div class="ss-grid">
+        <figure class="ss-fig">
+    <img src="screenshots/pickup-pending.png" alt="Pending Pickup — awaiting runner collection" loading="lazy" style="width:100%;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+    <figcaption>Pending Pickup — awaiting runner collection</figcaption>
+  </figure>
+        <figure class="ss-fig">
+    <img src="screenshots/pickup-pickedup.png" alt="Picked Up Devices — collected, en route to hub" loading="lazy" style="width:100%;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+    <figcaption>Picked Up Devices — collected, en route to hub</figcaption>
+  </figure>
+      </div>
+      <div class="ss-grid">
+        <figure class="ss-fig">
+    <img src="screenshots/pickup-failed.png" alt="Pickup Failed Cases — attempt failed or customer absent" loading="lazy" style="width:100%;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+    <figcaption>Pickup Failed Cases — attempt failed or customer absent</figcaption>
+  </figure>
+        <figure class="ss-fig">
+    <img src="screenshots/pickup-history.png" alt="Pickup History — all completed pickup records" loading="lazy" style="width:100%;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+    <figcaption>Pickup History — all completed pickup records</figcaption>
+  </figure>
+      </div>
+      <div class="vid-wrap">
+    <video controls width="100%" style="border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+      <source src="videos/wf-pickup.webm" type="video/webm">
+      Your browser does not support video playback.
+    </video>
+    <p class="vid-caption">🎬 Pickup Management Workflow</p>
+  </div>
+    
+    </div>
+  </section>
+<section id="hub" class="module-section">
+    <div class="module-header accent-gold">
+      <h2>🏭 Hub Operations</h2>
+    </div>
+    <div class="module-body">
+      
+      <p>The Hub is the central warehouse that receives devices from runners, verifies them, and dispatches them to the service center.</p>
+      <div class="flow-diagram">
+        <strong>Hub Flow:</strong>
+        <div class="flow-steps" style="margin-top:10px;">
+          <span class="flow-step">Device Received</span><span class="flow-arrow">→</span>
+          <span class="flow-step">IMEI Verification</span><span class="flow-arrow">→</span>
+          <span class="flow-step">Inward Register</span><span class="flow-arrow">→</span>
+          <span class="flow-step">Send to Service Center</span>
+        </div>
+      </div>
+      <h3>Device Received at Hub</h3>
+      <p>When a runner drops off a device, the hub operator scans its QR/IMEI to mark it as received.</p>
+      <div class="step"><div class="step-num">1</div><div class="step-body"><strong>Open Hub Operations → Device Received at Hub</strong></div></div>
+      <div class="step"><div class="step-num">2</div><div class="step-body"><strong>Scan or enter the device IMEI or request number</strong></div></div>
+      <div class="step"><div class="step-num">3</div><div class="step-body"><strong>Confirm receipt</strong><p>The device moves to Pending Verification.</p></div></div>
+      <figure class="ss-fig">
+    <img src="screenshots/hub-received.png" alt="Device Received at Hub queue" loading="lazy" style="width:100%;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+    <figcaption>Device Received at Hub queue</figcaption>
+  </figure>
+      <h3>Pending Verification</h3>
+      <p>Each received device must be verified — IMEI checked, package condition assessed, photos uploaded.</p>
+      <figure class="ss-fig">
+    <img src="screenshots/hub-verification.png" alt="Hub – Pending Verification queue" loading="lazy" style="width:100%;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+    <figcaption>Hub – Pending Verification queue</figcaption>
+  </figure>
+      <h3>Send to Service Center</h3>
+      <p>After verification, devices are batched and dispatched to the repair service center.</p>
+      <figure class="ss-fig">
+    <img src="screenshots/hub-send-sc.png" alt="Hub – Send to Service Center" loading="lazy" style="width:100%;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+    <figcaption>Hub – Send to Service Center</figcaption>
+  </figure>
+      <h3>Inward Register & Inventory</h3>
+      <div class="ss-grid">
+        <figure class="ss-fig">
+    <img src="screenshots/hub-inward.png" alt="Hub Inward Register — full log of received devices" loading="lazy" style="width:100%;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+    <figcaption>Hub Inward Register — full log of received devices</figcaption>
+  </figure>
+        <figure class="ss-fig">
+    <img src="screenshots/hub-inventory.png" alt="Hub Inventory — devices currently at the hub" loading="lazy" style="width:100%;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+    <figcaption>Hub Inventory — devices currently at the hub</figcaption>
+  </figure>
+      </div>
+      <div class="vid-wrap">
+    <video controls width="100%" style="border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+      <source src="videos/wf-hub-operations.webm" type="video/webm">
+      Your browser does not support video playback.
+    </video>
+    <p class="vid-caption">🎬 Hub Operations Workflow</p>
+  </div>
+    
+    </div>
+  </section>
+<section id="service-center" class="module-section">
+    <div class="module-header accent-orange">
+      <h2>🔧 Service Center</h2>
+    </div>
+    <div class="module-body">
+      
+      <p>The Service Center handles physical inspection, repair, and total-loss decisions for all devices.</p>
+      <div class="flow-diagram">
+        <strong>Repair Flow:</strong>
+        <div class="flow-steps" style="margin-top:10px;">
+          <span class="flow-step">Inspection</span><span class="flow-arrow">→</span>
+          <span class="flow-step">Estimate</span><span class="flow-arrow">→</span>
+          <span class="flow-step">Customer Approval</span><span class="flow-arrow">→</span>
+          <span class="flow-step">Repair</span><span class="flow-arrow">→</span>
+          <span class="flow-step">QC</span>
+        </div>
+      </div>
+      <h3>Devices Under Inspection</h3>
+      <p>Newly arrived devices waiting for technician diagnosis.</p>
+      <figure class="ss-fig">
+    <img src="screenshots/sc-inspection.png" alt="Devices Under Inspection queue" loading="lazy" style="width:100%;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+    <figcaption>Devices Under Inspection queue</figcaption>
+  </figure>
+      <h3>Estimate Pending & Submitted</h3>
+      <p>After diagnosis the technician creates a cost estimate. "Estimate Pending" = estimate not yet created. "Estimate Submitted" = submitted, awaiting customer decision.</p>
+      <div class="ss-grid">
+        <figure class="ss-fig">
+    <img src="screenshots/sc-estimate-pending.png" alt="Estimate Pending — no estimate yet" loading="lazy" style="width:100%;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+    <figcaption>Estimate Pending — no estimate yet</figcaption>
+  </figure>
+        <figure class="ss-fig">
+    <img src="screenshots/sc-estimate-submitted.png" alt="Estimate Submitted — waiting for customer" loading="lazy" style="width:100%;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+    <figcaption>Estimate Submitted — waiting for customer</figcaption>
+  </figure>
+      </div>
+      <h3>Under Repair & Completed</h3>
+      <div class="ss-grid">
+        <figure class="ss-fig">
+    <img src="screenshots/sc-under-repair.png" alt="Under Repair — active repair in progress" loading="lazy" style="width:100%;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+    <figcaption>Under Repair — active repair in progress</figcaption>
+  </figure>
+        <figure class="ss-fig">
+    <img src="screenshots/sc-repair-completed.png" alt="Repair Completed — ready for QC" loading="lazy" style="width:100%;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+    <figcaption>Repair Completed — ready for QC</figcaption>
+  </figure>
+      </div>
+      <h3>Total Loss Cases</h3>
+      <p>Devices where repair cost exceeds device value are marked as Total Loss and written off.</p>
+      <figure class="ss-fig">
+    <img src="screenshots/sc-total-loss.png" alt="Total Loss Cases" loading="lazy" style="width:100%;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+    <figcaption>Total Loss Cases</figcaption>
+  </figure>
+      <div class="vid-wrap">
+    <video controls width="100%" style="border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+      <source src="videos/wf-service-center.webm" type="video/webm">
+      Your browser does not support video playback.
+    </video>
+    <p class="vid-caption">🎬 Service Center & Repair Flow</p>
+  </div>
+    
+    </div>
+  </section>
+<section id="estimates" class="module-section">
+    <div class="module-header accent-purple">
+      <h2>💰 Estimates</h2>
+    </div>
+    <div class="module-body">
+      
+      <p>Estimates are cost quotations sent to customers for approval. A customer must approve an estimate before repair begins.</p>
+      <h3>Estimate Tabs</h3>
+      <div class="tab-row">
+        <span class="tab-chip">New Estimates</span>
+        <span class="tab-chip">Awaiting Customer Approval</span>
+        <span class="tab-chip">Approved Estimates</span>
+        <span class="tab-chip">Rejected Estimates</span>
+        <span class="tab-chip">Estimate History</span>
+      </div>
+      <h3>New Estimates</h3>
+      <p>Fresh estimates submitted by the service center, ready for internal review before sending to the customer.</p>
+      <figure class="ss-fig">
+    <img src="screenshots/est-new.png" alt="New Estimates queue" loading="lazy" style="width:100%;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+    <figcaption>New Estimates queue</figcaption>
+  </figure>
+      <h3>Awaiting Customer Approval</h3>
+      <p>Estimates that have been shared with the customer. The customer approves or rejects via a self-service portal or customer support call.</p>
+      <figure class="ss-fig">
+    <img src="screenshots/est-awaiting.png" alt="Awaiting Customer Approval" loading="lazy" style="width:100%;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+    <figcaption>Awaiting Customer Approval</figcaption>
+  </figure>
+      <h3>Approved & Rejected</h3>
+      <div class="ss-grid">
+        <figure class="ss-fig">
+    <img src="screenshots/est-approved.png" alt="Approved Estimates — repair authorised" loading="lazy" style="width:100%;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+    <figcaption>Approved Estimates — repair authorised</figcaption>
+  </figure>
+        <figure class="ss-fig">
+    <img src="screenshots/est-rejected.png" alt="Rejected Estimates — customer declined" loading="lazy" style="width:100%;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+    <figcaption>Rejected Estimates — customer declined</figcaption>
+  </figure>
+      </div>
+      <figure class="ss-fig">
+    <img src="screenshots/est-history.png" alt="Estimate History — all past estimates" loading="lazy" style="width:100%;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+    <figcaption>Estimate History — all past estimates</figcaption>
+  </figure>
+    
+    </div>
+  </section>
+<section id="cashless" class="module-section">
+    <div class="module-header accent-purple">
+      <h2>🛡️ Cashless Approval</h2>
+    </div>
+    <div class="module-body">
+      
+      <p>Cashless cases are insurance-backed repairs where the customer pays nothing upfront. This module handles the photo evidence and approval workflow before the repair begins.</p>
+      <h3>Approval Queue</h3>
+      <p>Cases with all required photos uploaded, awaiting backend team review and approval.</p>
+      <div class="step"><div class="step-num">1</div><div class="step-body"><strong>Open Cashless → Approval Queue</strong></div></div>
+      <div class="step"><div class="step-num">2</div><div class="step-body"><strong>Review the case details and uploaded photos</strong><p>Each case requires 6 device photos + 4 damage photos.</p></div></div>
+      <div class="step"><div class="step-num">3</div><div class="step-body"><strong>Click Approve or Reject</strong><p>Approved cases move to repair. Rejected cases are sent back to the customer for photo re-upload.</p></div></div>
+      <figure class="ss-fig">
+    <img src="screenshots/cashless-approval.png" alt="Cashless Approval Queue" loading="lazy" style="width:100%;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+    <figcaption>Cashless Approval Queue</figcaption>
+  </figure>
+      <h3>Pending Photos</h3>
+      <p>Cases where the customer has not yet uploaded all required evidence photos.</p>
+      <figure class="ss-fig">
+    <img src="screenshots/cashless-pending-photos.png" alt="Cashless – Pending Photos" loading="lazy" style="width:100%;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+    <figcaption>Cashless – Pending Photos</figcaption>
+  </figure>
+      <h3>Approved Cases</h3>
+      <p>Cases fully approved and in the repair workflow.</p>
+      <figure class="ss-fig">
+    <img src="screenshots/cashless-approved.png" alt="Cashless – Approved Cases" loading="lazy" style="width:100%;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+    <figcaption>Cashless – Approved Cases</figcaption>
+  </figure>
+    
+    </div>
+  </section>
+<section id="quality-check" class="module-section">
+    <div class="module-header accent-rose">
+      <h2>✅ Quality Check</h2>
+    </div>
+    <div class="module-body">
+      
+      <p>After repair is complete, every device goes through Quality Check (QC) before it is dispatched back to the customer.</p>
+      <div class="flow-diagram">
+        <strong>QC Flow:</strong>
+        <div class="flow-steps" style="margin-top:10px;">
+          <span class="flow-step">Repair Completed</span><span class="flow-arrow">→</span>
+          <span class="flow-step">QC Inspection</span><span class="flow-arrow">→</span>
+          <span class="flow-step">Pass → Dispatch</span>
+          <span class="flow-arrow"> | </span>
+          <span class="flow-step">Fail → Rework</span>
+        </div>
+      </div>
+      <h3>Pending QC</h3>
+      <p>Devices whose repair is complete and are waiting for a QC technician to inspect them.</p>
+      <figure class="ss-fig">
+    <img src="screenshots/qc-pending.png" alt="Pending QC queue" loading="lazy" style="width:100%;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+    <figcaption>Pending QC queue</figcaption>
+  </figure>
+      <h3>QC Results</h3>
+      <div class="ss-grid">
+        <figure class="ss-fig">
+    <img src="screenshots/qc-passed.png" alt="QC Passed — cleared for delivery" loading="lazy" style="width:100%;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+    <figcaption>QC Passed — cleared for delivery</figcaption>
+  </figure>
+        <figure class="ss-fig">
+    <img src="screenshots/qc-failed.png" alt="QC Failed — sent back for rework" loading="lazy" style="width:100%;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+    <figcaption>QC Failed — sent back for rework</figcaption>
+  </figure>
+      </div>
+      <figure class="ss-fig">
+    <img src="screenshots/qc-rework.png" alt="Rework Required — second repair attempt in progress" loading="lazy" style="width:100%;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+    <figcaption>Rework Required — second repair attempt in progress</figcaption>
+  </figure>
+    
+    </div>
+  </section>
+<section id="delivery" class="module-section">
+    <div class="module-header accent-gold">
+      <h2>🚚 Delivery</h2>
+    </div>
+    <div class="module-body">
+      
+      <p>After QC passes, devices are dispatched back to the customer through the Delivery module.</p>
+      <div class="flow-diagram">
+        <strong>Delivery Flow:</strong>
+        <div class="flow-steps" style="margin-top:10px;">
+          <span class="flow-step">Ready for Dispatch</span><span class="flow-arrow">→</span>
+          <span class="flow-step">Assign Agent</span><span class="flow-arrow">→</span>
+          <span class="flow-step">Out for Delivery</span><span class="flow-arrow">→</span>
+          <span class="flow-step">Delivered (OTP)</span>
+        </div>
+      </div>
+      <h3>Assign Delivery</h3>
+      <p>Select a delivery agent for devices that are ready to be dispatched.</p>
+      <figure class="ss-fig">
+    <img src="screenshots/delivery-assign.png" alt="Assign Delivery page" loading="lazy" style="width:100%;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+    <figcaption>Assign Delivery page</figcaption>
+  </figure>
+      <h3>Delivery Queues</h3>
+      <div class="ss-grid">
+        <figure class="ss-fig">
+    <img src="screenshots/delivery-dispatch.png" alt="Ready for Dispatch" loading="lazy" style="width:100%;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+    <figcaption>Ready for Dispatch</figcaption>
+  </figure>
+        <figure class="ss-fig">
+    <img src="screenshots/delivery-out.png" alt="Out for Delivery — in transit" loading="lazy" style="width:100%;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+    <figcaption>Out for Delivery — in transit</figcaption>
+  </figure>
+      </div>
+      <div class="ss-grid">
+        <figure class="ss-fig">
+    <img src="screenshots/delivery-delivered.png" alt="Delivered — OTP confirmed" loading="lazy" style="width:100%;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+    <figcaption>Delivered — OTP confirmed</figcaption>
+  </figure>
+        <figure class="ss-fig">
+    <img src="screenshots/delivery-failed.png" alt="Delivery Failed — attempt unsuccessful" loading="lazy" style="width:100%;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+    <figcaption>Delivery Failed — attempt unsuccessful</figcaption>
+  </figure>
+      </div>
+      <figure class="ss-fig">
+    <img src="screenshots/delivery-history.png" alt="Delivery History — all completed deliveries" loading="lazy" style="width:100%;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+    <figcaption>Delivery History — all completed deliveries</figcaption>
+  </figure>
+      <div class="vid-wrap">
+    <video controls width="100%" style="border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+      <source src="videos/wf-quality-delivery.webm" type="video/webm">
+      Your browser does not support video playback.
+    </video>
+    <p class="vid-caption">🎬 Quality Check & Delivery</p>
+  </div>
+    
+    </div>
+  </section>
+<section id="billing" class="module-section">
+    <div class="module-header accent-red">
+      <h2>🧾 Billing</h2>
+    </div>
+    <div class="module-body">
+      
+      <p>The Billing module manages invoice generation, payment collection, reconciliation, and refunds.</p>
+      <div class="flow-diagram">
+        <strong>Billing Flow:</strong>
+        <div class="flow-steps" style="margin-top:10px;">
+          <span class="flow-step">Generate Invoice</span><span class="flow-arrow">→</span>
+          <span class="flow-step">Send to Customer</span><span class="flow-arrow">→</span>
+          <span class="flow-step">Payment Received</span><span class="flow-arrow">→</span>
+          <span class="flow-step">Reconcile</span><span class="flow-arrow">→</span>
+          <span class="flow-step">Close</span>
+        </div>
+      </div>
+      <h3>Generate Invoice</h3>
+      <p>Once a repaired device is delivered, a GST-compliant invoice is created for the customer.</p>
+      <div class="step"><div class="step-num">1</div><div class="step-body"><strong>Open Billing → Generate Invoice</strong></div></div>
+      <div class="step"><div class="step-num">2</div><div class="step-body"><strong>Search for the service request</strong></div></div>
+      <div class="step"><div class="step-num">3</div><div class="step-body"><strong>Review line items and totals</strong><p>Parts, labour, GST are auto-calculated.</p></div></div>
+      <div class="step"><div class="step-num">4</div><div class="step-body"><strong>Click Generate</strong><p>Invoice PDF is created and can be sent to the customer.</p></div></div>
+      <figure class="ss-fig">
+    <img src="screenshots/billing-invoice.png" alt="Generate Invoice page" loading="lazy" style="width:100%;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+    <figcaption>Generate Invoice page</figcaption>
+  </figure>
+      <h3>Payment Reconciliation</h3>
+      <p>Records UTR (payment reference) numbers against invoices to confirm payments received from customers.</p>
+      <figure class="ss-fig">
+    <img src="screenshots/billing-reconcile.png" alt="Payment Reconciliation — match UTR to invoice" loading="lazy" style="width:100%;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+    <figcaption>Payment Reconciliation — match UTR to invoice</figcaption>
+  </figure>
+      <h3>Refund Cases</h3>
+      <p>Manages partial or full refunds for cases where repair was unsuccessful or customer is due a credit.</p>
+      <div class="ss-grid">
+        <figure class="ss-fig">
+    <img src="screenshots/billing-pending.png" alt="Pending Invoices" loading="lazy" style="width:100%;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+    <figcaption>Pending Invoices</figcaption>
+  </figure>
+        <figure class="ss-fig">
+    <img src="screenshots/billing-refund.png" alt="Refund Cases" loading="lazy" style="width:100%;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+    <figcaption>Refund Cases</figcaption>
+  </figure>
+      </div>
+      <div class="vid-wrap">
+    <video controls width="100%" style="border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+      <source src="videos/wf-billing.webm" type="video/webm">
+      Your browser does not support video playback.
+    </video>
+    <p class="vid-caption">🎬 Billing & Payment Flow</p>
+  </div>
+    
+    </div>
+  </section>
+<section id="claims" class="module-section">
+    <div class="module-header accent-teal">
+      <h2>📑 Claims Management (Cashless Claims)</h2>
+    </div>
+    <div class="module-body">
+      
+      <p>The Claims module manages end-to-end cashless insurance claims — from initial registration through approval, invoice submission, and insurance payout.</p>
+      <div class="flow-diagram">
+        <strong>Full Claim Lifecycle:</strong>
+        <div class="flow-steps" style="margin-top:10px;">
+          <span class="flow-step">Claim Registered</span><span class="flow-arrow">→</span>
+          <span class="flow-step">Docs Verified</span><span class="flow-arrow">→</span>
+          <span class="flow-step">Approved</span><span class="flow-arrow">→</span>
+          <span class="flow-step">Repair + Invoice</span><span class="flow-arrow">→</span>
+          <span class="flow-step">Insurance</span><span class="flow-arrow">→</span>
+          <span class="flow-step">Closed</span>
+        </div>
+      </div>
+      <div class="warn-box">⚠️ <strong>Role required:</strong> Claims are accessible to Admin, Backend Team, Customer Support, and MSE Team.</div>
+      <h3>All Claims</h3>
+      <p>Master list of every cashless claim in the system. Use the tabs or filter dropdown to narrow by status.</p>
+      <figure class="ss-fig">
+    <img src="screenshots/claims-all.png" alt="Claims Management — All Claims list" loading="lazy" style="width:100%;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+    <figcaption>Claims Management — All Claims list</figcaption>
+  </figure>
+      <h3>Claims Sub-Tabs</h3>
+      <div class="tab-row">
+        <span class="tab-chip">All Claims</span>
+        <span class="tab-chip">Approval Pending</span>
+        <span class="tab-chip">Approved Claims</span>
+        <span class="tab-chip">Rejected Claims</span>
+        <span class="tab-chip">Re-upload Pending</span>
+        <span class="tab-chip">Claim History</span>
+      </div>
+      <h3>Approval Pending</h3>
+      <p>Claims submitted by customers awaiting backend team document verification and approval.</p>
+      <div class="step"><div class="step-num">1</div><div class="step-body"><strong>Click the "Approval Pending" tab</strong><p>Lists all claims in APPROVAL_PENDING status.</p></div></div>
+      <div class="step"><div class="step-num">2</div><div class="step-body"><strong>Open a claim by clicking "View Details"</strong><p>Review the submitted documents, IMEI, and claim details.</p></div></div>
+      <div class="step"><div class="step-num">3</div><div class="step-body"><strong>Approve or Reject</strong><p>Click Approve (claim moves to APPROVED) or Reject (enter reason, claim moves to REJECTED).</p></div></div>
+      <figure class="ss-fig">
+    <img src="screenshots/claims-approval-pending.png" alt="Claims — Approval Pending tab" loading="lazy" style="width:100%;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+    <figcaption>Claims — Approval Pending tab</figcaption>
+  </figure>
+      <h3>Approved & Rejected</h3>
+      <div class="ss-grid">
+        <figure class="ss-fig">
+    <img src="screenshots/claims-approved.png" alt="Approved Claims — cleared for repair" loading="lazy" style="width:100%;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+    <figcaption>Approved Claims — cleared for repair</figcaption>
+  </figure>
+        <figure class="ss-fig">
+    <img src="screenshots/claims-rejected.png" alt="Rejected Claims — invalid or insufficient docs" loading="lazy" style="width:100%;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+    <figcaption>Rejected Claims — invalid or insufficient docs</figcaption>
+  </figure>
+      </div>
+      <h3>Re-upload Pending</h3>
+      <p>Claims where the customer needs to re-submit photos or documents. The system tracks the number of re-upload attempts.</p>
+      <figure class="ss-fig">
+    <img src="screenshots/claims-reupload.png" alt="Re-upload Pending" loading="lazy" style="width:100%;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+    <figcaption>Re-upload Pending</figcaption>
+  </figure>
+      <figure class="ss-fig">
+    <img src="screenshots/claims-history.png" alt="Claim History — all closed/completed claims" loading="lazy" style="width:100%;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+    <figcaption>Claim History — all closed/completed claims</figcaption>
+  </figure>
+      <div class="vid-wrap">
+    <video controls width="100%" style="border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+      <source src="videos/wf-cashless-claim.webm" type="video/webm">
+      Your browser does not support video playback.
+    </video>
+    <p class="vid-caption">🎬 Cashless Claim Lifecycle</p>
+  </div>
+    
+    </div>
+  </section>
+<section id="invoice-verification" class="module-section">
+    <div class="module-header accent-gold">
+      <h2>🧮 Invoice Verification</h2>
+    </div>
+    <div class="module-body">
+      
+      <p>After a cashless repair is complete, the service center submits an invoice. This module is used to verify and approve or reject that invoice before it is sent to the insurance company.</p>
+      <div class="flow-diagram">
+        <strong>Invoice Verification Flow:</strong>
+        <div class="flow-steps" style="margin-top:10px;">
+          <span class="flow-step">Invoice Submitted</span><span class="flow-arrow">→</span>
+          <span class="flow-step">Backend Reviews</span><span class="flow-arrow">→</span>
+          <span class="flow-step">Approve / Reject</span><span class="flow-arrow">→</span>
+          <span class="flow-step">Ready for Insurance</span>
+        </div>
+      </div>
+      <h3>Invoice Queue</h3>
+      <p>All invoices submitted by the service center and waiting for backend verification.</p>
+      <div class="step"><div class="step-num">1</div><div class="step-body"><strong>Open Invoice Verification → Invoice Queue</strong></div></div>
+      <div class="step"><div class="step-num">2</div><div class="step-body"><strong>Click on a claim to view the invoice</strong><p>Review the invoice amount, line items, and uploaded invoice document.</p></div></div>
+      <div class="step"><div class="step-num">3</div><div class="step-body"><strong>Approve the invoice</strong><p>Enter the approved amount. If the amount exceeds the threshold, admin approval is required.</p></div></div>
+      <div class="step"><div class="step-num">4</div><div class="step-body"><strong>Or reject with reason</strong><p>The service center will need to re-upload a corrected invoice.</p></div></div>
+      <figure class="ss-fig">
+    <img src="screenshots/invoice-queue.png" alt="Invoice Verification Queue" loading="lazy" style="width:100%;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+    <figcaption>Invoice Verification Queue</figcaption>
+  </figure>
+      <div class="ss-grid">
+        <figure class="ss-fig">
+    <img src="screenshots/invoice-approved.png" alt="Invoice Approved — ready for insurance submission" loading="lazy" style="width:100%;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+    <figcaption>Invoice Approved — ready for insurance submission</figcaption>
+  </figure>
+        <figure class="ss-fig">
+    <img src="screenshots/invoice-rejected.png" alt="Invoice Rejected — awaiting corrected invoice" loading="lazy" style="width:100%;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+    <figcaption>Invoice Rejected — awaiting corrected invoice</figcaption>
+  </figure>
+      </div>
+    
+    </div>
+  </section>
+<section id="insurance-submission" class="module-section">
+    <div class="module-header accent-rose">
+      <h2>🏦 Insurance Submission</h2>
+    </div>
+    <div class="module-body">
+      
+      <p>The final step in the cashless claim lifecycle. Once an invoice is verified and approved, the claim package is submitted to the insurance company for reimbursement.</p>
+      <div class="flow-diagram">
+        <strong>Insurance Submission Flow:</strong>
+        <div class="flow-steps" style="margin-top:10px;">
+          <span class="flow-step">Invoice Approved</span><span class="flow-arrow">→</span>
+          <span class="flow-step">Package Ready</span><span class="flow-arrow">→</span>
+          <span class="flow-step">Submit to Insurer</span><span class="flow-arrow">→</span>
+          <span class="flow-step">Claim Closed</span>
+        </div>
+      </div>
+      <div class="warn-box">⚠️ <strong>Role required:</strong> Insurance Submission is accessible to Admin, Backend Team, and MSE Team only.</div>
+      <h3>Ready for Insurance</h3>
+      <p>Claims whose invoices have been approved and are ready to be packaged and submitted to the insurance company.</p>
+      <div class="step"><div class="step-num">1</div><div class="step-body"><strong>Open Insurance Submission → Ready for Insurance</strong></div></div>
+      <div class="step"><div class="step-num">2</div><div class="step-body"><strong>Review the claim summary</strong><p>Check the approved amount, documents, and claim number.</p></div></div>
+      <div class="step"><div class="step-num">3</div><div class="step-body"><strong>Click "Submit to Insurance"</strong><p>Add submission notes and confirm. The claim status changes to SUBMITTED_TO_INSURANCE.</p></div></div>
+      <figure class="ss-fig">
+    <img src="screenshots/insurance-ready.png" alt="Insurance Submission — Ready for Insurance queue" loading="lazy" style="width:100%;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+    <figcaption>Insurance Submission — Ready for Insurance queue</figcaption>
+  </figure>
+      <figure class="ss-fig">
+    <img src="screenshots/insurance-submitted.png" alt="Submitted to Insurance — claims sent to insurer" loading="lazy" style="width:100%;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+    <figcaption>Submitted to Insurance — claims sent to insurer</figcaption>
+  </figure>
+    
+    </div>
+  </section>
+<section id="notifications" class="module-section">
+    <div class="module-header accent-teal">
+      <h2>🔔 Notifications</h2>
+    </div>
+    <div class="module-body">
+      
+      <p>Tracks all SMS and email messages sent to customers and staff. Use this module to diagnose delivery failures and monitor communication logs.</p>
+      <div class="ss-grid">
+        <figure class="ss-fig">
+    <img src="screenshots/notif-sms.png" alt="SMS Logs — all SMS messages sent" loading="lazy" style="width:100%;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+    <figcaption>SMS Logs — all SMS messages sent</figcaption>
+  </figure>
+        <figure class="ss-fig">
+    <img src="screenshots/notif-email.png" alt="Email Logs — all email messages sent" loading="lazy" style="width:100%;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+    <figcaption>Email Logs — all email messages sent</figcaption>
+  </figure>
+      </div>
+      <figure class="ss-fig">
+    <img src="screenshots/notif-failed.png" alt="Failed Notifications — messages that failed to deliver" loading="lazy" style="width:100%;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+    <figcaption>Failed Notifications — messages that failed to deliver</figcaption>
+  </figure>
+      <h3>When to Use</h3>
+      <ul>
+        <li>Customer says they didn't receive an OTP or notification — check SMS Logs for their number.</li>
+        <li>Investigate delivery failures in the Failed Notifications tab.</li>
+        <li>Audit all communications for a specific service request.</li>
+      </ul>
+    
+    </div>
+  </section>
+<section id="users" class="module-section">
+    <div class="module-header accent-blue">
+      <h2>👤 Users & Roles</h2>
+    </div>
+    <div class="module-body">
+      
+      <p>Manage all platform users — admin staff, field agents, delivery executives, and customers. Only Admins have access to this module.</p>
+      <div class="ss-grid">
+        <figure class="ss-fig">
+    <img src="screenshots/users-admin.png" alt="Admin Users — platform staff accounts" loading="lazy" style="width:100%;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+    <figcaption>Admin Users — platform staff accounts</figcaption>
+  </figure>
+        <figure class="ss-fig">
+    <img src="screenshots/users-customers.png" alt="Customers — registered customer directory" loading="lazy" style="width:100%;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+    <figcaption>Customers — registered customer directory</figcaption>
+  </figure>
+      </div>
+      <figure class="ss-fig">
+    <img src="screenshots/users-roles.png" alt="Roles & Permissions — access control matrix" loading="lazy" style="width:100%;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+    <figcaption>Roles & Permissions — access control matrix</figcaption>
+  </figure>
+      <h3>How to Create a New User</h3>
+      <div class="step"><div class="step-num">1</div><div class="step-body"><strong>Go to Users → select the appropriate user type</strong><p>e.g. Admin Users for staff, Customers for customer records.</p></div></div>
+      <div class="step"><div class="step-num">2</div><div class="step-body"><strong>Click "Add User" or "Invite"</strong><p>Fill in name, email/phone, and role.</p></div></div>
+      <div class="step"><div class="step-num">3</div><div class="step-body"><strong>Set a temporary password</strong><p>The user must change it on first login.</p></div></div>
+    
+    </div>
+  </section>
+<section id="reports" class="module-section">
+    <div class="module-header accent-gold">
+      <h2>📈 Reports</h2>
+    </div>
+    <div class="module-body">
+      
+      <p>Generate operational and financial reports for management review and client communication.</p>
+      <div class="ss-grid">
+        <figure class="ss-fig">
+    <img src="screenshots/reports-request.png" alt="Request Report — intake and funnel analytics" loading="lazy" style="width:100%;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+    <figcaption>Request Report — intake and funnel analytics</figcaption>
+  </figure>
+        <figure class="ss-fig">
+    <img src="screenshots/reports-pickup.png" alt="Pickup Report — field productivity" loading="lazy" style="width:100%;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+    <figcaption>Pickup Report — field productivity</figcaption>
+  </figure>
+      </div>
+      <figure class="ss-fig">
+    <img src="screenshots/reports-revenue.png" alt="Revenue Report — billing and collections (Finance role)" loading="lazy" style="width:100%;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+    <figcaption>Revenue Report — billing and collections (Finance role)</figcaption>
+  </figure>
+      <h3>Available Reports</h3>
+      <ul>
+        <li><strong>Request Report</strong> — new requests, open vs closed, by date range</li>
+        <li><strong>Pickup Report</strong> — runner productivity, on-time rates</li>
+        <li><strong>Repair Report</strong> — repair throughput and outcomes</li>
+        <li><strong>Delivery Report</strong> — dispatch and completion analytics</li>
+        <li><strong>SLA / TAT Report</strong> — breach analysis and turnaround trends</li>
+        <li><strong>Revenue Report</strong> — billing totals, reconciled vs outstanding</li>
+      </ul>
+    
+    </div>
+  </section>
+<section id="settings" class="module-section">
+    <div class="module-header accent-orange">
+      <h2>⚙️ Settings</h2>
+    </div>
+    <div class="module-body">
+      
+      <p>System-wide configuration. Only Admins can access Settings.</p>
+      <div class="ss-grid">
+        <figure class="ss-fig">
+    <img src="screenshots/settings-status.png" alt="Status Configuration — workflow state management" loading="lazy" style="width:100%;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+    <figcaption>Status Configuration — workflow state management</figcaption>
+  </figure>
+        <figure class="ss-fig">
+    <img src="screenshots/settings-sla.png" alt="SLA Configuration — turnaround time rules" loading="lazy" style="width:100%;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+    <figcaption>SLA Configuration — turnaround time rules</figcaption>
+  </figure>
+      </div>
+      <h3>What You Can Configure</h3>
+      <ul>
+        <li><strong>Status Configuration</strong> — define and manage workflow states</li>
+        <li><strong>SLA Configuration</strong> — set turnaround time targets per request type</li>
+        <li><strong>Notification Settings</strong> — manage SMS/email retry policies and channels</li>
+        <li><strong>File Storage Config</strong> — configure storage bucket and signed URL settings</li>
+        <li><strong>System Preferences</strong> — global platform switches</li>
+      </ul>
+    
+    </div>
+  </section>
+<section id="documents" class="module-section">
+    <div class="module-header accent-teal">
+      <h2>📁 Documents</h2>
+    </div>
+    <div class="module-body">
+      
+      <p>Central repository for operational documents, SOPs, and shared reference files. Uploaded documents can be accessed by all authorised staff.</p>
+      <h3>How to Upload a Document</h3>
+      <div class="step"><div class="step-num">1</div><div class="step-body"><strong>Go to Documents → Document Library</strong></div></div>
+      <div class="step"><div class="step-num">2</div><div class="step-body"><strong>Click "Upload Document"</strong><p>A form appears on the right side of the page.</p></div></div>
+      <div class="step"><div class="step-num">3</div><div class="step-body"><strong>Enter a document name and description</strong></div></div>
+      <div class="step"><div class="step-num">4</div><div class="step-body"><strong>Select a file from your computer</strong><p>Supported formats: PDF, DOCX, XLSX, PNG, JPG.</p></div></div>
+      <div class="step"><div class="step-num">5</div><div class="step-body"><strong>Click Upload</strong><p>The file is uploaded and appears in the library list.</p></div></div>
+      <figure class="ss-fig">
+    <img src="screenshots/documents.png" alt="Documents — Document Library" loading="lazy" style="width:100%;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+    <figcaption>Documents — Document Library</figcaption>
+  </figure>
+      <div class="info-box">💡 Uploaded documents are stored securely and accessible via signed URLs. Files do not expire by default.</div>
+    
+    </div>
+  </section>
+<section id="audit" class="module-section">
+    <div class="module-header accent-purple">
+      <h2>🔍 Audit & Logs</h2>
+    </div>
+    <div class="module-body">
+      
+      <p>Enterprise-grade audit trail. Every significant action in the platform is recorded with a timestamp, user, and before/after snapshot.</p>
+      <div class="ss-grid">
+        <figure class="ss-fig">
+    <img src="screenshots/audit-activity.png" alt="Activity Logs — cross-system event stream" loading="lazy" style="width:100%;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+    <figcaption>Activity Logs — cross-system event stream</figcaption>
+  </figure>
+        <figure class="ss-fig">
+    <img src="screenshots/audit-timeline.png" alt="Status History — request status transitions" loading="lazy" style="width:100%;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+    <figcaption>Status History — request status transitions</figcaption>
+  </figure>
+      </div>
+      <h3>Use Cases</h3>
+      <ul>
+        <li>Investigate who approved a claim or changed a device status</li>
+        <li>Track the full status history of a service request from creation to closure</li>
+        <li>Compliance review — every user action is logged with IP and timestamp</li>
+      </ul>
+    
+    </div>
+  </section>
+<section id="videos" class="module-section">
+    <div class="module-header accent-slate">
+      <h2>🎬 Workflow Videos</h2>
+    </div>
+    <div class="module-body">
+      
+      <p>Recorded walkthroughs of each major workflow. Watch these to understand the end-to-end flow before using the system.</p>
+      
+        <h3>How to Log In</h3>
+        <div class="vid-wrap">
+    <video controls width="100%" style="border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+      <source src="videos/wf-login.webm" type="video/webm">
+      Your browser does not support video playback.
+    </video>
+    <p class="vid-caption">🎬 How to Log In</p>
+  </div>
+      
+        <h3>Dashboard Overview</h3>
+        <div class="vid-wrap">
+    <video controls width="100%" style="border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+      <source src="videos/wf-dashboard.webm" type="video/webm">
+      Your browser does not support video playback.
+    </video>
+    <p class="vid-caption">🎬 Dashboard Overview</p>
+  </div>
+      
+        <h3>Create a Service Request</h3>
+        <div class="vid-wrap">
+    <video controls width="100%" style="border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+      <source src="videos/wf-service-request.webm" type="video/webm">
+      Your browser does not support video playback.
+    </video>
+    <p class="vid-caption">🎬 Create a Service Request</p>
+  </div>
+      
+        <h3>Pickup Management Workflow</h3>
+        <div class="vid-wrap">
+    <video controls width="100%" style="border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+      <source src="videos/wf-pickup.webm" type="video/webm">
+      Your browser does not support video playback.
+    </video>
+    <p class="vid-caption">🎬 Pickup Management Workflow</p>
+  </div>
+      
+        <h3>Hub Operations Workflow</h3>
+        <div class="vid-wrap">
+    <video controls width="100%" style="border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+      <source src="videos/wf-hub-operations.webm" type="video/webm">
+      Your browser does not support video playback.
+    </video>
+    <p class="vid-caption">🎬 Hub Operations Workflow</p>
+  </div>
+      
+        <h3>Service Center & Repair Flow</h3>
+        <div class="vid-wrap">
+    <video controls width="100%" style="border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+      <source src="videos/wf-service-center.webm" type="video/webm">
+      Your browser does not support video playback.
+    </video>
+    <p class="vid-caption">🎬 Service Center & Repair Flow</p>
+  </div>
+      
+        <h3>Cashless Claim Lifecycle</h3>
+        <div class="vid-wrap">
+    <video controls width="100%" style="border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+      <source src="videos/wf-cashless-claim.webm" type="video/webm">
+      Your browser does not support video playback.
+    </video>
+    <p class="vid-caption">🎬 Cashless Claim Lifecycle</p>
+  </div>
+      
+        <h3>Billing & Payment Flow</h3>
+        <div class="vid-wrap">
+    <video controls width="100%" style="border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+      <source src="videos/wf-billing.webm" type="video/webm">
+      Your browser does not support video playback.
+    </video>
+    <p class="vid-caption">🎬 Billing & Payment Flow</p>
+  </div>
+      
+        <h3>Quality Check & Delivery</h3>
+        <div class="vid-wrap">
+    <video controls width="100%" style="border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+      <source src="videos/wf-quality-delivery.webm" type="video/webm">
+      Your browser does not support video playback.
+    </video>
+    <p class="vid-caption">🎬 Quality Check & Delivery</p>
+  </div>
+      
+    
+    </div>
+  </section>
+    </div>
+  </div>
+  <script>
+    // Highlight active sidebar link on scroll
+    const links = document.querySelectorAll('.sidebar a');
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          links.forEach(l => l.classList.remove('active'));
+          const id = e.target.id;
+          const link = document.querySelector(`.sidebar a[href="#${id}"]`);
+          if (link) link.classList.add('active');
+        }
+      });
+    }, { threshold: 0.3 });
+    document.querySelectorAll('section[id]').forEach(s => observer.observe(s));
+  </script>
+</body>
+</html>
