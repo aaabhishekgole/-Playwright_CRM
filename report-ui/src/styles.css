@@ -1,0 +1,165 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Tech / Cyber Design System ─────────────────────────────────────── */
+:root {
+  --cyber-green:   #00ff88;
+  --cyber-cyan:    #00d4ff;
+  --cyber-blue:    #3b82f6;
+  --cyber-purple:  #a855f7;
+  --cyber-red:     #ff4444;
+  --cyber-yellow:  #fbbf24;
+  --neon-glow-g:   0 0 8px #00ff8866, 0 0 20px #00ff8833;
+  --neon-glow-c:   0 0 8px #00d4ff66, 0 0 20px #00d4ff33;
+  --neon-glow-r:   0 0 8px #ff444466, 0 0 20px #ff444433;
+  --panel-bg:      rgba(10, 16, 30, 0.85);
+  --panel-border:  rgba(0, 212, 255, 0.18);
+  --grid-line:     rgba(0, 212, 255, 0.05);
+  color-scheme: dark;
+}
+
+/* ── Base ─────────────────────────────────────────────────────────────── */
+html, body, #root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', 'Segoe UI', sans-serif;
+  background: #020408;
+  color: #e2e8f0;
+}
+
+* { box-sizing: border-box; }
+
+a { color: inherit; text-decoration: none; }
+
+/* ── Cyber grid background ─────────────────────────────────────────── */
+.cyber-bg {
+  background-color: #020810;
+  background-image:
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+  background-size: 40px 40px;
+  background-position: -1px -1px;
+}
+
+/* Subtle radial fade in center */
+.cyber-bg::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(0, 212, 255, 0.06) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── Glass panels ─────────────────────────────────────────────────── */
+.cyber-panel {
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* ── Neon borders ─────────────────────────────────────────────────── */
+.neon-border-green {
+  border-color: var(--cyber-green) !important;
+  box-shadow: var(--neon-glow-g);
+}
+
+.neon-border-cyan {
+  border-color: var(--cyber-cyan) !important;
+  box-shadow: var(--neon-glow-c);
+}
+
+.neon-border-red {
+  border-color: var(--cyber-red) !important;
+  box-shadow: var(--neon-glow-r);
+}
+
+/* ── Neon text ────────────────────────────────────────────────────── */
+.neon-text-green {
+  color: var(--cyber-green);
+  text-shadow: 0 0 10px #00ff8880;
+}
+
+.neon-text-cyan {
+  color: var(--cyber-cyan);
+  text-shadow: 0 0 10px #00d4ff80;
+}
+
+.neon-text-red {
+  color: var(--cyber-red);
+  text-shadow: 0 0 10px #ff444480;
+}
+
+/* ── Monospace numbers ────────────────────────────────────────────── */
+.mono {
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+}
+
+/* ── Orbitron headings ────────────────────────────────────────────── */
+.tech-heading {
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* ── Stat card accent line ────────────────────────────────────────── */
+.stat-card-passed  { border-top: 2px solid var(--cyber-green);  }
+.stat-card-failed  { border-top: 2px solid var(--cyber-red);    }
+.stat-card-skipped { border-top: 2px solid var(--cyber-yellow); }
+.stat-card-time    { border-top: 2px solid var(--cyber-cyan);   }
+.stat-card-rate    { border-top: 2px solid var(--cyber-purple);  }
+
+/* ── Progress bar override ────────────────────────────────────────── */
+[role="progressbar"] > div {
+  background: linear-gradient(90deg, var(--cyber-cyan), var(--cyber-green)) !important;
+  box-shadow: 0 0 6px #00ff8855;
+}
+
+/* ── Scrollbar ───────────────────────────────────────────────────── */
+::-webkit-scrollbar       { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: #0a0f1d; }
+::-webkit-scrollbar-thumb { background: var(--cyber-cyan); border-radius: 2px; }
+
+/* ── Table row hover ──────────────────────────────────────────────── */
+.cyber-row:hover {
+  background: rgba(0, 212, 255, 0.06) !important;
+  border-left: 2px solid var(--cyber-cyan);
+}
+
+/* ── Badge overrides ──────────────────────────────────────────────── */
+.badge-passed  { background: rgba(0, 255, 136, 0.12) !important; color: var(--cyber-green)  !important; border: 1px solid var(--cyber-green)  !important; }
+.badge-failed  { background: rgba(255, 68, 68, 0.12)  !important; color: var(--cyber-red)    !important; border: 1px solid var(--cyber-red)    !important; }
+.badge-flaky   { background: rgba(251,191,36, 0.12)   !important; color: var(--cyber-yellow) !important; border: 1px solid var(--cyber-yellow) !important; }
+.badge-skipped { background: rgba(168,85,247, 0.12)   !important; color: var(--cyber-purple) !important; border: 1px solid var(--cyber-purple) !important; }
+
+/* ── Animated scan line ───────────────────────────────────────────── */
+@keyframes scanline {
+  0%   { transform: translateY(-100%); }
+  100% { transform: translateY(100vh); }
+}
+
+.scanline {
+  pointer-events: none;
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(0,212,255,0.3), transparent);
+  animation: scanline 8s linear infinite;
+  z-index: 9999;
+}
+
+/* ── Button glow ──────────────────────────────────────────────────── */
+button:not([disabled]):hover {
+  box-shadow: 0 0 12px rgba(0, 212, 255, 0.25);
+  transition: box-shadow 0.2s ease;
+}
+
+/* ── Select / Input dark override ────────────────────────────────── */
+select, input {
+  color-scheme: dark;
+}

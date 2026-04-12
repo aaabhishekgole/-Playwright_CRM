@@ -1,0 +1,87 @@
+- generic [ref=e4]:
+  - banner [ref=e5]:
+    - generic [ref=e6]: GSH
+    - generic [ref=e7]:
+      - generic "Current page" [ref=e8]:
+        - generic [ref=e9]: Invoice Verification
+        - generic [ref=e10]: /
+        - strong [ref=e11]: Invoice Queue
+      - generic [ref=e12]: Submitted invoices awaiting backend approval.
+    - generic [ref=e13]:
+      - generic [ref=e14]: Live Workspace
+      - generic [ref=e15]: Updated 11 Apr 2026
+      - generic [ref=e16]:
+        - generic [ref=e17]: Signed in as
+        - strong [ref=e18]: admin
+        - generic [ref=e19]: ADMIN
+      - button "Logout" [ref=e20] [cursor=pointer]
+  - navigation "Section navigation" [ref=e21]:
+    - generic [ref=e22]:
+      - link "Dashboard" [ref=e23] [cursor=pointer]:
+        - /url: /
+      - link "Service Requests" [ref=e24] [cursor=pointer]:
+        - /url: /workspace/service-requests/create-request
+      - link "Pickup Management" [ref=e25] [cursor=pointer]:
+        - /url: /workspace/pickup-management/pickup-dashboard
+      - link "Hub Operations" [ref=e26] [cursor=pointer]:
+        - /url: /workspace/hub-operations/device-received-at-hub
+      - link "Service Center" [ref=e27] [cursor=pointer]:
+        - /url: /workspace/service-center/devices-under-inspection
+      - link "Estimates" [ref=e28] [cursor=pointer]:
+        - /url: /workspace/estimates/new-estimates
+      - link "Cashless" [ref=e29] [cursor=pointer]:
+        - /url: /cashless-approval
+      - link "Claims" [ref=e30] [cursor=pointer]:
+        - /url: /claims
+      - link "Invoice Verification" [ref=e31] [cursor=pointer]:
+        - /url: /invoice-verification
+      - link "Insurance Submission" [ref=e32] [cursor=pointer]:
+        - /url: /insurance-submission
+      - link "Quality Check" [ref=e33] [cursor=pointer]:
+        - /url: /workspace/quality-check/pending-qc
+      - link "Delivery" [ref=e34] [cursor=pointer]:
+        - /url: /workspace/delivery/assign-delivery
+      - link "Billing" [ref=e35] [cursor=pointer]:
+        - /url: /workspace/billing/generate-invoice
+      - link "Notifications" [ref=e36] [cursor=pointer]:
+        - /url: /workspace/notifications/sms-logs
+      - link "Users" [ref=e37] [cursor=pointer]:
+        - /url: /workspace/users/admin-users
+      - link "Reports" [ref=e38] [cursor=pointer]:
+        - /url: /workspace/reports/request-report
+      - link "Settings" [ref=e39] [cursor=pointer]:
+        - /url: /workspace/settings/status-configuration
+      - link "Documents" [ref=e40] [cursor=pointer]:
+        - /url: /documents
+      - link "Audit" [ref=e41] [cursor=pointer]:
+        - /url: /workspace/audit/activity-logs
+  - navigation "Invoice Verification navigation" [ref=e42]:
+    - generic [ref=e43]:
+      - link "Invoice Queue Submitted invoices awaiting backend approval." [ref=e44] [cursor=pointer]:
+        - /url: /invoice-verification
+        - strong [ref=e45]: Invoice Queue
+        - generic [ref=e46]: Submitted invoices awaiting backend approval.
+      - link "Invoice Approved Invoices approved for insurance submission." [ref=e47] [cursor=pointer]:
+        - /url: /claims?status=INVOICE_APPROVED
+        - strong [ref=e48]: Invoice Approved
+        - generic [ref=e49]: Invoices approved for insurance submission.
+      - link "Invoice Rejected Invoices rejected — awaiting re-upload." [ref=e50] [cursor=pointer]:
+        - /url: /claims?status=INVOICE_REJECTED
+        - strong [ref=e51]: Invoice Rejected
+        - generic [ref=e52]: Invoices rejected — awaiting re-upload.
+  - main [ref=e53]:
+    - generic [ref=e54]:
+      - generic [ref=e56]:
+        - paragraph [ref=e57]: Invoice Verification
+        - heading "Invoice Approval Queue" [level=2] [ref=e58]
+        - paragraph [ref=e59]: Review submitted repair invoices, verify amounts against approved limits, and approve or reject.
+      - generic [ref=e60]:
+        - article [ref=e61]:
+          - generic [ref=e62]: Pending Review
+          - strong [ref=e63]: "0"
+          - generic [ref=e64]: Invoices awaiting approval.
+        - article [ref=e65]:
+          - generic [ref=e66]: Admin Approval Required
+          - strong [ref=e67]: "0"
+          - generic [ref=e68]: Invoices exceeding 10% threshold.
+      - strong [ref=e70]: Loading invoices…

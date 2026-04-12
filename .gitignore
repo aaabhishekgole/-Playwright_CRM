@@ -1,54 +1,13 @@
-# OS / editor
-.DS_Store
-Thumbs.db
-.vscode/
-
-# Node / frontend / mobile
 node_modules/
-frontend/node_modules/
-mobile/node_modules/
-Advance-Playwright-Framework-Testing/
-dist/
-build/
-frontend/dist/
-mobile/dist/
 .npm-cache/
-.expo/
-.expo-shared/
-
-# Java / Maven
-target/
-backend/target/
-backend/.m2/
-*.class
-*.jar
-
-# Local runtime data
-data/
-.data/
-# Exception: Android app source package named 'data'
-!android-runner-app/**/data/
-uploads/
-*.db
-*.mv.db
-*.trace.db
-
-# Logs
-*.log
-*.err.log
-
-# Env files
-.env
-.env.local
-.env.production
-.env.*
-!.env.example
-!*.env.example
-!.env.*.example
-
-# Test / reports
+Report/
 playwright-report/
 test-results/
-allure-report/
+dashboard-report/
 allure-results/
-Report/
+allure-report/
+tta-report/
+dist/
+.auth/
+.env
+*.log

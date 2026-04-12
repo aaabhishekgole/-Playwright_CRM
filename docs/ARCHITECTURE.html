@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Advanced Playwright Framework Architecture</title>
+    <style>
+      body {
+        font-family: Segoe UI, Arial, sans-serif;
+        margin: 0;
+        padding: 32px;
+        background: #f6f8fc;
+        color: #1c294d;
+      }
+      h1, h2 {
+        margin: 0 0 12px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+        margin-top: 24px;
+      }
+      .card {
+        background: #ffffff;
+        border: 1px solid #d8e0f0;
+        border-radius: 16px;
+        padding: 20px;
+      }
+      code {
+        background: #eef3ff;
+        padding: 2px 6px;
+        border-radius: 6px;
+      }
+      ul {
+        padding-left: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Advanced Playwright Framework</h1>
+    <p>Reusable Pages -> Modules -> Tests framework adapted to Gadget Seva Hub.</p>
+    <div class="grid">
+      <section class="card">
+        <h2>Pages</h2>
+        <ul>
+          <li>Atomic locators and actions</li>
+          <li>No business logic</li>
+          <li>Arrow-function locator style</li>
+        </ul>
+      </section>
+      <section class="card">
+        <h2>Modules</h2>
+        <ul>
+          <li>Business workflows</li>
+          <li>Cross-page orchestration</li>
+          <li>Logger-driven steps</li>
+        </ul>
+      </section>
+      <section class="card">
+        <h2>Tests</h2>
+        <ul>
+          <li>Fixture-first usage</li>
+          <li>Tagged scenarios</li>
+          <li><code>test.step()</code> reporting</li>
+        </ul>
+      </section>
+      <section class="card">
+        <h2>Support Layers</h2>
+        <ul>
+          <li>API helpers</li>
+          <li>Custom reporter</li>
+          <li>Rule engine</li>
+        </ul>
+      </section>
+      <section class="card">
+        <h2>Execution</h2>
+        <ul>
+          <li>Chromium, Firefox, WebKit, Mobile Chrome</li>
+          <li>HTML, JSON, and custom TTA report</li>
+          <li>Docker and Jenkins starter files</li>
+        </ul>
+      </section>
+      <section class="card">
+        <h2>Target App</h2>
+        <ul>
+          <li>Admin login</li>
+          <li>Open claims queue</li>
+          <li>Runner inbox browser flow</li>
+        </ul>
+      </section>
+    </div>
+  </body>
+</html>

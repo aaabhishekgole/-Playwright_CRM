@@ -1,100 +1,42 @@
-# Gadget Seva Hub
+# Advance Playwright Framework Testing
 
-This repository is set up to run locally without Docker.
+This project materializes the `Advance-Playwright-Framework.md` blueprint into a runnable Playwright + TypeScript framework adapted to the live Gadget Seva Hub portal.
 
-Deployment guide:
-- [Docs/deployment.md](/d:/Test%20Abhishek/AI_Frameworl/local/gadget-seva-hub/gadget-seva-hub/Docs/deployment.md)
+## What is included
 
-## Local setup
+- Pages -> Modules -> Tests architecture
+- typed env config
+- JSON test data
+- UI and API layers
+- reusable fixtures
+- QA execution dashboard
+- Playwright HTML + Allure reporting
+- rule engine for framework conventions
+- Docker and Jenkins starter files
 
-### Backend
+## Target application
 
-Requirements:
-- Java 21
-- Maven 3.9+
+- Web portal: `http://127.0.0.1:5173`
+- API: `http://127.0.0.1:8081/api`
 
-Run:
-```bash
-cd backend
-mvn spring-boot:run -Dspring-boot.run.profiles=local
-```
+## Baseline flows
 
-The API starts on `http://localhost:8081` and uses:
-- embedded H2 database stored under `backend/.data`
-- local file uploads under `backend/uploads`
-- seeded demo users with password `Admin@123`
-- logging-based notification delivery by default, with optional HTTP gateway delivery for SMS / WhatsApp
+- admin login
+- open claims queue
+- runner inbox login
+- API login and service-request fetch support
 
-Useful URLs:
-- API docs: `http://localhost:8081/swagger-ui/index.html`
-- H2 console: `http://localhost:8081/h2-console`
+## Reporting
 
-### Notifications
+- `npm test` now runs the suite and generates reports only after the execution completes
+- All report output is stored under `Report/`
+- The dashboard build now uses the JSX design in `playwright_pulse_dashboard.jsx` through a small React/Vite report app
+- HTML dashboard: `Report/dashboard/index.html`
+- Playwright HTML report: `Report/playwright/index.html`
+- Allure report: `Report/allure/index.html` generated in single-file mode so it can be opened directly from the folder
+- `npm run report:generate` rebuilds the dashboard and Allure reports from the latest stored results
+- Each UI flow stores a final screenshot and recorded video as test attachments
 
-By default, notifications are queued and marked through the local logging gateway.
+## Runtime note
 
-To switch SMS / WhatsApp delivery to a live provider or internal gateway, set these backend env vars:
-
-```bash
-NOTIFICATION_PROVIDER=HTTP
-NOTIFICATION_API_KEY=your-provider-key
-NOTIFICATION_AUTH_HEADER=authkey
-NOTIFICATION_SMS_ENABLED=true
-NOTIFICATION_SMS_URL=https://your-sms-gateway.example/send
-NOTIFICATION_SMS_SENDER_ID=GSHUB
-NOTIFICATION_WHATSAPP_ENABLED=true
-NOTIFICATION_WHATSAPP_URL=https://your-whatsapp-gateway.example/send
-NOTIFICATION_WHATSAPP_NUMBER=919999999999
-NOTIFICATION_WHATSAPP_TEMPLATE_NAME=pickup_runner_link
-```
-
-The notification payload includes the request number, recipient, message, subject, and metadata such as the runner portal link.
-
-### Frontend
-
-Requirements:
-- Node.js 20+
-
-Run:
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-The frontend runs on `http://localhost:5173` and talks to `http://localhost:8081/api` by default.
-
-### Mobile
-
-Requirements:
-- Node.js 20+
-- Expo CLI / Android Studio or Xcode as needed
-
-Run:
-```bash
-cd mobile
-npm install
-npx expo start
-```
-
-## Demo users
-
-- `admin`
-- `support`
-- `backend`
-- `pickup`
-- `tech`
-- `delivery`
-- `mse`
-- `finance`
-
-Password for all demo users: `Admin@123`
-
-## Codex / AI Context
-
-To make project context travel with every fresh `git clone`, this repository now includes:
-
-- `AGENTS.md`
-- `Docs/CODEX-HANDOFF.md`
-
-For any new Codex session on this repo, read those files first.
+- If Vite starts on a different port locally, update `BASE_URL` in `.env` before running the suite

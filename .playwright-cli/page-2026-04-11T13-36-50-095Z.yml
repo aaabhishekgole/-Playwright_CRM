@@ -1,0 +1,56 @@
+- generic [ref=e4]:
+  - generic [ref=e5]:
+    - generic [ref=e6]:
+      - img "Gadget Seva Hub logo" [ref=e8]
+      - generic [ref=e15]:
+        - paragraph [ref=e16]: Enterprise Service Operations
+        - heading "Gadget Seva Hub" [level=1] [ref=e17]
+        - paragraph [ref=e18]: Run claim intake, pickup coordination, repair tracking, dispatch, and billing from one compact operations workspace.
+    - generic [ref=e19]:
+      - article [ref=e20]:
+        - strong [ref=e21]: "22"
+        - generic [ref=e22]: workflow states
+        - generic [ref=e23]: from intake to final delivery
+      - article [ref=e24]:
+        - strong [ref=e25]: "8"
+        - generic [ref=e26]: operator roles
+        - generic [ref=e27]: admin, support, tech, finance and more
+      - article [ref=e28]:
+        - strong [ref=e29]: 24x7
+        - generic [ref=e30]: ops posture
+        - generic [ref=e31]: built for repeat daily handling
+    - generic [ref=e32]:
+      - generic [ref=e33]:
+        - generic [ref=e34]: Ops Matrix
+        - generic [ref=e35]: Workspace available
+      - list [ref=e36]:
+        - listitem [ref=e37]: Repair intake, diagnostics, approval, dispatch, and reconciliation in one command surface.
+        - listitem [ref=e38]: JWT-based access with seeded local operators for controlled role testing.
+        - listitem [ref=e39]: Traceable service-request history so each status transition stays visible.
+  - generic [ref=e40]:
+    - generic [ref=e41]:
+      - paragraph [ref=e42]: Secure operator access
+      - heading "Sign in to Ops Console" [level=2] [ref=e43]
+      - paragraph [ref=e44]: Use a seeded operator account to enter live workflow queues, billing screens, and request controls.
+    - generic [ref=e45]:
+      - generic [ref=e46]: Username
+      - textbox "Username" [ref=e47]:
+        - /placeholder: admin
+        - text: admin
+    - generic [ref=e48]:
+      - generic [ref=e49]: Password
+      - textbox "Password" [ref=e50]: Admin@123
+    - button "Enter Console" [ref=e51] [cursor=pointer]
+    - generic [ref=e52]:
+      - generic [ref=e53]:
+        - generic [ref=e54]: Local access
+        - strong [ref=e55]: "Seeded password: `Admin@123`"
+      - generic [ref=e56]:
+        - generic [ref=e57]: admin
+        - generic [ref=e58]: support
+        - generic [ref=e59]: backend
+        - generic [ref=e60]: pickup
+        - generic [ref=e61]: tech
+        - generic [ref=e62]: delivery
+        - generic [ref=e63]: mse
+        - generic [ref=e64]: finance
