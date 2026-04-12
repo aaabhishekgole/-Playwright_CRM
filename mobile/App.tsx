@@ -15,8 +15,8 @@ import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
 
-const DEFAULT_WEB_ORIGIN = 'http://localhost:5173';
-const DEFAULT_API_BASE_URL = 'http://localhost:8081/api';
+const DEFAULT_WEB_ORIGIN = 'https://front-end-uat.up.railway.app';
+const DEFAULT_API_BASE_URL = 'https://front-end-uat.up.railway.app/api';
 
 type AuthSession = {
   accessToken: string;
@@ -52,7 +52,7 @@ function normalizeWebOrigin(value?: string | null) {
 function resolveApiBaseUrl(webOrigin: string) {
   try {
     const parsed = new URL(normalizeWebOrigin(webOrigin));
-    parsed.port = parsed.port === '5174' || parsed.port === '5173' ? '8081' : parsed.port || '8081';
+    parsed.port = parsed.port === '5174' || parsed.port === '5173' ? '8081' : parsed.port;
     parsed.pathname = '/api';
     parsed.search = '';
     parsed.hash = '';
@@ -293,7 +293,7 @@ export default function App() {
               javaScriptEnabled
               domStorageEnabled
               setSupportMultipleWindows={false}
-              originWhitelist={['*']}
+              originWhitelist={['https://front-end-uat.up.railway.app', 'https://*.railway.app', 'gshrunner://*']}
               renderLoading={() => (
                 <View style={styles.centered}>
                   <ActivityIndicator size="large" color="#2563eb" />
