@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { StatusBadge } from '../components/StatusBadge';
 import { useToast } from '../hooks/useToast';
 import { fetchClaims, getApiErrorMessage } from '../services/api';
@@ -22,10 +22,11 @@ const CLAIM_STATUSES = [
 ];
 
 export function ClaimsListPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const statusFilter = searchParams.get('status') ?? '';
   const [claims, setClaims] = useState<Claim[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [statusFilter, setStatusFilter] = useState('');
   const { showError } = useToast();
 
   useEffect(() => {
@@ -40,6 +41,14 @@ export function ClaimsListPage() {
       })
       .finally(() => setLoading(false));
   }, [statusFilter]);
+
+  function handleStatusChange(value: string) {
+    if (value) {
+      setSearchParams({ status: value });
+    } else {
+      setSearchParams({});
+    }
+  }
 
   const counts = {
     pending: claims.filter((c) => c.claimStatus === 'APPROVAL_PENDING').length,
@@ -89,7 +98,7 @@ export function ClaimsListPage() {
       <div className="filter-row">
         <label className="action-field" style={{ maxWidth: '280px' }}>
           <span>Filter by status</span>
-          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+          <select value={statusFilter} onChange={(e) => handleStatusChange(e.target.value)}>
             {CLAIM_STATUSES.map((s) => (
               <option key={s.value} value={s.value}>{s.label}</option>
             ))}
