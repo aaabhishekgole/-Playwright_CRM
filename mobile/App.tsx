@@ -282,11 +282,9 @@ export default function App() {
               <Pressable style={styles.secondaryButton} onPress={() => setRunnerToken(null)}>
                 <Text style={styles.secondaryButtonText}>Back To Inbox</Text>
               </Pressable>
-              {session ? (
-                <Pressable style={styles.ghostButton} onPress={handleLogout}>
-                  <Text style={styles.ghostButtonText}>Sign Out</Text>
-                </Pressable>
-              ) : null}
+              <Pressable style={styles.ghostButton} onPress={handleLogout}>
+                <Text style={styles.ghostButtonText}>Sign Out</Text>
+              </Pressable>
             </View>
             <WebView
               source={{ uri: webRunnerUrl }}
