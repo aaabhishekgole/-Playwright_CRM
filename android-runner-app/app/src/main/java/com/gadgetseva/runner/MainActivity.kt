@@ -1,6 +1,7 @@
 package com.gadgetseva.runner
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -20,14 +21,21 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        val sessionManager = SessionManager(applicationContext)
+        val sessionManager = try {
+            SessionManager(applicationContext)
+        } catch (e: Exception) {
+            Log.e("MainActivity", "SessionManager init failed", e)
+            SessionManager(applicationContext)
+        }
         RetrofitClient.init(sessionManager)
         val repository = RunnerRepository(sessionManager)
 
-        val startDestination = if (sessionManager.isLoggedIn())
-            Screen.Dashboard.route
-        else
+        val startDestination = try {
+            if (sessionManager.isLoggedIn()) Screen.Dashboard.route else Screen.Login.route
+        } catch (e: Exception) {
+            Log.e("MainActivity", "isLoggedIn check failed", e)
             Screen.Login.route
+        }
 
         setContent {
             MaterialTheme {

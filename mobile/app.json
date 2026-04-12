@@ -42,15 +42,6 @@
         "projectId": "gadget-seva-runner"
       }
     },
-    "plugins": [
-      [
-        "expo-build-properties",
-        {
-          "android": {
-            "usesCleartextTraffic": false
-          }
-        }
-      ]
-    ]
+    "plugins": []
   }
 }

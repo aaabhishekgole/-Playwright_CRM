@@ -1,22 +1,30 @@
 package com.gadgetseva.runner.session
 
 import android.content.Context
+import android.content.SharedPreferences
+import android.util.Log
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 
 class SessionManager(context: Context) {
 
-    private val masterKey = MasterKey.Builder(context)
-        .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
-        .build()
-
-    private val prefs = EncryptedSharedPreferences.create(
-        context,
-        "gsh_runner_session",
-        masterKey,
-        EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-        EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
-    )
+    private val prefs: SharedPreferences = try {
+        val masterKey = MasterKey.Builder(context)
+            .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+            .build()
+        EncryptedSharedPreferences.create(
+            context,
+            "gsh_runner_session",
+            masterKey,
+            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+        )
+    } catch (e: Exception) {
+        Log.e("SessionManager", "EncryptedSharedPreferences failed, falling back to plain prefs", e)
+        // Delete any corrupted encrypted prefs file and use plain prefs as fallback
+        try { context.deleteSharedPreferences("gsh_runner_session") } catch (_: Exception) {}
+        context.getSharedPreferences("gsh_runner_session_plain", Context.MODE_PRIVATE)
+    }
 
     fun saveSession(token: String, username: String, role: String) {
         prefs.edit()
